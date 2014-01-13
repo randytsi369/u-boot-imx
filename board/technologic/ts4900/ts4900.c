@@ -42,7 +42,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 iomux_v3_cfg_t const ecspi1_pads[] = {
 	/* SS1 */
-	MX6_PAD_EIM_D19__ECSPI1_SS1  | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_EIM_D19__GPIO_3_19   | MUX_PAD_CTRL(SPI_PAD_CTRL),
 	MX6_PAD_EIM_D17__ECSPI1_MISO | MUX_PAD_CTRL(SPI_PAD_CTRL),
 	MX6_PAD_EIM_D18__ECSPI1_MOSI | MUX_PAD_CTRL(SPI_PAD_CTRL),
 	MX6_PAD_EIM_D16__ECSPI1_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL),
@@ -56,7 +56,10 @@ void setup_spi(void)
 
 int dram_init(void)
 {
-	gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
+	int ram_mb = 1024;
+
+	//gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
+	gd->ram_size = ((ulong)ram_mb * 1024 * 1024);
 
 	return 0;
 }
@@ -184,7 +187,7 @@ int board_mmc_init(bd_t *bis)
 
 int mx6_rgmii_rework(struct phy_device *phydev)
 {
-	unsigned short val;
+	//unsigned short val;
 
 	/* To enable AR8031 ouput a 125MHz clk from CLK_25M */
 	/*phy_write(phydev, MDIO_DEVAD_NONE, 0xd, 0x7);
@@ -240,10 +243,6 @@ int board_eth_init(bd_t *bis)
 int board_early_init_f(void)
 {
 	setup_iomux_uart();
-#if defined(CONFIG_VIDEO_IPUV3)
-	setup_display();
-#endif
-
 	return 0;
 }
 
