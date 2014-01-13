@@ -20,6 +20,7 @@
 #include <netdev.h>
 #include <asm/arch/mxc_hdmi.h>
 #include <asm/arch/crm_regs.h>
+#include <micrel.h>
 #include <linux/fb.h>
 #include <ipu_pixfmt.h>
 #include <asm/io.h>
@@ -69,7 +70,7 @@ iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_SD3_DAT6__UART1_RXD | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
 
-iomux_v3_cfg_t const enet_pads[] = {
+iomux_v3_cfg_t const enet_pads1[] = {
 	MX6_PAD_ENET_MDIO__ENET_MDIO		| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET_MDC__ENET_MDC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_TXC__ENET_RGMII_TXC	| MUX_PAD_CTRL(ENET_PAD_CTRL),
@@ -79,24 +80,51 @@ iomux_v3_cfg_t const enet_pads[] = {
 	MX6_PAD_RGMII_TD3__ENET_RGMII_TD3	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_TX_CTL__RGMII_TX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET_REF_CLK__ENET_TX_CLK	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* pin 35 - 1 (PHY_AD2) on reset */
+	MX6_PAD_RGMII_RXC__GPIO_6_30		| MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* pin 32 - 1 - (MODE0) all */
+	MX6_PAD_RGMII_RD0__GPIO_6_25		| MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* pin 31 - 1 - (MODE1) all */
+	MX6_PAD_RGMII_RD1__GPIO_6_27		| MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* pin 28 - 1 - (MODE2) all */
+	MX6_PAD_RGMII_RD2__GPIO_6_28		| MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* pin 27 - 1 - (MODE3) all */
+	MX6_PAD_RGMII_RD3__GPIO_6_29		| MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* pin 33 - 1 - (CLK125_EN) 125Mhz clockout enabled */
+	MX6_PAD_RGMII_RX_CTL__GPIO_6_24	| MUX_PAD_CTRL(NO_PAD_CTRL),
+	
+	// RESET
+	MX6_PAD_DI0_PIN4__GPIO_4_20		| MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+iomux_v3_cfg_t const enet_pads2[] = {
 	MX6_PAD_RGMII_RXC__ENET_RGMII_RXC	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_RD0__ENET_RGMII_RD0	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_RD1__ENET_RGMII_RD1	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_RD2__ENET_RGMII_RD2	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_RD3__ENET_RGMII_RD3	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_RX_CTL__RGMII_RX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	// TS-4900 has no reset pin connected to the phy?
-	//MX6_PAD_ENET_CRS_DV__GPIO_1_25		| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static void setup_iomux_enet(void)
 {
-	imx_iomux_v3_setup_multiple_pads(enet_pads, ARRAY_SIZE(enet_pads));
+	// Assert reset
+	gpio_direction_output(IMX_GPIO_NR(4, 20), 1);
 
-/* TODO: No manual control over phy reset ?
-	gpio_direction_output(IMX_GPIO_NR(1, 25) , 0);
-	udelay(500);
-	gpio_set_value(IMX_GPIO_NR(1, 25), 1); */
+	gpio_direction_output(IMX_GPIO_NR(6, 30), 1); // MX6_PAD_RGMII_RXC
+	gpio_direction_output(IMX_GPIO_NR(6, 25), 1); // MX6_PAD_RGMII_RD0
+	gpio_direction_output(IMX_GPIO_NR(6, 27), 1); // MX6_PAD_RGMII_RD1
+	gpio_direction_output(IMX_GPIO_NR(6, 28), 1); // MX6_PAD_RGMII_RD2
+	gpio_direction_output(IMX_GPIO_NR(6, 29), 1); // MX6_PAD_RGMII_RD3
+	imx_iomux_v3_setup_multiple_pads(enet_pads1, ARRAY_SIZE(enet_pads1));
+	gpio_direction_output(IMX_GPIO_NR(6, 24), 1); // MX6_PAD_RGMII_RX_CTL
+
+	/* Need delay 10ms according to KSZ9021 spec */
+	mdelay(10);
+
+	// De-assert reset
+	gpio_direction_output(IMX_GPIO_NR(4, 20), 0);
+	imx_iomux_v3_setup_multiple_pads(enet_pads2, ARRAY_SIZE(enet_pads2));
 }
 
 /* SD card */
@@ -117,6 +145,7 @@ iomux_v3_cfg_t const usdhc3_pads[] = {
 	MX6_PAD_SD3_DAT1__USDHC3_DAT1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD3_DAT2__USDHC3_DAT2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD3_DAT3__USDHC3_DAT3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_SD3_RST__USDHC3_RST   | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 };
 
 static void setup_iomux_uart(void)
@@ -185,33 +214,17 @@ int board_mmc_init(bd_t *bis)
 }
 #endif
 
-int mx6_rgmii_rework(struct phy_device *phydev)
-{
-	//unsigned short val;
-
-	/* To enable AR8031 ouput a 125MHz clk from CLK_25M */
-	/*phy_write(phydev, MDIO_DEVAD_NONE, 0xd, 0x7);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0xe, 0x8016);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0xd, 0x4007);
-
-	val = phy_read(phydev, MDIO_DEVAD_NONE, 0xe);
-	val &= 0xffe3;
-	val |= 0x18;
-	phy_write(phydev, MDIO_DEVAD_NONE, 0xe, val); */
-
-	/* introduce tx clock delay */
-	/*phy_write(phydev, MDIO_DEVAD_NONE, 0x1d, 0x5);
-	val = phy_read(phydev, MDIO_DEVAD_NONE, 0x1e);
-	val |= 0x0100;
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1e, val);*/
-
-	return 0;
-}
-
 int board_phy_config(struct phy_device *phydev)
 {
-	mx6_rgmii_rework(phydev);
-
+	/* min rx data delay */
+	ksz9021_phy_extended_write(phydev,
+			MII_KSZ9021_EXT_RGMII_RX_DATA_SKEW, 0x0);
+	/* min tx data delay */
+	ksz9021_phy_extended_write(phydev,
+			MII_KSZ9021_EXT_RGMII_TX_DATA_SKEW, 0x0);
+	/* max rx/tx clock delay, min rx/tx control */
+	ksz9021_phy_extended_write(phydev,
+			MII_KSZ9021_EXT_RGMII_CLOCK_SKEW, 0xf0f0);
 	if (phydev->drv->config)
 		phydev->drv->config(phydev);
 
@@ -229,15 +242,28 @@ int overwrite_console(void)
 
 int board_eth_init(bd_t *bis)
 {
+	uint32_t base = IMX_FEC_BASE;
+	struct mii_dev *bus = NULL;
+	struct phy_device *phydev = NULL;
 	int ret;
 
 	setup_iomux_enet();
-
-	ret = cpu_eth_init(bis);
-	if (ret)
+	bus = fec_get_miibus(base, -1);
+	if (!bus)
+		return 0;
+	/* scan phy 4,5,6,7 */
+	phydev = phy_find_by_mask(bus, (0xf << 4), PHY_INTERFACE_MODE_RGMII);
+	if (!phydev) {
+		free(bus);
+		return 0;
+	}
+	printf("using phy at %d\n", phydev->addr);
+	ret  = fec_probe(bis, -1, base, bus, phydev);
+	if (ret) {
 		printf("FEC MXC: %s:failed\n", __func__);
-
-	return ret;
+		free(phydev);
+		free(bus);
+	}
 }
 
 int board_early_init_f(void)

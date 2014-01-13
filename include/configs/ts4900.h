@@ -32,19 +32,15 @@
 #define CONFIG_MXC_GPIO
 
 #define CONFIG_CMD_FUSE
-#ifdef CONFIG_CMD_FUSE
 #define CONFIG_MXC_OCOTP
-#endif
 
 #define CONFIG_MXC_UART
 #define CONFIG_MXC_UART_BASE	       UART1_BASE
 
 #define CONFIG_CMD_SF
-#ifdef CONFIG_CMD_SF
 #define CONFIG_SPI_FLASH
 #define CONFIG_SPI_FLASH_STMICRO
 #define CONFIG_MXC_SPI
-#endif
 
 /* I2C Configs */
 #define CONFIG_CMD_I2C
@@ -55,14 +51,11 @@
 /* OCOTP Configs */
 
 #define CONFIG_CMD_IMXOTP
-#ifdef CONFIG_CMD_IMXOTP
 #define CONFIG_IMX_OTP
 #define IMX_OTP_BASE			OCOTP_BASE_ADDR
 #define IMX_OTP_ADDR_MAX		0x7F
 #define IMX_OTP_DATA_ERROR_VAL		0xBADABADA
 #define IMX_OTPWRITE_ENABLED
-#endif 
-
 
 /* MMC Configs */
 #define CONFIG_FSL_ESDHC
