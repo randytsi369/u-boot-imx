@@ -15,6 +15,7 @@
 #include <asm/imx-common/iomux-v3.h>
 #include <asm/imx-common/boot_mode.h>
 #include <mmc.h>
+#include <malloc.h>
 #include <fsl_esdhc.h>
 #include <miiphy.h>
 #include <netdev.h>
@@ -25,6 +26,7 @@
 #include <ipu_pixfmt.h>
 #include <asm/io.h>
 #include <asm/arch/sys_proto.h>
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #define UART_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
@@ -120,7 +122,7 @@ static void setup_iomux_enet(void)
 	gpio_direction_output(IMX_GPIO_NR(6, 24), 1); // MX6_PAD_RGMII_RX_CTL
 
 	/* Need delay 10ms according to KSZ9021 spec */
-	mdelay(10);
+	udelay(1000 * 10);
 
 	// De-assert reset
 	gpio_direction_output(IMX_GPIO_NR(4, 20), 0);
@@ -145,7 +147,7 @@ iomux_v3_cfg_t const usdhc3_pads[] = {
 	MX6_PAD_SD3_DAT1__USDHC3_DAT1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD3_DAT2__USDHC3_DAT2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD3_DAT3__USDHC3_DAT3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_SD3_RST__USDHC3_RST   | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_SD3_RST__GPIO_7_8     | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static void setup_iomux_uart(void)
@@ -182,6 +184,7 @@ int board_mmc_init(bd_t *bis)
 	s32 status = 0;
 	int i;
 
+
 	/*
 	 * According to the board_mmc_init() the following map is done:
 	 * (U-boot device node)    (Physical Port)
@@ -190,14 +193,18 @@ int board_mmc_init(bd_t *bis)
 	 */
 	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
 		switch (i) {
-		case 0:
+		case 0: // SD
 			imx_iomux_v3_setup_multiple_pads(
 				usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+			usdhc_cfg[0].max_bus_width = 4;
 			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
 			break;
-		case 1:
+		case 1: // MMC
+			// Reset#
+			gpio_direction_output(IMX_GPIO_NR(7, 8), 1);
 			imx_iomux_v3_setup_multiple_pads(
 				usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
+			usdhc_cfg[1].max_bus_width = 4;
 			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
 			break;
 		default:
@@ -253,6 +260,7 @@ int board_eth_init(bd_t *bis)
 		return 0;
 	/* scan phy 4,5,6,7 */
 	phydev = phy_find_by_mask(bus, (0xf << 4), PHY_INTERFACE_MODE_RGMII);
+	//phydev = phy_find_by_mask(bus, 0x80, PHY_INTERFACE_MODE_RGMII);
 	if (!phydev) {
 		free(bus);
 		return 0;
@@ -264,6 +272,7 @@ int board_eth_init(bd_t *bis)
 		free(phydev);
 		free(bus);
 	}
+	return ret;
 }
 
 int board_early_init_f(void)
