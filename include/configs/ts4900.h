@@ -78,9 +78,23 @@
 #define CONFIG_CMD_SATA
 #endif
 
-/*
- * SATA Configs
- */
+#define CONFIG_BOARD_SPECIFIC_LED
+#define CONFIG_STATUS_LED
+#define CONFIG_CMD_LED
+
+#define CONFIG_RED_LED                  IMX_GPIO_NR(1, 2)
+#define CONFIG_GREEN_LED                IMX_GPIO_NR(1, 3)
+#define STATUS_LED_RED                  0
+#define STATUS_LED_GREEN                1
+
+#define STATUS_LED_BIT                  STATUS_LED_RED
+#define STATUS_LED_STATE                STATUS_LED_ON
+#define STATUS_LED_PERIOD               (CONFIG_SYS_HZ / 2)
+
+#define STATUS_LED_BIT1                 STATUS_LED_GREEN
+#define STATUS_LED_STATE1               STATUS_LED_ON
+#define STATUS_LED_PERIOD1              (CONFIG_SYS_HZ / 2)
+
 #ifdef CONFIG_CMD_SATA
 #define CONFIG_DWC_AHSATA
 #define CONFIG_SYS_SATA_MAX_DEVICE	1
