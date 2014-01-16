@@ -14,7 +14,7 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
 
-#define CONFIG_MACH_TYPE	3769
+#define CONFIG_MACH_TYPE	4843
 
 #include <asm/arch/imx-regs.h>
 #include <asm/imx-common/gpio.h>
@@ -26,7 +26,7 @@
 #define CONFIG_REVISION_TAG
 
 /* Size of malloc() pool */
- #define CONFIG_SYS_MALLOC_LEN		(10 * SZ_1M)
+#define CONFIG_SYS_MALLOC_LEN		(10 * SZ_1M)
 
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_MXC_GPIO
