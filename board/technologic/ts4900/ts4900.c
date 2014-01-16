@@ -57,13 +57,16 @@ void setup_spi(void)
 					 ARRAY_SIZE(ecspi1_pads));
 }
 
+
+void dram_init_banksize(void) { 
+   gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
+	gd->bd->bi_dram[0].size  = PHYS_SDRAM_SIZE;		
+}
+
+
 int dram_init(void)
-{
-	int ram_mb = 1024;
-
-	//gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
-	gd->ram_size = ((ulong)ram_mb * 1024 * 1024);
-
+{	
+	gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
 	return 0;
 }
 
