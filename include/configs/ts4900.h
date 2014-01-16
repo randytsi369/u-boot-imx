@@ -170,114 +170,27 @@
 
 #define CONFIG_DRIVE_TYPES CONFIG_DRIVE_SATA CONFIG_DRIVE_MMC
 
-/*#if defined(CONFIG_SABRELITE)
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"script=boot.scr\0" \
-	"uimage=uImage\0" \
-	"console=ttymxc1\0" \
-	"fdt_high=0xffffffff\0" \
-	"initrd_high=0xffffffff\0" \
-	"fdt_file=imx6q-sabrelite.dtb\0" \
-	"fdt_addr=0x11000000\0" \
-	"boot_fdt=try\0" \
+	"uimage=/boot/uImage\0" \
 	"ip_dyn=yes\0" \
-	"mmcdev=0\0" \
-	"mmcpart=1\0" \
-	"mmcroot=/dev/mmcblk0p2 rootwait rw\0" \
-	"mmcargs=setenv bootargs console=${console},${baudrate} " \
-		"root=${mmcroot}\0" \
-	"loadbootscript=" \
-		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
-	"bootscript=echo Running bootscript from mmc ...; " \
-		"source\0" \
-	"loaduimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${uimage}\0" \
-	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}\0" \
-	"mmcboot=echo Booting from mmc ...; " \
-		"run mmcargs; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if run loadfdt; then " \
-				"bootm ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"if test ${boot_fdt} = try; then " \
-					"bootm; " \
-				"else " \
-					"echo WARN: Cannot load the DT; " \
-				"fi; " \
-			"fi; " \
-		"else " \
-			"bootm; " \
-		"fi;\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} " \
-		"root=/dev/nfs " \
-	"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
-		"netboot=echo Booting from net ...; " \
-		"run netargs; " \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"${get_cmd} ${uimage}; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"bootm ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"if test ${boot_fdt} = try; then " \
-					"bootm; " \
-				"else " \
-					"echo WARN: Cannot load the DT; " \
-				"fi; " \
-			"fi; " \
-		"else " \
-			"bootm; " \
-		"fi;\0"
+	"fdt_file=/boot/ts4900.dtb\0" \
+	"fdt_addr=0x11000000\0" \
+	"clearenv=if sf probe; then " \
+		"sf erase 0x100000 0x2000 && " \
+	"echo restored environment to factory default ; fi\0" \
+	"sdboot=echo Booting from the SD card ...; " \
+		"load mmc 0:1 ${loadaddr} ${uimage}; " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 rootwait rw init=/sbin/init'; " \
+		"bootm;\0" \
+	"emmcboot=echo Booting from the eMMC ...; " \
+		"load mmc 1:1 ${loadaddr} ${uimage}; " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 rootwait rw init=/sbin/init'; " \
+		"bootm;\0"
 
 #define CONFIG_BOOTCOMMAND \
-	   "mmc dev ${mmcdev}; if mmc rescan; then " \
-		   "if run loadbootscript; then " \
-			   "run bootscript; " \
-		   "else " \
-			   "if run loaduimage; then " \
-				   "run mmcboot; " \
-			   "else run netboot; " \
-			   "fi; " \
-		   "fi; " \
-	   "else run netboot; fi"
-#else
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	"console=ttymxc1\0" \
-	"clearenv=if sf probe || sf probe || sf probe 1 ; then " \
-		"sf erase 0xc0000 0x2000 && " \
-		"echo restored environment to factory default ; fi\0" \
-	"bootcmd=for dtype in " CONFIG_DRIVE_TYPES \
-		"; do " \
-			"for disk in 0 1 ; do ${dtype} dev ${disk} ;" \
-				"for fs in fat ext2 ; do " \
-					"${fs}load " \
-						"${dtype} ${disk}:1 " \
-						"10008000 " \
-						"/6x_bootscript" \
-						"&& source 10008000 ; " \
-				"done ; " \
-			"done ; " \
-		"done; " \
-		"setenv stdout serial,vga ; " \
-		"echo ; echo 6x_bootscript not found ; " \
-		"echo ; echo serial console at 115200, 8N1 ; echo ; " \
-		"echo details at http://boundarydevices.com/6q_bootscript ; " \
-		"setenv stdout serial\0" \
-	"upgradeu=for dtype in " CONFIG_DRIVE_TYPES \
-		"; do " \
-		"for disk in 0 1 ; do ${dtype} dev ${disk} ;" \
-		     "for fs in fat ext2 ; do " \
-				"${fs}load ${dtype} ${disk}:1 10008000 " \
-					"/6x_upgrade " \
-					"&& source 10008000 ; " \
-			"done ; " \
-		"done ; " \
-	"done\0" \
+	   "run sdboot;"
 
-#endif*/
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP
@@ -317,13 +230,20 @@
 /* FLASH and environment organization */
 #define CONFIG_SYS_NO_FLASH
 
+/* 
+ * 8MB SPI Flash
+ * 0-0x3ff 				Padding				
+ * 0x400-0x9FFFF		U-Boot 				Requires ~300KB in current build
+ * 0x100000-0x101FFF	U-Boot environment  8KB, can be bigger, but has to be loaded every boot
+ * 0x102000-0x1FFFFF	Reserved
+ * 0x200000-0x2FFFFF	FDT
+ * 0x300000-0x7FFFFF	Available
+ */
+
 #define CONFIG_ENV_SIZE			(8 * 1024)
-
-//#define CONFIG_ENV_IS_NOWHERE
 #define CONFIG_ENV_IS_IN_SPI_FLASH
-
-#define CONFIG_ENV_OFFSET		(768 * 1024)
-#define CONFIG_ENV_SECT_SIZE		(4 * 1024)
+#define CONFIG_ENV_OFFSET		0x100000
+#define CONFIG_ENV_SECT_SIZE	(4 * 1024)
 #define CONFIG_SF_DEFAULT_BUS  0
 #define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(3, 19)<<8))
 #define CONFIG_SF_DEFAULT_SPEED 1000000
