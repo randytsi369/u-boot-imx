@@ -51,6 +51,11 @@ iomux_v3_cfg_t const ecspi1_pads[] = {
 	MX6_PAD_EIM_D16__ECSPI1_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL),
 };
 
+
+iomux_v3_cfg_t const misc_pads[] = {
+	MX6_PAD_EIM_A17__GPIO_2_21 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
 void setup_spi(void)
 {
 	imx_iomux_v3_setup_multiple_pads(ecspi1_pads,
@@ -187,7 +192,6 @@ int board_mmc_init(bd_t *bis)
 	s32 status = 0;
 	int i;
 
-
 	/*
 	 * According to the board_mmc_init() the following map is done:
 	 * (U-boot device node)    (Physical Port)
@@ -226,17 +230,17 @@ int board_mmc_init(bd_t *bis)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	/* min rx data delay */
-	ksz9021_phy_extended_write(phydev,
-			MII_KSZ9021_EXT_RGMII_RX_DATA_SKEW, 0x0);
-	/* min tx data delay */
-	ksz9021_phy_extended_write(phydev,
-			MII_KSZ9021_EXT_RGMII_TX_DATA_SKEW, 0x0);
-	/* max rx/tx clock delay, min rx/tx control */
-	ksz9021_phy_extended_write(phydev,
-			MII_KSZ9021_EXT_RGMII_CLOCK_SKEW, 0xf0f0);
+	///* min rx data delay */
+	//ksz9021_phy_extended_write(phydev,
+			//MII_KSZ9021_EXT_RGMII_RX_DATA_SKEW, 0x0);
+	///* min tx data delay */
+	//ksz9021_phy_extended_write(phydev,
+			//MII_KSZ9021_EXT_RGMII_TX_DATA_SKEW, 0x0);
+	///* max rx/tx clock delay, min rx/tx control */
+	//ksz9021_phy_extended_write(phydev,
+			//MII_KSZ9021_EXT_RGMII_CLOCK_SKEW, 0xf0f0); 
 	if (phydev->drv->config)
-		phydev->drv->config(phydev);
+		phydev->drv->config(phydev); 
 
 	return 0;
 }
@@ -289,6 +293,12 @@ int board_init(void)
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 	setup_spi();
+
+	// Disable offboard reset
+	// required for console on many boards
+	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
+	gpio_direction_output(IMX_GPIO_NR(2, 21), 1);
+
 	return 0;
 }
 
