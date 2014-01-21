@@ -154,7 +154,7 @@
 
 #define CONFIG_BOOTDELAY	       1
 #define CONFIG_PREBOOT                 ""
-#define CONFIG_LOADADDR			       0x12000000
+#define CONFIG_LOADADDR			       0x10800000
 #define CONFIG_SYS_TEXT_BASE	       0x17800000
 #define CONFIG_MISC_INIT_R
 
@@ -177,7 +177,7 @@
 	"uimage=/boot/uImage\0" \
 	"ip_dyn=yes\0" \
 	"fdt_file=/boot/imx6q-ts4900.dtb\0" \
-	"fdt_addr=0x18000000\0" \
+	"fdt_addr=0x11000000\0" \
 	"fdt_high=0xffffffff\0"	  \
 	"initrd_high=0xffffffff\0" \
 	"clearenv=if sf probe; then " \
