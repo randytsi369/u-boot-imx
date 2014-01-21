@@ -48,8 +48,14 @@
 #define CONFIG_I2C_MXC
 #define CONFIG_SYS_I2C_SPEED		100000
 
-/* OCOTP Configs */
+#define CONFIG_CMD_BBDETECT
+#define CONFIG_BB_S0		IMX_GPIO_NR(1, 2)
+#define CONFIG_BB_S1		IMX_GPIO_NR(1, 3)
+#define CONFIG_BB_S2		IMX_GPIO_NR(2, 26)
+#define CONFIG_BB_IN		IMX_GPIO_NR(2, 25)
+#define CONFIG_BB_USDLY		1000
 
+/* OCOTP Configs */
 #define CONFIG_CMD_IMXOTP
 #define CONFIG_IMX_OTP
 #define IMX_OTP_BASE				OCOTP_BASE_ADDR
@@ -74,9 +80,6 @@
 #define CONFIG_CMD_FAT
 #define CONFIG_DOS_PARTITION
 
-#ifdef CONFIG_MX6Q
-#define CONFIG_CMD_SATA
-#endif
 
 #define CONFIG_BOARD_SPECIFIC_LED
 #define CONFIG_STATUS_LED
@@ -95,14 +98,13 @@
 #define STATUS_LED_STATE1               STATUS_LED_ON
 #define STATUS_LED_PERIOD1              (CONFIG_SYS_HZ / 2)
 
-#ifdef CONFIG_CMD_SATA
+#define CONFIG_CMD_SATA
 #define CONFIG_DWC_AHSATA
 #define CONFIG_SYS_SATA_MAX_DEVICE	1
 #define CONFIG_DWC_AHSATA_PORT_ID	0
 #define CONFIG_DWC_AHSATA_BASE_ADDR	SATA_ARB_BASE_ADDR
 #define CONFIG_LBA48
 #define CONFIG_LIBATA
-#endif
 
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
@@ -150,12 +152,11 @@
 
 #undef CONFIG_CMD_IMLS
 
-#define CONFIG_BOOTDELAY	       5
-
+#define CONFIG_BOOTDELAY	       1
 #define CONFIG_PREBOOT                 ""
-
 #define CONFIG_LOADADDR			       0x12000000
 #define CONFIG_SYS_TEXT_BASE	       0x17800000
+#define CONFIG_MISC_INIT_R
 
 #ifdef CONFIG_CMD_SATA
 #define CONFIG_DRIVE_SATA "sata "
@@ -175,19 +176,25 @@
 	"script=boot.scr\0" \
 	"uimage=/boot/uImage\0" \
 	"ip_dyn=yes\0" \
-	"fdt_file=/boot/ts4900.dtb\0" \
-	"fdt_addr=0x11000000\0" \
+	"fdt_file=/boot/imx6q-ts4900.dtb\0" \
+	"fdt_addr=0x18000000\0" \
+	"fdt_high=0xffffffff\0"	  \
+	"initrd_high=0xffffffff\0" \
 	"clearenv=if sf probe; then " \
 		"sf erase 0x100000 0x2000 && " \
 	"echo restored environment to factory default ; fi\0" \
 	"sdboot=echo Booting from the SD card ...; " \
 		"load mmc 0:1 ${loadaddr} ${uimage}; " \
-		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 rootwait rw init=/sbin/init'; " \
-		"bootm;\0" \
+		"load mmc 0:1 ${fdt_addr} ${fdt_file}; " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 " \
+			" rootwait rw init=/sbin/init'; " \
+		"bootm ${loadaddr} - ${fdt_addr};\0" \
 	"emmcboot=echo Booting from the eMMC ...; " \
 		"load mmc 1:1 ${loadaddr} ${uimage}; " \
-		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 rootwait rw init=/sbin/init'; " \
-		"bootm;\0"
+		"load mmc 1:1 ${fdt_addr} ${fdt_file}; " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 " \
+			" rootwait rw init=/sbin/init'; " \
+		"bootm ${loadaddr} - ${fdt_addr};\0"
 
 #define CONFIG_BOOTCOMMAND \
 	   "run sdboot;"

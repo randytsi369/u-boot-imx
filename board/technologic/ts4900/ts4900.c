@@ -51,9 +51,12 @@ iomux_v3_cfg_t const ecspi1_pads[] = {
 	MX6_PAD_EIM_D16__ECSPI1_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL),
 };
 
-
 iomux_v3_cfg_t const misc_pads[] = {
-	MX6_PAD_EIM_A17__GPIO_2_21 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_EIM_A17__GPIO_2_21 | MUX_PAD_CTRL(NO_PAD_CTRL), // off_bd_reset
+	MX6_PAD_GPIO_2__GPIO_1_2 | MUX_PAD_CTRL(NO_PAD_CTRL), // Red LED
+	MX6_PAD_GPIO_3__GPIO_1_3 | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
+	MX6_PAD_EIM_RW__GPIO_2_26 | MUX_PAD_CTRL(NO_PAD_CTRL), // MODE2
+	MX6_PAD_EIM_OE__GPIO_2_25 | MUX_PAD_CTRL(NO_PAD_CTRL), // BD_ID_DATA
 };
 
 void setup_spi(void)
@@ -230,15 +233,15 @@ int board_mmc_init(bd_t *bis)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	///* min rx data delay */
-	//ksz9021_phy_extended_write(phydev,
-			//MII_KSZ9021_EXT_RGMII_RX_DATA_SKEW, 0x0);
-	///* min tx data delay */
-	//ksz9021_phy_extended_write(phydev,
-			//MII_KSZ9021_EXT_RGMII_TX_DATA_SKEW, 0x0);
-	///* max rx/tx clock delay, min rx/tx control */
-	//ksz9021_phy_extended_write(phydev,
-			//MII_KSZ9021_EXT_RGMII_CLOCK_SKEW, 0xf0f0); 
+	/* min rx data delay */
+	ksz9021_phy_extended_write(phydev,
+			MII_KSZ9021_EXT_RGMII_RX_DATA_SKEW, 0x0);
+	/* min tx data delay */
+	ksz9021_phy_extended_write(phydev,
+			MII_KSZ9021_EXT_RGMII_TX_DATA_SKEW, 0x0);
+	/* max rx/tx clock delay, min rx/tx control */
+	ksz9021_phy_extended_write(phydev,
+			MII_KSZ9021_EXT_RGMII_CLOCK_SKEW, 0xf0f0); 
 	if (phydev->drv->config)
 		phydev->drv->config(phydev); 
 
@@ -288,16 +291,26 @@ int board_early_init_f(void)
 	return 0;
 }
 
+int misc_init_r(void)
+{
+	int sdboot = 0;
+
+	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
+
+	// Set OFF_BD_RESET low and check if the SD boot jumper is on
+	gpio_direction_output(IMX_GPIO_NR(2, 21), 0);
+	gpio_direction_input(IMX_GPIO_NR(2, 26));
+
+	sdboot = gpio_get_value(IMX_GPIO_NR(2, 26));
+	if(sdboot) setenv("bootjp", "on");
+	else setenv("bootjp", "off");
+}
+
 int board_init(void)
 {
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 	setup_spi();
-
-	// Disable offboard reset
-	// required for console on many boards
-	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
-	gpio_direction_output(IMX_GPIO_NR(2, 21), 1);
 
 	return 0;
 }
@@ -316,6 +329,8 @@ int board_late_init(void)
 #ifdef CONFIG_CMD_BMODE
 	add_board_boot_modes(board_boot_modes);
 #endif
+
+
 
 	return 0;
 }
