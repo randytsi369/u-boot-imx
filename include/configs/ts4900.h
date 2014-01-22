@@ -186,13 +186,13 @@
 	"sdboot=echo Booting from the SD card ...; " \
 		"load mmc 0:1 ${loadaddr} ${uimage}; " \
 		"load mmc 0:1 ${fdt_addr} ${fdt_file}; " \
-		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 " \
 			" rootwait rw init=/sbin/init'; " \
 		"bootm ${loadaddr} - ${fdt_addr};\0" \
 	"emmcboot=echo Booting from the eMMC ...; " \
 		"load mmc 1:1 ${loadaddr} ${uimage}; " \
 		"load mmc 1:1 ${fdt_addr} ${fdt_file}; " \
-		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 " \
 			" rootwait rw init=/sbin/init'; " \
 		"bootm ${loadaddr} - ${fdt_addr};\0"
 
