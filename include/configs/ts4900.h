@@ -176,6 +176,25 @@
 	"script=boot.scr\0" \
 	"uimage=/boot/uImage\0" \
 	"ip_dyn=yes\0" \
+	"initrd_high=0xffffffff\0" \
+	"clearenv=if sf probe; then " \
+		"sf erase 0x100000 0x2000 && " \
+	"echo restored environment to factory default ; fi\0" \
+	"sdboot=echo Booting from the SD card ...; " \
+		"load mmc 0:1 ${loadaddr} ${uimage}; " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 " \
+			" rootwait rw init=/sbin/init'; " \
+		"bootm;\0" \
+	"emmcboot=echo Booting from the eMMC ...; " \
+		"load mmc 1:1 ${loadaddr} ${uimage}; " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 " \
+			" rootwait rw init=/sbin/init'; " \
+		"bootm;\0"
+
+ /* Disabling FDT config for now... 
+	"script=boot.scr\0" \
+	"uimage=/boot/uImage\0" \
+	"ip_dyn=yes\0" \
 	"fdt_file=/boot/imx6q-ts4900.dtb\0" \
 	"fdt_addr=0x11000000\0" \
 	"fdt_high=0xffffffff\0"	  \
@@ -194,7 +213,7 @@
 		"load mmc 1:1 ${fdt_addr} ${fdt_file}; " \
 		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 " \
 			" rootwait rw init=/sbin/init'; " \
-		"bootm ${loadaddr} - ${fdt_addr};\0"
+		"bootm ${loadaddr} - ${fdt_addr};\0"*/
 
 #define CONFIG_BOOTCOMMAND \
 	   "run sdboot;"

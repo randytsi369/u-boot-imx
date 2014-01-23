@@ -132,7 +132,7 @@ static void setup_iomux_enet(void)
 	imx_iomux_v3_setup_multiple_pads(enet_pads1, ARRAY_SIZE(enet_pads1));
 	gpio_direction_output(IMX_GPIO_NR(6, 24), 1); // MX6_PAD_RGMII_RX_CTL
 
-	/* Need delay 10ms according to KSZ9021 spec */
+	/* Need delay 10ms according to KSZ9031 spec */
 	udelay(1000 * 10);
 
 	// De-assert reset
@@ -233,15 +233,8 @@ int board_mmc_init(bd_t *bis)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	/* min rx data delay */
-	ksz9021_phy_extended_write(phydev,
-			MII_KSZ9021_EXT_RGMII_RX_DATA_SKEW, 0x0);
-	/* min tx data delay */
-	ksz9021_phy_extended_write(phydev,
-			MII_KSZ9021_EXT_RGMII_TX_DATA_SKEW, 0x0);
-	/* max rx/tx clock delay, min rx/tx control */
-	ksz9021_phy_extended_write(phydev,
-			MII_KSZ9021_EXT_RGMII_CLOCK_SKEW, 0xf0f0); 
+	ksz9031_phy_extended_write(phydev, 0x2, 0x8, 0x8000, 0x3f30);
+
 	if (phydev->drv->config)
 		phydev->drv->config(phydev); 
 
@@ -302,6 +295,9 @@ int misc_init_r(void)
 	gpio_direction_input(IMX_GPIO_NR(2, 26));
 
 	sdboot = gpio_get_value(IMX_GPIO_NR(2, 26));
+	// OFF_BD_RESET should be left high to diable reset of offboard peripherals
+	gpio_direction_output(IMX_GPIO_NR(2, 21), 1);
+
 	if(sdboot) setenv("bootjp", "on");
 	else setenv("bootjp", "off");
 }
