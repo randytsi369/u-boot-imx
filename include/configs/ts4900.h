@@ -86,7 +86,7 @@
 #define CONFIG_CMD_LED
 
 #define CONFIG_RED_LED                  IMX_GPIO_NR(1, 2)
-#define CONFIG_GREEN_LED                IMX_GPIO_NR(1, 3)
+#define CONFIG_GREEN_LED                IMX_GPIO_NR(2, 24)
 #define STATUS_LED_RED                  0
 #define STATUS_LED_GREEN                1
 
@@ -189,6 +189,14 @@
 		"load mmc 1:1 ${loadaddr} ${uimage}; " \
 		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 " \
 			" rootwait rw init=/sbin/init'; " \
+		"bootm;\0" \
+	"nfsboot=echo Booting from NFS ...; " \
+		"env set serverip 192.168.0.11; " \
+		"env set ipaddr 192.168.0.36; " \
+		"env set netmask 255.255.252.0; " \
+		"nfs ${loadaddr} 192.168.0.11:/u/x/home/mark/imx6/boot/uImage; " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/nfs " \
+			"ip=dhcp nfsroot=192.168.0.11:/u/x/home/mark/imx6/ rootwait rw init=/sbin/init'; " \
 		"bootm;\0"
 
  /* Disabling FDT config for now... 
@@ -216,7 +224,7 @@
 		"bootm ${loadaddr} - ${fdt_addr};\0"*/
 
 #define CONFIG_BOOTCOMMAND \
-	   "run sdboot;"
+	   "run nfsboot;"
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP

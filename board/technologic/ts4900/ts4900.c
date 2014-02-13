@@ -54,9 +54,10 @@ iomux_v3_cfg_t const ecspi1_pads[] = {
 iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_EIM_A17__GPIO_2_21 | MUX_PAD_CTRL(NO_PAD_CTRL), // off_bd_reset
 	MX6_PAD_GPIO_2__GPIO_1_2 | MUX_PAD_CTRL(NO_PAD_CTRL), // Red LED
-	MX6_PAD_GPIO_3__GPIO_1_3 | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
+	MX6_PAD_EIM_CS1__GPIO_2_24 | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
 	MX6_PAD_EIM_RW__GPIO_2_26 | MUX_PAD_CTRL(NO_PAD_CTRL), // MODE2
 	MX6_PAD_EIM_OE__GPIO_2_25 | MUX_PAD_CTRL(NO_PAD_CTRL), // BD_ID_DATA
+	MX6_PAD_GPIO_3__ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
 };
 
 void setup_spi(void)
@@ -65,12 +66,10 @@ void setup_spi(void)
 					 ARRAY_SIZE(ecspi1_pads));
 }
 
-
 void dram_init_banksize(void) { 
    gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
 	gd->bd->bi_dram[0].size  = PHYS_SDRAM_SIZE;		
 }
-
 
 int dram_init(void)
 {	
@@ -122,7 +121,7 @@ iomux_v3_cfg_t const enet_pads2[] = {
 static void setup_iomux_enet(void)
 {
 	// Assert reset
-	gpio_direction_output(IMX_GPIO_NR(4, 20), 1);
+	gpio_direction_output(IMX_GPIO_NR(4, 20), 0);
 
 	gpio_direction_output(IMX_GPIO_NR(6, 30), 1); // MX6_PAD_RGMII_RXC
 	gpio_direction_output(IMX_GPIO_NR(6, 25), 1); // MX6_PAD_RGMII_RD0
@@ -136,7 +135,7 @@ static void setup_iomux_enet(void)
 	udelay(1000 * 10);
 
 	// De-assert reset
-	gpio_direction_output(IMX_GPIO_NR(4, 20), 0);
+	gpio_direction_output(IMX_GPIO_NR(4, 20), 1);
 	imx_iomux_v3_setup_multiple_pads(enet_pads2, ARRAY_SIZE(enet_pads2));
 }
 
@@ -148,6 +147,7 @@ iomux_v3_cfg_t const usdhc2_pads[] = {
 	MX6_PAD_SD2_DAT1__USDHC2_DAT1	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD2_DAT2__USDHC2_DAT2	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD2_DAT3__USDHC2_DAT3	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
+	MX6_PAD_EIM_EB0__GPIO_2_28     	| MUX_PAD_CTRL(NO_PAD_CTRL), // EN_SD_POWER
 };
 
 /* MMC */
@@ -195,6 +195,17 @@ int board_mmc_init(bd_t *bis)
 	s32 status = 0;
 	int i;
 
+	imx_iomux_v3_setup_multiple_pads(usdhc2_pads, 
+		ARRAY_SIZE(usdhc2_pads));
+	imx_iomux_v3_setup_multiple_pads(usdhc3_pads, 
+		ARRAY_SIZE(usdhc3_pads));
+
+	gpio_direction_output(IMX_GPIO_NR(2, 28), 1); // EN_SD_POWER#
+	gpio_direction_output(IMX_GPIO_NR(7, 8), 0); // EMMC_RESET#
+	udelay(1000);
+	gpio_direction_output(IMX_GPIO_NR(2, 28), 0);
+	gpio_direction_output(IMX_GPIO_NR(7, 8), 1);
+
 	/*
 	 * According to the board_mmc_init() the following map is done:
 	 * (U-boot device node)    (Physical Port)
@@ -204,16 +215,11 @@ int board_mmc_init(bd_t *bis)
 	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
 		switch (i) {
 		case 0: // SD
-			imx_iomux_v3_setup_multiple_pads(
-				usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
 			usdhc_cfg[0].max_bus_width = 4;
 			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+
 			break;
 		case 1: // MMC
-			// Reset#
-			gpio_direction_output(IMX_GPIO_NR(7, 8), 1);
-			imx_iomux_v3_setup_multiple_pads(
-				usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
 			usdhc_cfg[1].max_bus_width = 4;
 			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
 			break;
@@ -325,9 +331,6 @@ int board_late_init(void)
 #ifdef CONFIG_CMD_BMODE
 	add_board_boot_modes(board_boot_modes);
 #endif
-
-
-
 	return 0;
 }
 
