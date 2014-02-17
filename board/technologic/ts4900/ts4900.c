@@ -57,7 +57,7 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_EIM_CS1__GPIO_2_24 | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
 	MX6_PAD_EIM_RW__GPIO_2_26 | MUX_PAD_CTRL(NO_PAD_CTRL), // MODE2
 	MX6_PAD_EIM_OE__GPIO_2_25 | MUX_PAD_CTRL(NO_PAD_CTRL), // BD_ID_DATA
-	MX6_PAD_GPIO_3__ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
+	MX6_PAD_GPIO_3__ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
 };
 
 void setup_spi(void)
@@ -121,7 +121,7 @@ iomux_v3_cfg_t const enet_pads2[] = {
 static void setup_iomux_enet(void)
 {
 	// Assert reset
-	gpio_direction_output(IMX_GPIO_NR(4, 20), 0);
+	gpio_direction_output(IMX_GPIO_NR(4, 20), 1);
 
 	gpio_direction_output(IMX_GPIO_NR(6, 30), 1); // MX6_PAD_RGMII_RXC
 	gpio_direction_output(IMX_GPIO_NR(6, 25), 1); // MX6_PAD_RGMII_RD0
@@ -132,10 +132,10 @@ static void setup_iomux_enet(void)
 	gpio_direction_output(IMX_GPIO_NR(6, 24), 1); // MX6_PAD_RGMII_RX_CTL
 
 	/* Need delay 10ms according to KSZ9031 spec */
-	udelay(1000 * 10);
+	udelay(1000 * 15);
 
 	// De-assert reset
-	gpio_direction_output(IMX_GPIO_NR(4, 20), 1);
+	gpio_direction_output(IMX_GPIO_NR(4, 20), 0);
 	imx_iomux_v3_setup_multiple_pads(enet_pads2, ARRAY_SIZE(enet_pads2));
 }
 

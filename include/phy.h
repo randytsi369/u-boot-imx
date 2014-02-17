@@ -32,7 +32,7 @@
 #define PHY_10G_FEATURES	(PHY_GBIT_FEATURES | \
 				SUPPORTED_10000baseT_Full)
 
-#define PHY_ANEG_TIMEOUT	4000
+#define PHY_ANEG_TIMEOUT	10000
 
 
 typedef enum {

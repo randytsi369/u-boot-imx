@@ -172,6 +172,8 @@
 
 #define CONFIG_DRIVE_TYPES CONFIG_DRIVE_SATA CONFIG_DRIVE_MMC
 
+#define CONFIG_NFS_TIMEOUT 10000UL
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"script=boot.scr\0" \
 	"uimage=/boot/uImage\0" \
@@ -191,13 +193,19 @@
 			" rootwait rw init=/sbin/init'; " \
 		"bootm;\0" \
 	"nfsboot=echo Booting from NFS ...; " \
-		"env set serverip 192.168.0.11; " \
-		"env set ipaddr 192.168.0.36; " \
-		"env set netmask 255.255.252.0; " \
+		"setenv serverip 192.168.0.11 ; " \
+		"setenv autoload no ; " \
+		"dhcp ; " \
 		"nfs ${loadaddr} 192.168.0.11:/u/x/home/mark/imx6/boot/uImage; " \
 		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/nfs " \
 			"ip=dhcp nfsroot=192.168.0.11:/u/x/home/mark/imx6/ rootwait rw init=/sbin/init'; " \
-		"bootm;\0"
+		"bootm;\0" \
+	"prod=echo Starting Production ...; " \
+		"setenv serverip 192.168.0.11; " \
+		"setenv autoload no; " \
+		"dhcp; " \
+		"nfs 0x12000000 192.168.0.11:/u/x/var/ts-production/images/ts4900/u-boot.imx; " \
+		"sf probe;\0"
 
  /* Disabling FDT config for now... 
 	"script=boot.scr\0" \
@@ -224,7 +232,7 @@
 		"bootm ${loadaddr} - ${fdt_addr};\0"*/
 
 #define CONFIG_BOOTCOMMAND \
-	   "run nfsboot;"
+	   "run sdboot;"
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP
@@ -280,7 +288,7 @@
 #define CONFIG_ENV_SECT_SIZE	(4 * 1024)
 #define CONFIG_SF_DEFAULT_BUS  0
 #define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(3, 19)<<8))
-#define CONFIG_SF_DEFAULT_SPEED 59000000
+#define CONFIG_SF_DEFAULT_SPEED 15000000
 #define CONFIG_SF_DEFAULT_MODE (SPI_MODE_0)
 #define CONFIG_ENV_SPI_BUS		CONFIG_SF_DEFAULT_BUS
 #define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
