@@ -62,6 +62,7 @@
 #define IMX_OTP_ADDR_MAX			0x7F
 #define IMX_OTP_DATA_ERROR_VAL		0xBADABADA
 #define IMX_OTPWRITE_ENABLED
+#define CONFIG_RANDOM_MACADDR
 
 /* MMC Configs */
 #define CONFIG_FSL_ESDHC
@@ -175,7 +176,6 @@
 #define CONFIG_NFS_TIMEOUT 10000UL
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"script=boot.scr\0" \
 	"uimage=/boot/uImage\0" \
 	"ip_dyn=yes\0" \
 	"initrd_high=0xffffffff\0" \
@@ -204,32 +204,8 @@
 		"setenv serverip 192.168.0.11; " \
 		"setenv autoload no; " \
 		"dhcp; " \
-		"nfs 0x12000000 192.168.0.11:/u/x/var/ts-production/images/ts4900/u-boot.imx; " \
-		"sf probe;\0"
-
- /* Disabling FDT config for now... 
-	"script=boot.scr\0" \
-	"uimage=/boot/uImage\0" \
-	"ip_dyn=yes\0" \
-	"fdt_file=/boot/imx6q-ts4900.dtb\0" \
-	"fdt_addr=0x11000000\0" \
-	"fdt_high=0xffffffff\0"	  \
-	"initrd_high=0xffffffff\0" \
-	"clearenv=if sf probe; then " \
-		"sf erase 0x100000 0x2000 && " \
-	"echo restored environment to factory default ; fi\0" \
-	"sdboot=echo Booting from the SD card ...; " \
-		"load mmc 0:1 ${loadaddr} ${uimage}; " \
-		"load mmc 0:1 ${fdt_addr} ${fdt_file}; " \
-		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 " \
-			" rootwait rw init=/sbin/init'; " \
-		"bootm ${loadaddr} - ${fdt_addr};\0" \
-	"emmcboot=echo Booting from the eMMC ...; " \
-		"load mmc 1:1 ${loadaddr} ${uimage}; " \
-		"load mmc 1:1 ${fdt_addr} ${fdt_file}; " \
-		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 " \
-			" rootwait rw init=/sbin/init'; " \
-		"bootm ${loadaddr} - ${fdt_addr};\0"*/
+		"nfs 0x12000000 192.168.0.11:/u/x/var/ts-production/images/ts4900/ts4900-production.uboot; " \
+		"source 0x12000000;\0"
 
 #define CONFIG_BOOTCOMMAND \
 	   "run sdboot;"
@@ -240,6 +216,8 @@
 #define CONFIG_SYS_PROMPT	       "U-Boot > "
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_CBSIZE	       1024
+#define CONFIG_HW_WATCHDOG
+#define CONFIG_IMX_WATCHDOG
 
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)

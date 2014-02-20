@@ -293,6 +293,7 @@ int board_early_init_f(void)
 int misc_init_r(void)
 {
 	int sdboot = 0;
+	uchar enetaddr[6];
 
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 
@@ -306,6 +307,17 @@ int misc_init_r(void)
 
 	if(sdboot) setenv("bootjp", "on");
 	else setenv("bootjp", "off");
+
+	// This should only happen in production
+#ifdef CONFIG_RANDOM_MACADDR
+	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
+		eth_random_enetaddr(enetaddr);
+		if (eth_setenv_enetaddr("ethaddr", enetaddr)) {
+			printf("Failed to set ethernet address\n");
+			return;
+		}
+	}
+#endif
 }
 
 int board_init(void)
