@@ -57,7 +57,13 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_EIM_CS1__GPIO_2_24 | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
 	MX6_PAD_EIM_RW__GPIO_2_26 | MUX_PAD_CTRL(NO_PAD_CTRL), // MODE2
 	MX6_PAD_EIM_OE__GPIO_2_25 | MUX_PAD_CTRL(NO_PAD_CTRL), // BD_ID_DATA
+
+	// Really? 
+#ifdef CONFIG_MX6Q
 	MX6_PAD_GPIO_3__ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
+#else / CONFIG_MX6DL 
+	MX6_PAD_GPIO_3__ANATOP_ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
+#endif
 };
 
 void setup_spi(void)
@@ -66,14 +72,9 @@ void setup_spi(void)
 					 ARRAY_SIZE(ecspi1_pads));
 }
 
-void dram_init_banksize(void) { 
-   gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
-	gd->bd->bi_dram[0].size  = PHYS_SDRAM_SIZE;		
-}
-
 int dram_init(void)
 {	
-	gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
+	gd->ram_size = (phys_size_t)CONFIG_DDR_MB * 1024 * 1024;
 	return 0;
 }
 
@@ -261,6 +262,7 @@ int board_eth_init(bd_t *bis)
 	uint32_t base = IMX_FEC_BASE;
 	struct mii_dev *bus = NULL;
 	struct phy_device *phydev = NULL;
+	uchar enetaddr[6];
 	int ret;
 
 	setup_iomux_enet();
@@ -281,6 +283,18 @@ int board_eth_init(bd_t *bis)
 		free(phydev);
 		free(bus);
 	}
+
+	// This should only happen in production
+#ifdef CONFIG_RANDOM_MACADDR
+	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
+		printf("No MAC address set in fuses.  Using random mac address.\n");
+		eth_random_enetaddr(enetaddr);
+		if (eth_setenv_enetaddr("ethaddr", enetaddr)) {
+			printf("Failed to set ethernet address\n");
+		}
+	}
+#endif
+	
 	return ret;
 }
 
@@ -293,7 +307,6 @@ int board_early_init_f(void)
 int misc_init_r(void)
 {
 	int sdboot = 0;
-	uchar enetaddr[6];
 
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 
@@ -307,17 +320,6 @@ int misc_init_r(void)
 
 	if(sdboot) setenv("bootjp", "on");
 	else setenv("bootjp", "off");
-
-	// This should only happen in production
-#ifdef CONFIG_RANDOM_MACADDR
-	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
-		eth_random_enetaddr(enetaddr);
-		if (eth_setenv_enetaddr("ethaddr", enetaddr)) {
-			printf("Failed to set ethernet address\n");
-			return;
-		}
-	}
-#endif
 }
 
 int board_init(void)
