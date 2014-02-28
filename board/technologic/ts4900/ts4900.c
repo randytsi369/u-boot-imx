@@ -320,6 +320,12 @@ int misc_init_r(void)
 
 	if(sdboot) setenv("bootjp", "on");
 	else setenv("bootjp", "off");
+
+	#ifdef CONFIG_MX6Q
+	setenv("cpu", "quad");
+	#else
+	setenv("cpu", "solo");
+	#endif
 }
 
 int board_init(void)
