@@ -50,7 +50,7 @@
 
 #define CONFIG_CMD_BBDETECT
 #define CONFIG_BB_S0		IMX_GPIO_NR(1, 2)
-#define CONFIG_BB_S1		IMX_GPIO_NR(1, 3)
+#define CONFIG_BB_S1		IMX_GPIO_NR(2, 24)
 #define CONFIG_BB_S2		IMX_GPIO_NR(2, 26)
 #define CONFIG_BB_IN		IMX_GPIO_NR(2, 25)
 #define CONFIG_BB_USDLY		1000
@@ -99,13 +99,18 @@
 #define STATUS_LED_STATE1               STATUS_LED_ON
 #define STATUS_LED_PERIOD1              (CONFIG_SYS_HZ / 2)
 
+#ifdef CONFIG_MX6Q
 #define CONFIG_CMD_SATA
+#endif
+
+#ifdef CONFIG_CMD_SATA
 #define CONFIG_DWC_AHSATA
 #define CONFIG_SYS_SATA_MAX_DEVICE	1
 #define CONFIG_DWC_AHSATA_PORT_ID	0
 #define CONFIG_DWC_AHSATA_BASE_ADDR	SATA_ARB_BASE_ADDR
 #define CONFIG_LBA48
 #define CONFIG_LIBATA
+#endif
 
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_DHCP
@@ -138,10 +143,6 @@
 /* Miscellaneous commands */
 #define CONFIG_CMD_BMODE
 #define CONFIG_CMD_SETEXPR
-
-#define CONFIG_CMD_MEMTEST
-//#define CONFIG_SYS_MEMTEST_START
-//#define CONFIG_SYS_MEMTEST_END
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
@@ -227,6 +228,7 @@
 #define CONFIG_SYS_MEMTEST_START       0x10000000
 #define CONFIG_SYS_MEMTEST_END	       0x10010000
 #define CONFIG_SYS_MEMTEST_SCRATCH     0x10800000
+#define CONFIG_CMD_MEMTEST
 
 #define CONFIG_SYS_LOAD_ADDR	       CONFIG_LOADADDR
 #define CONFIG_SYS_HZ		       1000
@@ -236,7 +238,6 @@
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS	       1
 #define PHYS_SDRAM		       MMDC0_ARB_BASE_ADDR
-#define PHYS_SDRAM_SIZE    (2UL * 1024*1024*1024)
 
 #define CONFIG_SYS_SDRAM_BASE	       PHYS_SDRAM
 #define CONFIG_SYS_INIT_RAM_ADDR       IRAM_BASE_ADDR
