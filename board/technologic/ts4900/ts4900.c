@@ -325,8 +325,8 @@ int misc_init_r(void)
 	gpio_direction_output(IMX_GPIO_NR(2, 21), 1);
 
 	if (getenv("jpsdboot") == NULL) {
-		if(sdboot) setenv("jpsdboot", "on");
-		else setenv("jpsdboot", "off");
+		if(sdboot) setenv("jpsdboot", "off");
+		else setenv("jpsdboot", "on");
 	}
 
 	#ifdef CONFIG_MX6Q
