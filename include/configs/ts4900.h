@@ -156,7 +156,7 @@
 
 #define CONFIG_BOOTDELAY	       1
 #define CONFIG_PREBOOT                 ""
-#define CONFIG_LOADADDR			       0x10800000
+#define CONFIG_LOADADDR			       0x12000000
 #define CONFIG_SYS_TEXT_BASE	       0x17800000
 #define CONFIG_MISC_INIT_R
 
@@ -180,36 +180,74 @@
 	"uimage=/boot/uImage\0" \
 	"ip_dyn=yes\0" \
 	"initrd_high=0xffffffff\0" \
-	"clearenv=if sf probe; then " \
-		"sf erase 0x100000 0x2000 && " \
-	"echo restored environment to factory default ; fi\0" \
+	"fdtaddr=0x18000000\0" \
+	"fdt_high=0xffffffff\0" \
 	"sdboot=echo Booting from the SD card ...; " \
+		"bbdetect; " \
+		"if load mmc 0:1 ${fdtaddr} /boot/ts4900-${baseboard}.dtb; " \
+			"then echo $baseboard detected; " \
+		"else " \
+			"echo Booting default device tree; " \
+			"load mmc 0:1 ${fdtaddr} /boot/ts4900-default.dtb; " \
+		"fi; " \
 		"load mmc 0:1 ${loadaddr} ${uimage}; " \
 		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 " \
 			" rootwait rw init=/sbin/init'; " \
-		"bootm;\0" \
+		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"emmcboot=echo Booting from the eMMC ...; " \
+		"bbdetect; " \
+		"if load mmc 1:1 ${fdtaddr} /boot/ts4900-${baseboard}.dtb; " \
+			"then echo $baseboard detected; " \
+		"else " \
+			"echo Booting default device tree; " \
+			"load mmc 1:1 ${fdtaddr} /boot/ts4900-default.dtb; " \
+		"fi; " \
 		"load mmc 1:1 ${loadaddr} ${uimage}; " \
-		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk1p1 " \
+		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/mmcblk0p1 " \
 			" rootwait rw init=/sbin/init'; " \
-		"bootm;\0" \
+		"bootm ${loadaddr} - ${fdtaddr}; \0" \
+	"usbprod=usb start; " \
+		"if usb storage; " \
+			"then echo Checking USB storage for updates; " \
+			"if load usb 0:1 ${loadaddr} /u-boot.imx; " \
+				"then echo updating u-boot. ; " \
+				"sf probe; " \
+				"sf erase 0 0x50000; " \
+				"sf write ${loadaddr} 0x400 $filesize; " \
+			"fi; " \
+			"if load usb 0:1 ${loadaddr} /tsinit; " \
+				"then source ${loadaddr}; " \
+			"fi; " \
+		"fi; \0" \
 	"nfsboot=echo Booting from NFS ...; " \
 		"setenv serverip 192.168.0.11 ; " \
 		"setenv autoload no ; " \
+		"setenv nfsroot /u/x/ts4900/rootfs/ ;" \
 		"dhcp ; " \
-		"nfs ${loadaddr} 192.168.0.11:/u/x/home/mark/imx6/boot/uImage; " \
+		"bbdetect; " \
+		"nfs ${loadaddr} ${serverip}:${nfsroot}/boot/uImage; " \
+		"if nfs ${fdtaddr} ${serverip}:${nfsroot}/boot/ts4900-${baseboard}.dtb; " \
+		"then echo $baseboard detected; " \
+		"else " \
+			"echo Booting default device tree; " \
+			"load nfs ${fdtaddr} ${serverip}:${nfsroot}/boot/ts4900-default.dtb; " \
+		"fi; " \
 		"setenv bootargs 'console=ttymxc0,115200 debug root=/dev/nfs " \
-			"ip=dhcp nfsroot=192.168.0.11:/u/x/home/mark/imx6/ rootwait rw init=/sbin/init'; " \
-		"bootm;\0" \
+			"ip=dhcp nfsroot=${serverip}:${nfsroot} rootwait rw init=/sbin/init'; " \
+		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"prod=echo Starting Production ...; " \
 		"setenv serverip 192.168.0.11; " \
 		"setenv autoload no; " \
 		"dhcp; " \
-		"nfs 0x12000000 192.168.0.11:/u/x/var/ts-production/images/ts4900/ts4900-production.uboot; " \
+		"nfs 0x12000000 192.168.0.11:/u/x/ts4900/ts4900-production.uboot; " \
 		"source 0x12000000;\0"
 
 #define CONFIG_BOOTCOMMAND \
-	   "run sdboot;"
+	"run usbprod; " \
+	"if test ${jpsdboot} = 'on' ; " \
+		"then run sdboot; " \
+		"else run emmcboot; " \
+	"fi;"
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP
@@ -231,7 +269,7 @@
 #define CONFIG_CMD_MEMTEST
 
 #define CONFIG_SYS_LOAD_ADDR	       CONFIG_LOADADDR
-#define CONFIG_SYS_HZ		       1000
+#define CONFIG_SYS_HZ		           1000
 
 #define CONFIG_CMDLINE_EDITING
 
