@@ -121,6 +121,8 @@ iomux_v3_cfg_t const enet_pads2[] = {
 
 static void setup_iomux_enet(void)
 {
+	imx_iomux_v3_setup_multiple_pads(enet_pads1, ARRAY_SIZE(enet_pads1));
+    udelay(20);
 	// Assert reset
 	gpio_direction_output(IMX_GPIO_NR(4, 20), 1);
 
@@ -137,6 +139,10 @@ static void setup_iomux_enet(void)
 
 	// De-assert reset
 	gpio_direction_output(IMX_GPIO_NR(4, 20), 0);
+
+	/* Need 100ms delay to exit from reset. */
+	udelay(1000 * 100);
+
 	imx_iomux_v3_setup_multiple_pads(enet_pads2, ARRAY_SIZE(enet_pads2));
 }
 
@@ -318,8 +324,10 @@ int misc_init_r(void)
 	// OFF_BD_RESET should be left high to diable reset of offboard peripherals
 	gpio_direction_output(IMX_GPIO_NR(2, 21), 1);
 
-	if(sdboot) setenv("bootjp", "on");
-	else setenv("bootjp", "off");
+	if (getenv("jpsdboot") == NULL) {
+		if(sdboot) setenv("jpsdboot", "on");
+		else setenv("jpsdboot", "off");
+	}
 
 	#ifdef CONFIG_MX6Q
 	setenv("cpu", "quad");
