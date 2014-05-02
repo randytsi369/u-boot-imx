@@ -2,7 +2,6 @@
 #include <command.h>
 #include <asm/gpio.h>
 
-
 static int do_bbdetect(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i, id = 0;
@@ -72,6 +71,9 @@ static int do_bbdetect(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			break;
 		case 17:
 			setenv("baseboard", "8920");
+			break;
+		default:
+			setenv("baseboard", "unknown");
 			break;
 	}
 
