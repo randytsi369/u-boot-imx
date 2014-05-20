@@ -330,9 +330,9 @@ int misc_init_r(void)
 	}
 
 	#ifdef CONFIG_MX6Q
-	setenv("cpu", "quad");
+	setenv("cpu", "q");
 	#else
-	setenv("cpu", "solo");
+	setenv("cpu", "dl");
 	#endif
 }
 
