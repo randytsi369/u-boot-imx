@@ -182,10 +182,10 @@
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x18000000\0" \
 	"fdt_high=0xffffffff\0" \
-	"serverip 192.168.0.11 ; " \
-	"nfsroot /u/x/ts4900/rootfs/ ;" \
-	"autoload no ; " \
-	"cmdline_append console=ttymxc0,115200 debug init=/sbin/init ; " \
+	"serverip 192.168.0.11\0" \
+	"nfsroot /u/x/ts4900/rootfs/\0" \
+	"autoload no\0" \
+	"cmdline_append console=ttymxc0,115200 debug init=/sbin/init \0" \
 	"sdboot=echo Booting from the SD card ...; " \
 		"bbdetect; " \
 		"if load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts4900-${baseboardid}.dtb; " \
