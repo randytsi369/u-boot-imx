@@ -9,6 +9,7 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/iomux.h>
+#include <asm/imx-common/mxc_i2c.h>
 #include <asm/arch/mx6-pins.h>
 #include <asm/errno.h>
 #include <asm/gpio.h>
@@ -16,7 +17,10 @@
 #include <asm/imx-common/boot_mode.h>
 #include <mmc.h>
 #include <malloc.h>
+#include <spi.h>
+#include <image.h>
 #include <fsl_esdhc.h>
+#include <command.h>
 #include <miiphy.h>
 #include <netdev.h>
 #include <asm/arch/mxc_hdmi.h>
@@ -29,7 +33,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define UART_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
+#define UART_PAD_CTRL (PAD_CTL_PUS_100K_UP |			\
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm |			\
 	PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
 
@@ -37,14 +41,19 @@ DECLARE_GLOBAL_DATA_PTR;
 	PAD_CTL_SPEED_LOW | PAD_CTL_DSE_80ohm |			\
 	PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
 
-#define ENET_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
+#define ENET_PAD_CTRL (PAD_CTL_PUS_100K_UP |			\
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS)
 
 #define SPI_PAD_CTRL (PAD_CTL_HYS | PAD_CTL_SPEED_MED |		\
 	PAD_CTL_DSE_40ohm     | PAD_CTL_SRE_FAST)
 
+#define I2C_PAD_CTRL (PAD_CTL_PUS_100K_UP |                  \
+	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS |   \
+	PAD_CTL_ODE | PAD_CTL_SRE_FAST)
+
+#define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
+
 iomux_v3_cfg_t const ecspi1_pads[] = {
-	/* SS1 */
 	MX6_PAD_EIM_D19__GPIO_3_19   | MUX_PAD_CTRL(SPI_PAD_CTRL),
 	MX6_PAD_EIM_D17__ECSPI1_MISO | MUX_PAD_CTRL(SPI_PAD_CTRL),
 	MX6_PAD_EIM_D18__ECSPI1_MOSI | MUX_PAD_CTRL(SPI_PAD_CTRL),
@@ -57,19 +66,15 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_EIM_CS1__GPIO_2_24 | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
 	MX6_PAD_EIM_RW__GPIO_2_26 | MUX_PAD_CTRL(NO_PAD_CTRL), // MODE2
 	MX6_PAD_EIM_OE__GPIO_2_25 | MUX_PAD_CTRL(NO_PAD_CTRL), // BD_ID_DATA
-
-	// Really? 
-#ifdef CONFIG_MX6Q
-	MX6_PAD_GPIO_3__ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
-#else / CONFIG_MX6DL 
-	MX6_PAD_GPIO_3__ANATOP_ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
-#endif
 };
 
 void setup_spi(void)
 {
 	imx_iomux_v3_setup_multiple_pads(ecspi1_pads,
 					 ARRAY_SIZE(ecspi1_pads));
+
+	// Enable clock
+	setbits_le32(CCM_CCGR1, MXC_CCM_CCGR1_ECSPI2S_MASK);
 }
 
 int dram_init(void)
@@ -145,6 +150,21 @@ static void setup_iomux_enet(void)
 
 	imx_iomux_v3_setup_multiple_pads(enet_pads2, ARRAY_SIZE(enet_pads2));
 }
+
+iomux_v3_cfg_t const fpga_pads[] = {
+	MX6_PAD_CSI0_DATA_EN__GPIO_5_20 | MUX_PAD_CTRL(SPI_PAD_CTRL), // FPGA_DONE
+	MX6_PAD_CSI0_VSYNC__GPIO_5_21 | MUX_PAD_CTRL(SPI_PAD_CTRL),// FPGA_RESET
+	MX6_PAD_CSI0_DAT16__GPIO_6_2 | MUX_PAD_CTRL(SPI_PAD_CTRL), // FPGA_SPI_CS#
+	MX6_PAD_CSI0_DAT10__ECSPI2_MISO | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_CSI0_DAT9__ECSPI2_MOSI | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_CSI0_DAT8__ECSPI2_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_CSI0_DAT11__ECSPI2_SS0 | MUX_PAD_CTRL(SPI_PAD_CTRL),
+#ifdef CONFIG_MX6Q
+	MX6_PAD_GPIO_3__ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
+#else //CONFIG_MX6DL 
+	MX6_PAD_GPIO_3__ANATOP_ANATOP_24M_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
+#endif
+};
 
 /* SD card */
 iomux_v3_cfg_t const usdhc2_pads[] = {
@@ -277,7 +297,7 @@ int board_eth_init(bd_t *bis)
 		return 0;
 	/* scan phy 4,5,6,7 */
 	phydev = phy_find_by_mask(bus, (0xf << 4), PHY_INTERFACE_MODE_RGMII);
-	//phydev = phy_find_by_mask(bus, 0x80, PHY_INTERFACE_MODE_RGMII);
+
 	if (!phydev) {
 		free(bus);
 		return 0;
@@ -334,13 +354,118 @@ int misc_init_r(void)
 	#else
 	setenv("cpu", "dl");
 	#endif
+	return 0;
 }
+
+void setup_fpga(void)
+{
+	imx_iomux_v3_setup_multiple_pads(fpga_pads, ARRAY_SIZE(fpga_pads));	
+}
+
+static int do_ice40_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	void *data;
+	unsigned int len;
+	void *buf;
+	struct spi_slave *slave;
+	int ret_val, i;
+	image_header_t *hdr;
+
+	// Parse image from mkimage
+	buf = (void *)simple_strtoul(argv[1], NULL, 16);
+	hdr = buf;
+	if (genimg_get_format (buf) != IMAGE_FORMAT_LEGACY) {
+		printf("Invalid FPGA bitstream, or non-legacy image\n");
+		return -1;
+	}
+	if (!image_check_hcrc (hdr)) {
+		puts ("Bad FPGA header crc\n");
+		return 1;
+	}
+	if (!image_check_dcrc (hdr)) {
+		puts ("Bad FPGA data crc\n");
+		return 1;
+	}
+
+	data = (void *)image_get_data (hdr);
+	if ((len = image_get_data_size (hdr)) == 0) {
+		puts ("Empty bitstream\n");
+		return 1;
+	}
+
+	slave = spi_setup_slave(1, 0, 25000000, SPI_MODE_1);
+	if(spi_claim_bus(slave)){
+		printf("Failed to claim the SPI bus\n");
+		return 1;
+	}
+
+	// We need to pulse reset while the clock is high, so set it to a gpio first
+	imx_iomux_v3_setup_pad(
+		MX6_PAD_CSI0_DAT8__GPIO_5_26 | MUX_PAD_CTRL(SPI_PAD_CTRL));
+	gpio_direction_input(IMX_GPIO_NR(5, 20)); // fpga_done
+	gpio_direction_output(IMX_GPIO_NR(5, 21), 0); // reset low
+	gpio_direction_output(IMX_GPIO_NR(5, 26), 1); // spi_clk high
+	gpio_direction_output(IMX_GPIO_NR(6, 2), 0); // spi cs# low
+	udelay(800);
+	gpio_set_value(IMX_GPIO_NR(5, 21), 1); // reset high
+	udelay(800);
+	imx_iomux_v3_setup_pad(
+		MX6_PAD_CSI0_DAT8__ECSPI2_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL));
+
+	ret_val = spi_xfer(slave, len * 8, data, NULL, 0);
+	udelay(800);
+
+	// FPGA requires additional spi clocks after bitstream
+	char zeroes[100];
+	memset(zeroes, 0, 100);
+	ret_val = spi_xfer(slave, 100 * 8, zeroes, NULL, 0);
+
+	gpio_set_value(IMX_GPIO_NR(6, 2), 1); // spi cs# high
+
+	for(i = 0; i <= 3000; i++)
+	{
+		if(gpio_get_value(IMX_GPIO_NR(5, 20)))
+			break;
+
+		if(i == 3000){ 
+			printf("FPGA_DONE never asserted\n");
+			ret_val = 1;
+		}
+		udelay(1000);
+	}
+
+	spi_release_bus(slave);
+
+	return ret_val;
+}
+
+U_BOOT_CMD(ice40, 2, 0, do_ice40_load,
+	"ICE40 programming support",
+	" [image address]\n"
+	"    Image must be in mkimage legacy format\n"
+);
+
+struct i2c_pads_info i2c_pad_info0 = {
+	.scl = {
+		.i2c_mode  = MX6_PAD_EIM_D21__I2C1_SCL | MUX_PAD_CTRL(I2C_PAD_CTRL),
+		.gpio_mode = MX6_PAD_EIM_D21__GPIO_3_21 | MUX_PAD_CTRL(I2C_PAD_CTRL),
+		.gp = IMX_GPIO_NR(3, 21)
+	},
+	.sda = {
+		.i2c_mode = MX6_PAD_EIM_D28__I2C1_SDA | MUX_PAD_CTRL(I2C_PAD_CTRL),
+		.gpio_mode = MX6_PAD_EIM_D28__GPIO_3_28 | MUX_PAD_CTRL(I2C_PAD_CTRL),
+		.gp = IMX_GPIO_NR(3, 28)
+	}
+};
 
 int board_init(void)
 {
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 	setup_spi();
+	setup_fpga();
+
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info0);
 
 	return 0;
 }

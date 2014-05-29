@@ -182,10 +182,13 @@
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x18000000\0" \
 	"fdt_high=0xffffffff\0" \
-	"serverip 192.168.0.11\0" \
-	"nfsroot /u/x/ts4900/rootfs/\0" \
-	"autoload no\0" \
-	"cmdline_append console=ttymxc0,115200 debug init=/sbin/init \0" \
+	"serverip=192.168.0.11\0" \
+	"nfsroot=/u/x/ts4900/rootfs/\0" \
+	"autoload=no\0" \
+	"cmdline_append=console=ttymxc0,115200 debug init=/sbin/init\0" \
+	"clearenv=if sf probe; then " \
+		"sf erase 0x100000 0x2000 && " \
+		"echo restored environment to factory default ; fi\0" \
 	"sdboot=echo Booting from the SD card ...; " \
 		"bbdetect; " \
 		"if load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts4900-${baseboardid}.dtb; " \
@@ -194,6 +197,8 @@
 			"echo Booting default device tree; " \
 			"load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts4900.dtb; " \
 		"fi; " \
+		"load mmc 0:1 ${loadaddr} /boot/ts4900-fpga.img; " \
+		"ice40 ${loadaddr}; " \
 		"load mmc 0:1 ${loadaddr} ${uimage}; " \
 		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
@@ -205,6 +210,8 @@
 			"echo Booting default device tree; " \
 			"load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts4900.dtb; " \
 		"fi; " \
+		"load mmc 1:1 ${loadaddr} /boot/ts4900-fpga.img; " \
+		"ice40 ${loadaddr}; " \
 		"load mmc 1:1 ${loadaddr} ${uimage}; " \
 		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
@@ -228,7 +235,9 @@
 		"else " \
 			"echo Booting default device tree; " \
 			"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts4900.dtb; " \
-		"fi; " \
+		"fi; " 
+		"nfs ${loadaddr} ${nfsroot}/boot/ts4900-fpga.img; " \
+		"ice40 ${loadaddr}; " \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${serverip}:${nfsroot} " \
 			"rootwait rw init=/sbin/init ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
@@ -298,6 +307,7 @@
 #define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
 #define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
 #define CONFIG_ENV_SPI_MAX_HZ	CONFIG_SF_DEFAULT_SPEED
+#define CONFIG_CMD_SPI
 
 #define CONFIG_OF_LIBFDT
 #define CONFIG_CMD_BOOTZ
@@ -313,4 +323,4 @@
 #define CONFIG_SUPPORT_RAW_INITRD
 #define CONFIG_CMD_FS_GENERIC
 
-#endif	       /* __CONFIG_H */
+#endif
