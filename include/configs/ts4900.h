@@ -235,7 +235,7 @@
 		"else " \
 			"echo Booting default device tree; " \
 			"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts4900.dtb; " \
-		"fi; " 
+		"fi; " \
 		"nfs ${loadaddr} ${nfsroot}/boot/ts4900-fpga.img; " \
 		"ice40 ${loadaddr}; " \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${serverip}:${nfsroot} " \
