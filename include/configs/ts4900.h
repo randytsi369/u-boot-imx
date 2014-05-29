@@ -228,7 +228,6 @@
 	"nfsboot=echo Booting from NFS ...; " \
 		"dhcp ; " \
 		"bbdetect; " \
-		"nfs ${loadaddr} ${nfsroot}/boot/uImage; " \
 		"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts4900-${baseboardid}.dtb; " \
 		"if fdt addr ${fdtaddr}; " \
 			"then echo $baseboardid detected; " \
@@ -238,6 +237,7 @@
 		"fi; " \
 		"nfs ${loadaddr} ${nfsroot}/boot/ts4900-fpga.img; " \
 		"ice40 ${loadaddr}; " \
+		"nfs ${loadaddr} ${nfsroot}/boot/uImage; " \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${serverip}:${nfsroot} " \
 			"rootwait rw init=/sbin/init ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
