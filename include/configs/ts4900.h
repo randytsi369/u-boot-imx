@@ -1,8 +1,7 @@
 /*
  * Copyright (C) 2010-2011 Freescale Semiconductor, Inc.
  *
- * Configuration settings for the Boundary Devices Nitrogen6X
- * and Freescale i.MX6Q Sabre Lite boards.
+ * Configuration settings for the Technologic Systems TS-4900
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -197,8 +196,8 @@
 			"echo Booting default device tree; " \
 			"load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts4900.dtb; " \
 		"fi; " \
-		"load mmc 0:1 ${loadaddr} /boot/ts4900-fpga.img; " \
-		"ice40 ${loadaddr}; " \
+		"load mmc 0:1 ${loadaddr} /boot/ts4900-fpga.bin; " \
+		"ice40 ${loadaddr} ${filesize}; " \
 		"load mmc 0:1 ${loadaddr} ${uimage}; " \
 		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
@@ -210,8 +209,8 @@
 			"echo Booting default device tree; " \
 			"load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts4900.dtb; " \
 		"fi; " \
-		"load mmc 1:1 ${loadaddr} /boot/ts4900-fpga.img; " \
-		"ice40 ${loadaddr}; " \
+		"load mmc 1:1 ${loadaddr} /boot/ts4900-fpga.bin; " \
+		"ice40 ${loadaddr} ${filesize}; " \
 		"load mmc 1:1 ${loadaddr} ${uimage}; " \
 		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
@@ -235,8 +234,8 @@
 			"echo Booting default device tree; " \
 			"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts4900.dtb; " \
 		"fi; " \
-		"nfs ${loadaddr} ${nfsroot}/boot/ts4900-fpga.img; " \
-		"ice40 ${loadaddr}; " \
+		"nfs ${loadaddr} ${nfsroot}/boot/ts4900-fpga.bin; " \
+		"ice40 ${loadaddr} ${filesize}; " \
 		"nfs ${loadaddr} ${nfsroot}/boot/uImage; " \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${serverip}:${nfsroot} " \
 			"rootwait rw init=/sbin/init ${cmdline_append}; " \

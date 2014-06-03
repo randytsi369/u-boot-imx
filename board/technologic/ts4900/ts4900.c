@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2012 Freescale Semiconductor, Inc.
  *
- * Author: Fabio Estevam <fabio.estevam@freescale.com>
+ * Author: Mark Featherston <mark@embeddedarm.com.com>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -339,7 +339,7 @@ int misc_init_r(void)
 	// Set OFF_BD_RESET low and check if the SD boot jumper is on
 	gpio_direction_output(IMX_GPIO_NR(2, 21), 0);
 	gpio_direction_input(IMX_GPIO_NR(2, 26));
-
+	udelay(1000);
 	sdboot = gpio_get_value(IMX_GPIO_NR(2, 26));
 	// OFF_BD_RESET should be left high to diable reset of offboard peripherals
 	gpio_direction_output(IMX_GPIO_NR(2, 21), 1);
@@ -364,34 +364,13 @@ void setup_fpga(void)
 
 static int do_ice40_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	void *data;
-	unsigned int len;
-	void *buf;
+	unsigned int len, data;
 	struct spi_slave *slave;
 	int ret_val, i;
-	image_header_t *hdr;
 
 	// Parse image from mkimage
-	buf = (void *)simple_strtoul(argv[1], NULL, 16);
-	hdr = buf;
-	if (genimg_get_format (buf) != IMAGE_FORMAT_LEGACY) {
-		printf("Invalid FPGA bitstream, or non-legacy image\n");
-		return -1;
-	}
-	if (!image_check_hcrc (hdr)) {
-		puts ("Bad FPGA header crc\n");
-		return 1;
-	}
-	if (!image_check_dcrc (hdr)) {
-		puts ("Bad FPGA data crc\n");
-		return 1;
-	}
-
-	data = (void *)image_get_data (hdr);
-	if ((len = image_get_data_size (hdr)) == 0) {
-		puts ("Empty bitstream\n");
-		return 1;
-	}
+	data = simple_strtoul(argv[1], NULL, 16);
+	len = simple_strtoul(argv[2], NULL, 16);
 
 	slave = spi_setup_slave(1, 0, 25000000, SPI_MODE_1);
 	if(spi_claim_bus(slave)){
@@ -412,7 +391,7 @@ static int do_ice40_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 	imx_iomux_v3_setup_pad(
 		MX6_PAD_CSI0_DAT8__ECSPI2_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL));
 
-	ret_val = spi_xfer(slave, len * 8, data, NULL, 0);
+	ret_val = spi_xfer(slave, len * 8, (void *)data, NULL, 0);
 	udelay(800);
 
 	// FPGA requires additional spi clocks after bitstream
@@ -426,7 +405,6 @@ static int do_ice40_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 	{
 		if(gpio_get_value(IMX_GPIO_NR(5, 20)))
 			break;
-
 		if(i == 3000){ 
 			printf("FPGA_DONE never asserted\n");
 			ret_val = 1;
@@ -439,9 +417,9 @@ static int do_ice40_load(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 	return ret_val;
 }
 
-U_BOOT_CMD(ice40, 2, 0, do_ice40_load,
+U_BOOT_CMD(ice40, 3, 0, do_ice40_load,
 	"ICE40 programming support",
-	" [image address]\n"
+	" [image address] [filesize]\n"
 	"    Image must be in mkimage legacy format\n"
 );
 
