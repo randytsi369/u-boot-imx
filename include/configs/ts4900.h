@@ -239,13 +239,7 @@
 		"nfs ${loadaddr} ${nfsroot}/boot/uImage; " \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${serverip}:${nfsroot} " \
 			"rootwait rw init=/sbin/init ${cmdline_append}; " \
-		"bootm ${loadaddr} - ${fdtaddr}; \0" \
-	"prod=echo Starting Production ...; " \
-		"setenv serverip 192.168.0.11; " \
-		"setenv autoload no; " \
-		"dhcp; " \
-		"nfs 0x12000000 192.168.0.11:/u/x/ts4900/ts4900-production.uboot; " \
-		"source 0x12000000;\0"
+		"bootm ${loadaddr} - ${fdtaddr}; \0"
 
 #define CONFIG_BOOTCOMMAND \
 	"run usbprod; " \
