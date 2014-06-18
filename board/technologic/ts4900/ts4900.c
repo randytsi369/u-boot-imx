@@ -347,6 +347,8 @@ int misc_init_r(void)
 	if(sdboot) setenv("jpsdboot", "off");
 	else setenv("jpsdboot", "on");
 
+	setenv("imx_type", CONFIG_IMX_TYPE);
+
 	#ifdef CONFIG_MX6Q
 	setenv("cpu", "q");
 	#else
