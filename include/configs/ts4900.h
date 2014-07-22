@@ -199,7 +199,7 @@
 		"load mmc 0:1 ${loadaddr} /boot/ts4900-fpga.bin; " \
 		"ice40 ${loadaddr} ${filesize}; " \
 		"load mmc 0:1 ${loadaddr} ${uimage}; " \
-		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append}; " \
+		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"emmcboot=echo Booting from the eMMC ...; " \
 		"bbdetect; " \
@@ -212,7 +212,7 @@
 		"load mmc 1:1 ${loadaddr} /boot/ts4900-fpga.bin; " \
 		"ice40 ${loadaddr} ${filesize}; " \
 		"load mmc 1:1 ${loadaddr} ${uimage}; " \
-		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append}; " \
+		"setenv bootargs root=/dev/mmcblk2p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"usbprod=usb start; " \
 		"if usb storage; " \
