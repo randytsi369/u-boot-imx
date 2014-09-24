@@ -154,6 +154,10 @@
 #undef CONFIG_CMD_IMLS
 
 #define CONFIG_BOOTDELAY	       1
+#define CONFIG_AUTOBOOT_KEYED 1
+#define CONFIG_AUTOBOOT_PROMPT "Press Ctrl+C to abort autoboot in %d second\n", bootdelay
+#define CTRL(c) ((c)&0x1F)     
+#define CONFIG_AUTOBOOT_STOP_STR  (char []){CTRL('C'), 0}
 #define CONFIG_PREBOOT                 ""
 #define CONFIG_LOADADDR			       0x12000000
 #define CONFIG_SYS_TEXT_BASE	       0x17800000
@@ -190,6 +194,9 @@
 		"echo restored environment to factory default ; fi\0" \
 	"sdboot=echo Booting from the SD card ...; " \
 		"bbdetect; " \
+		"if load mmc 0:1 ${loadaddr} /boot/boot.ub; " \
+			"then source ${loadaddr}; " \
+		"fi; " \
 		"if load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts4900-${baseboardid}.dtb; " \
 			"then echo $baseboardid detected; " \
 		"else " \
@@ -203,6 +210,9 @@
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"emmcboot=echo Booting from the eMMC ...; " \
 		"bbdetect; " \
+		"if load mmc 1:1 ${loadaddr} /boot/boot.ub; " \
+			"then source ${loadaddr}; " \
+		"fi; " \
 		"if load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts4900-${baseboardid}.dtb; " \
 			"then echo $baseboardid detected; " \
 		"else " \
