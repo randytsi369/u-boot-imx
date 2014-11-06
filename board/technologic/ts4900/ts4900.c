@@ -66,6 +66,7 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_EIM_CS1__GPIO_2_24 | MUX_PAD_CTRL(NO_PAD_CTRL), // Green LED
 	MX6_PAD_EIM_RW__GPIO_2_26 | MUX_PAD_CTRL(NO_PAD_CTRL), // MODE2
 	MX6_PAD_EIM_OE__GPIO_2_25 | MUX_PAD_CTRL(NO_PAD_CTRL), // BD_ID_DATA
+	MX6_PAD_EIM_A16__GPIO_2_22 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_USB_5V
 };
 
 void setup_spi(void)
@@ -381,6 +382,8 @@ int board_init(void)
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 	setup_spi();
 	setup_fpga();
+
+	gpio_direction_output(IMX_GPIO_NR(2, 22), 1);
 
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info0);
 
