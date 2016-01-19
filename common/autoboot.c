@@ -257,8 +257,6 @@ const char *bootdelay_process(void)
 		bootdelay = 0;
 		set_default_env("Use default environment for \
 				 mfgtools\n");
-	} else {
-		printf("Normal Boot\n");
 	}
 #endif
 
