@@ -576,6 +576,10 @@ config TARGET_MX6UL_14X14_LPDDR2_ARM2
         bool "Support mx6ul_14x14_lpddr2_arm2"
         select CPU_V7
 
+config TARGET_TS4100
+	bool "Support TS-4100"
+	select CPU_V7
+
 config TARGET_GW_VENTANA
 	bool "Support gw_ventana"
 	select CPU_V7
@@ -923,6 +927,7 @@ source "board/st/stv0991/Kconfig"
 source "board/sunxi/Kconfig"
 source "board/syteco/zmx25/Kconfig"
 source "board/tbs/tbs2910/Kconfig"
+source "board/technologic/ts4100/Kconfig"
 source "board/ti/am335x/Kconfig"
 source "board/ti/am43xx/Kconfig"
 source "board/birdland/bav335x/Kconfig"
