@@ -115,44 +115,49 @@ int dram_init(void)
 	return 0;
 }
 
-#if defined(CONFIG_FPGA)
+#define EN_FPGA_PWR                   IMX_GPIO_NR(5, 2)
+#define JTAG_FPGA_TDO                 IMX_GPIO_NR(5, 4)
+#define JTAG_FPGA_TDI                 IMX_GPIO_NR(5, 5)
+#define JTAG_FPGA_TMS                 IMX_GPIO_NR(5, 6)
+#define JTAG_FPGA_TCK                 IMX_GPIO_NR(5, 7)
 
 iomux_v3_cfg_t const fpga_jtag_pads[] = {
-	MX6_PAD_SNVS_TAMPER4__GPIO5_IO04 | MUX_PAD_CTRL(NO_PAD_CTRL),	// JTAG_FPGA_TDO
-	MX6_PAD_SNVS_TAMPER5__GPIO5_IO05 | MUX_PAD_CTRL(NO_PAD_CTRL), 	// JTAG_FPGA_TDI
-	MX6_PAD_SNVS_TAMPER6__GPIO5_IO06 | MUX_PAD_CTRL(NO_PAD_CTRL), 	// JTAG_FPGA_TMS
-	MX6_PAD_SNVS_TAMPER7__GPIO5_IO07 | MUX_PAD_CTRL(NO_PAD_CTRL), 	// JTAG_FPGA_TCK
+	MX6_PAD_SNVS_TAMPER4__GPIO5_IO04 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TDO
+	MX6_PAD_SNVS_TAMPER5__GPIO5_IO05 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TDI
+	MX6_PAD_SNVS_TAMPER6__GPIO5_IO06 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TMS
+	MX6_PAD_SNVS_TAMPER7__GPIO5_IO07 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TCK
+	MX6_PAD_SNVS_TAMPER2__GPIO5_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_FPGA_PWR
 };
+
+#if defined(CONFIG_FPGA)
 
 static void ts4100_fpga_jtag_init(void)
 {
-	imx_iomux_v3_setup_multiple_pads(fpga_jtag_pads,
-					 ARRAY_SIZE(fpga_jtag_pads));
-	gpio_direction_output(CONFIG_FPGA_TDI, 1);
-	gpio_direction_output(CONFIG_FPGA_TCK, 1);
-	gpio_direction_output(CONFIG_FPGA_TMS, 1);
-	gpio_direction_input(CONFIG_FPGA_TDO);
+	gpio_direction_output(JTAG_FPGA_TDI, 1);
+	gpio_direction_output(JTAG_FPGA_TCK, 1);
+	gpio_direction_output(JTAG_FPGA_TMS, 1);
+	gpio_direction_input(JTAG_FPGA_TDO);
 	return;
 }
 
 static void ts4100_fpga_tdi(int value)
 {
-	gpio_set_value(CONFIG_FPGA_TDI, value);
+	gpio_set_value(JTAG_FPGA_TDI, value);
 }
 
 static void ts4100_fpga_tms(int value)
 {
-	gpio_set_value(CONFIG_FPGA_TMS, value);
+	gpio_set_value(JTAG_FPGA_TMS, value);
 }
 
 static void ts4100_fpga_tck(int value)
 {
-	gpio_set_value(CONFIG_FPGA_TCK, value);
+	gpio_set_value(JTAG_FPGA_TCK, value);
 }
 
 static int ts4100_fpga_tdo(void)
 {
-	return gpio_get_value(CONFIG_FPGA_TDO);
+	return gpio_get_value(JTAG_FPGA_TDO);
 }
 
 lattice_board_specific_func ts4100_fpga_fns = {
@@ -324,10 +329,10 @@ int board_mmc_init(bd_t *bis)
 	 */
 
 	/* TODO: SD power is on the FPGA */
-	i2c_set_bus_num(1);
-	i2c_read(0x28, 0, 2, &val, 1);
+	i2c_set_bus_num(2);
+	i2c_read(0x28, 59, 2, &val, 1);
 	val |= (1 << 6);
-	i2c_write(0x28, 0, 2, &val, 1);
+	i2c_write(0x28, 59, 2, &val, 1);
 
 	/* For the SD Select 3.3V instead of 1.8V */
 	gpio_direction_output(USDHC2_VSELECT, 0);
@@ -413,9 +418,18 @@ int board_early_init_f(void)
 {
 	setup_iomux_uart();
 
+	imx_iomux_v3_setup_multiple_pads(fpga_jtag_pads,
+					 ARRAY_SIZE(fpga_jtag_pads));
+	/* Turn on the FGPA */
+	gpio_direction_output(EN_FPGA_PWR, 1);
+
 	/* Enable LVDS clock output.  
 	 * Writing CCM_ANALOG_MISC1 to use output from 24M OSC */
 	setbits_le32(0x020C8160, 0x412);
+
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
+	i2c_set_bus_num(2);
 
 	return 0;
 }
@@ -424,9 +438,6 @@ int board_init(void)
 {
 	/* Address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
-
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
 
 	#ifdef CONFIG_FEC_MXC
 	setup_fec(CONFIG_FEC_ENET_DEV);
@@ -454,25 +465,7 @@ static void do_bbdetect()
 {
 	int i, id = 0;
 	uint8_t val;
-	/* Set S2:S0 as outputs, and data as an input */
-	//gpio_direction_output(CONFIG_BB_S0, 1);
-	//gpio_direction_output(CONFIG_BB_S1, 1);
-	//gpio_direction_output(CONFIG_BB_S2, 1);
-	//gpio_direction_input(CONFIG_BB_IN);
-
-//	for(i = 0; i < 8; i++) {
-//		if(i & 1)gpio_set_value(CONFIG_BB_S0, 1);
-//		else gpio_set_value(CONFIG_BB_S0, 0);
-//
-//		if(i & 2)gpio_set_value(CONFIG_BB_S1, 1);
-//		else gpio_set_value(CONFIG_BB_S1, 0);
-//	
-//		if(i & 4)gpio_set_value(CONFIG_BB_S2, 1);
-//		else gpio_set_value(CONFIG_BB_S2, 0);
-//
-//		id = (id >> 1);
-//		if(gpio_get_value(CONFIG_BB_IN)) id |= 0x80;
-//	}
+	id = 2;
 
 	setenv_hex("baseboardid", id & ~0xc0);
 	setenv_hex("baseboardrev", ((id & 0xc0) >> 6));
@@ -487,11 +480,11 @@ int board_late_init(void)
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
 	/* Pulse off_bd_reset */
-	i2c_set_bus_num(1);
-	i2c_read(0x28, 0, 2, &val, 1);
+	i2c_set_bus_num(2);
+	i2c_read(0x28, 59, 2, &val, 1);
 	val &= ~(0x1);
-	i2c_write(0x28, 0, 2, &val, 1);
-	
+	i2c_write(0x28, 59, 2, &val, 1);
+
 	mdelay(200);
 
 	/* While off_bd_reset is low read CN1_98 which 
@@ -500,9 +493,8 @@ int board_late_init(void)
 
 	setenv("jpsdboot", "off");
 
-	val |= ~(0x1);
-	i2c_write(0x28, 0, 2, &val, 1);
-
+	val |= 0x1;
+	i2c_write(0x28, 59, 2, &val, 1);
 
 	setenv("model", "4900");
 
