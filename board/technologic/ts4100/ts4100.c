@@ -268,9 +268,10 @@ static void setup_iomux_fec(int fec_id)
 						 ARRAY_SIZE(fec2_enet_pads));
 		/* Reset */
 		gpio_direction_output(EN_ETH_PHY_PWR, 0);
-		mdelay(200);
+		mdelay(10);
 		gpio_direction_output(EN_ETH_PHY_PWR, 1);
-		udelay(200);
+		// Allow time for fet to turn on and PHY to enable
+		mdelay(220);
 		reset = 1;
 	}
 }
