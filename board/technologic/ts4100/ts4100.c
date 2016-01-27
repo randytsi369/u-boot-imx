@@ -129,6 +129,40 @@ iomux_v3_cfg_t const fpga_jtag_pads[] = {
 	MX6_PAD_SNVS_TAMPER2__GPIO5_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_FPGA_PWR
 };
 
+void fpga_mmc_init(void)
+{
+	uint8_t val;
+	i2c_read(0x28, 59, 2, &val, 1);
+	val &= ~(1 << 6);
+	i2c_write(0x28, 59, 2, &val, 1);
+	mdelay(10);
+	val |= (1 << 6);
+	i2c_write(0x28, 59, 2, &val, 1);
+}
+
+void fpga_late_init(void)
+{
+	uint8_t val;
+	/* Enable offbd 3.3v */
+	i2c_read(0x28, 59, 2, &val, 1);
+	val |= (1 << 4);
+	i2c_write(0x28, 59, 2, &val, 1);
+
+	/* Pulse off_bd_reset */
+	i2c_read(0x28, 59, 2, &val, 1);
+	val &= ~(0x1);
+	i2c_write(0x28, 59, 2, &val, 1);
+	mdelay(20);
+
+	/* While off_bd_reset is low read CN1_98 which 
+	 * will have a pulldown to off_bd_reset if the sd
+	 * boot jumper is on */
+
+	setenv("jpsdboot", "off");
+	val |= 0x1;
+	i2c_write(0x28, 59, 2, &val, 1);
+}
+
 #if defined(CONFIG_FPGA)
 
 static void ts4100_fpga_jtag_init(void)
@@ -137,7 +171,20 @@ static void ts4100_fpga_jtag_init(void)
 	gpio_direction_output(JTAG_FPGA_TCK, 1);
 	gpio_direction_output(JTAG_FPGA_TMS, 1);
 	gpio_direction_input(JTAG_FPGA_TDO);
-	return;
+}
+
+static void ts4100_fpga_done(void)
+{
+	gpio_direction_input(JTAG_FPGA_TDI);
+	gpio_direction_input(JTAG_FPGA_TCK);
+	gpio_direction_input(JTAG_FPGA_TMS);
+
+	/* During FPGa programming several important pins will
+	 * have been tristated.  Put it back to normal */
+	fpga_mmc_init();
+	fpga_late_init();
+	red_led_on();
+	green_led_off();
 }
 
 static void ts4100_fpga_tdi(int value)
@@ -165,7 +212,8 @@ lattice_board_specific_func ts4100_fpga_fns = {
 	ts4100_fpga_tdi,
 	ts4100_fpga_tms,
 	ts4100_fpga_tck,
-	ts4100_fpga_tdo
+	ts4100_fpga_tdo,
+	ts4100_fpga_done
 };
 
 Lattice_desc ts4100_fpga = {
@@ -321,19 +369,13 @@ int board_mmc_getcd(struct mmc *mmc)
 
 int board_mmc_init(bd_t *bis)
 {
-	uint8_t val;
 	/*
 	 * According to the board_mmc_init() the following map is done:
 	 * (U-boot device node)    (Physical Port)
 	 * mmc0                    USDHC1 (SD/WIFI)
 	 * mmc1                    USDHC2 (eMMC)
 	 */
-
-	/* TODO: SD power is on the FPGA */
-	i2c_set_bus_num(2);
-	i2c_read(0x28, 59, 2, &val, 1);
-	val |= (1 << 6);
-	i2c_write(0x28, 59, 2, &val, 1);
+	fpga_mmc_init();
 
 	/* For the SD Select 3.3V instead of 1.8V */
 	gpio_direction_output(USDHC2_VSELECT, 0);
@@ -421,8 +463,13 @@ int board_early_init_f(void)
 
 	imx_iomux_v3_setup_multiple_pads(fpga_jtag_pads,
 					 ARRAY_SIZE(fpga_jtag_pads));
-	/* Turn on the FGPA */
+
+	/* reset the FGPA */
 	gpio_direction_output(EN_FPGA_PWR, 1);
+	mdelay(30);
+	gpio_direction_output(EN_FPGA_PWR, 1);
+	mdelay(20);
+	printf("Reset the FPGA\n");
 
 	/* Enable LVDS clock output.  
 	 * Writing CCM_ANALOG_MISC1 to use output from 24M OSC */
@@ -462,10 +509,9 @@ static const struct boot_mode board_boot_modes[] = {
 };
 #endif
 
-static void do_bbdetect()
+static void do_bbdetect(void)
 {
-	int i, id = 0;
-	uint8_t val;
+	int id = 0;
 	id = 2;
 
 	setenv_hex("baseboardid", id & ~0xc0);
@@ -474,30 +520,14 @@ static void do_bbdetect()
 
 int board_late_init(void)
 {
-	uint8_t val;
 #ifdef CONFIG_CMD_BMODE
 	add_board_boot_modes(board_boot_modes);
 #endif
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
-	/* Pulse off_bd_reset */
-	i2c_set_bus_num(2);
-	i2c_read(0x28, 59, 2, &val, 1);
-	val &= ~(0x1);
-	i2c_write(0x28, 59, 2, &val, 1);
+	fpga_late_init();
 
-	mdelay(200);
-
-	/* While off_bd_reset is low read CN1_98 which 
-	 * will have a pulldown to off_bd_reset if the sd
-	 * boot jumper is on */
-
-	setenv("jpsdboot", "off");
-
-	val |= 0x1;
-	i2c_write(0x28, 59, 2, &val, 1);
-
-	setenv("model", "4900");
+	setenv("model", "4100");
 
 	/* Detect the carrier board id to pick the right 
 	 * device tree */
