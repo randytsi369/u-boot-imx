@@ -267,6 +267,7 @@ typedef void (*Lattice_jtag_set_tdi)(int v);
 typedef void (*Lattice_jtag_set_tms)(int v);
 typedef void (*Lattice_jtag_set_tck)(int v);
 typedef int (*Lattice_jtag_get_tdo)(void);
+typedef void (*Lattice_jtag_done)(void);
 
 typedef struct {
 	Lattice_jtag_init	jtag_init;
@@ -274,6 +275,7 @@ typedef struct {
 	Lattice_jtag_set_tms	jtag_set_tms;
 	Lattice_jtag_set_tck	jtag_set_tck;
 	Lattice_jtag_get_tdo	jtag_get_tdo;
+	Lattice_jtag_done	jtag_done;
 } lattice_board_specific_func;
 
 void writePort(unsigned char pins, unsigned char value);
