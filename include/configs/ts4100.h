@@ -14,15 +14,13 @@
 #include "mx6_common.h"
 #include <asm/imx-common/gpio.h>
 
-#define CONFIG_SYS_USE_QSPI
-#define CONFIG_ENV_IS_IN_SPI_FLASH
+/* Env is at the 1MB boundary in emmc boot partition 1 */
+#define CONFIG_ENV_IS_IN_MMC
+#define CONFIG_SYS_MMC_ENV_DEV 1
+#define CONFIG_SYS_MMC_ENV_PART 1
 #define CONFIG_ENV_OFFSET		0x100000     /* 1MB */
-#define CONFIG_ENV_SIZE			SZ_8K
-#define CONFIG_ENV_SECT_SIZE		CONFIG_ENV_SIZE
-#define CONFIG_ENV_SPI_BUS		CONFIG_SF_DEFAULT_BUS
-#define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
-#define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
-#define CONFIG_ENV_SPI_MAX_HZ		CONFIG_SF_DEFAULT_SPEED
+#define CONFIG_ENV_SIZE			SZ_16K
+
 
 #define CONFIG_FSL_USDHC
 #define CONFIG_MX6
