@@ -16,7 +16,7 @@
 
 /* Env is at the 1MB boundary in emmc boot partition 1 */
 #define CONFIG_ENV_IS_IN_MMC
-#define CONFIG_SYS_MMC_ENV_DEV 1
+#define CONFIG_SYS_MMC_ENV_DEV  1
 #define CONFIG_SYS_MMC_ENV_PART 1
 #define CONFIG_ENV_OFFSET		0x100000     /* 1MB */
 #define CONFIG_ENV_SIZE			SZ_16K
@@ -28,6 +28,7 @@
 #define CONFIG_SYS_GENERIC_BOARD
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
+#define CONFIG_SYS_CONSOLE_INFO_QUIET
 
 #define CONFIG_BOARD_SPECIFIC_LED
 #define CONFIG_STATUS_LED
@@ -109,7 +110,7 @@
 	"autoload=no\0" \
 	"nfsip=192.168.1.139\0" \
 	"nfsroot=/mnt/storage/imx6\0" \
-	"clearenv=sf probe; sf erase 100000 4000;\0" \
+	"clearenv=mmc dev 1 1; mmc erase 800 20;\0" \
 	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \
@@ -212,24 +213,7 @@
 #define CONFIG_SYS_INIT_SP_ADDR \
 	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 
-/* FLASH and environment organization */
 #define CONFIG_SYS_NO_FLASH
-
-#ifdef CONFIG_SYS_USE_QSPI
-#define CONFIG_FSL_QSPI
-#define CONFIG_QSPI_BASE		QSPI1_BASE_ADDR
-#define CONFIG_QSPI_MEMMAP_BASE		QSPI1_ARB_BASE_ADDR
-
-#define CONFIG_CMD_SF
-#define	CONFIG_SPI_FLASH
-#define	CONFIG_SPI_FLASH_STMICRO
-#define	CONFIG_SPI_FLASH_ISSI
-#define	CONFIG_SPI_FLASH_BAR
-#define	CONFIG_SF_DEFAULT_BUS		0
-#define	CONFIG_SF_DEFAULT_CS		0
-#define	CONFIG_SF_DEFAULT_SPEED		15000000
-#define	CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
-#endif
 
 /* MMC Configs */
 #define CONFIG_FSL_ESDHC
