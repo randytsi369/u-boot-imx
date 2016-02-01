@@ -572,6 +572,7 @@ static struct phy_device *phy_device_create(struct mii_dev *bus, int addr,
 	return dev;
 }
 
+#ifndef CONFIG_TARGET_TS4100
 /**
  * get_phy_id - reads the specified addr for its ID.
  * @bus: the target MII bus
@@ -604,10 +605,19 @@ static int get_phy_id(struct mii_dev *bus, int addr, int devad, u32 *phy_id)
 
 	return 0;
 }
+#endif
 
 static struct phy_device *create_phy_by_mask(struct mii_dev *bus,
 		unsigned phy_mask, int devad, phy_interface_t interface)
 {
+#ifdef CONFIG_TARGET_TS4100
+	/* No reason for us to delay boot just for the phy to say
+	 * Yep, I'm here and I'm a phy.  Just hard coding it in since
+	 * this will always be the same phy with this u-boot */
+	u32 phy_id = 0x221560;
+	int addr = ffs(phy_mask) - 1;
+	return phy_device_create(bus, addr, phy_id, interface);
+#else
 	u32 phy_id = 0xffffffff;
 	while (phy_mask) {
 		int addr = ffs(phy_mask) - 1;
@@ -618,6 +628,7 @@ static struct phy_device *create_phy_by_mask(struct mii_dev *bus,
 		phy_mask &= ~(1 << addr);
 	}
 	return NULL;
+#endif
 }
 
 static struct phy_device *search_for_existing_phy(struct mii_dev *bus,
