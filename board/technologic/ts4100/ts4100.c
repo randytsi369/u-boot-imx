@@ -61,19 +61,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define LCD_PAD_CTRL    (PAD_CTL_HYS | PAD_CTL_PUS_100K_UP | PAD_CTL_PUE | \
 	PAD_CTL_PKE | PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm)
 
-#define GPMI_PAD_CTRL0 (PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_100K_UP)
-#define GPMI_PAD_CTRL1 (PAD_CTL_DSE_40ohm | PAD_CTL_SPEED_MED | \
-			PAD_CTL_SRE_FAST)
-#define GPMI_PAD_CTRL2 (GPMI_PAD_CTRL0 | GPMI_PAD_CTRL1)
-
-#define WEIM_NOR_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE | \
-		PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED | \
-		PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST)
-
-#define SPI_PAD_CTRL (PAD_CTL_HYS |				\
-	PAD_CTL_SPEED_MED |		\
-	PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST)
-
 #define OTG_ID_PAD_CTRL (PAD_CTL_PKE | PAD_CTL_PUE |		\
 	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
 	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
@@ -133,9 +120,6 @@ void fpga_mmc_init(void)
 {
 	uint8_t val;
 	i2c_read(0x28, 59, 2, &val, 1);
-	val &= ~(1 << 6);
-	i2c_write(0x28, 59, 2, &val, 1);
-	mdelay(10);
 	val |= (1 << 6);
 	i2c_write(0x28, 59, 2, &val, 1);
 }
@@ -159,7 +143,9 @@ void fpga_late_init(void)
 	 * boot jumper is on */
 
 	setenv("jpsdboot", "off");
-	val |= 0x1;
+
+	// EN_USB_5V
+	val |= (1 << 5);
 	i2c_write(0x28, 59, 2, &val, 1);
 }
 
@@ -178,8 +164,9 @@ static void ts4100_fpga_done(void)
 	gpio_direction_input(JTAG_FPGA_TDI);
 	gpio_direction_input(JTAG_FPGA_TCK);
 	gpio_direction_input(JTAG_FPGA_TMS);
+	gpio_direction_input(JTAG_FPGA_TDO);
 
-	/* During FPGa programming several important pins will
+	/* During FPGA programming several important pins will
 	 * have been tristated.  Put it back to normal */
 	fpga_mmc_init();
 	fpga_late_init();
@@ -259,14 +246,9 @@ static iomux_v3_cfg_t const usdhc2_emmc_pads[] = {
 	MX6_PAD_NAND_DATA01__USDHC2_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_NAND_DATA02__USDHC2_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_NAND_DATA03__USDHC2_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_NAND_DATA04__USDHC2_DATA4 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_NAND_DATA05__USDHC2_DATA5 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_NAND_DATA06__USDHC2_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_NAND_DATA07__USDHC2_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 };
 
-#ifdef CONFIG_FEC_MXC
-static iomux_v3_cfg_t const fec1_enet_pads[] = {
+static iomux_v3_cfg_t const fec_enet_pads[] = {
 	MX6_PAD_GPIO1_IO06__ENET1_MDIO | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_GPIO1_IO07__ENET1_MDC | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET1_TX_DATA0__ENET1_TDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
@@ -278,9 +260,6 @@ static iomux_v3_cfg_t const fec1_enet_pads[] = {
 	MX6_PAD_ENET1_RX_ER__ENET1_RX_ER | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET1_RX_EN__ENET1_RX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_JTAG_MOD__GPIO1_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL), //EN_ETH_PHY_PWR
-};
-
-static iomux_v3_cfg_t const fec2_enet_pads[] = {
 	MX6_PAD_ENET2_TX_DATA0__ENET2_TDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_TX_DATA1__ENET2_TDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_RX_DATA0__ENET2_RDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
@@ -304,55 +283,25 @@ static iomux_v3_cfg_t const fec2_enet_pads[] = {
 #define PHY2_CONFIG2		IMX_GPIO_NR(2, 10)
 #define PHY2_ISO		IMX_GPIO_NR(2, 15)
 
-static void setup_iomux_fec(int fec_id)
+static void setup_iomux_fec(void)
 {
 	static int reset = 0;
 
 	if(reset == 0) {
 		/* Set pins to enet modes */
-		imx_iomux_v3_setup_multiple_pads(fec1_enet_pads,
-						 ARRAY_SIZE(fec1_enet_pads));
-		imx_iomux_v3_setup_multiple_pads(fec2_enet_pads,
-						 ARRAY_SIZE(fec2_enet_pads));
+		imx_iomux_v3_setup_multiple_pads(fec_enet_pads,
+						 ARRAY_SIZE(fec_enet_pads));
 		/* Reset */
 		gpio_direction_output(EN_ETH_PHY_PWR, 0);
 		mdelay(10);
 		gpio_direction_output(EN_ETH_PHY_PWR, 1);
-		// Allow time for fet to turn on and PHY to enable
-		mdelay(220);
 		reset = 1;
 	}
 }
-#endif
 
 static void setup_iomux_uart(void)
 {
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
-}
-
-#define QSPI_PAD_CTRL1	\
-	(PAD_CTL_SRE_FAST | PAD_CTL_SPEED_MED | \
-	 PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_47K_UP | PAD_CTL_DSE_120ohm)
-
-static iomux_v3_cfg_t const quadspi_pads[] = {
-	MX6_PAD_NAND_WP_B__QSPI_A_SCLK	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_READY_B__QSPI_A_DATA00	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_CE0_B__QSPI_A_DATA01	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_CE1_B__QSPI_A_DATA02	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_CLE__QSPI_A_DATA03	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-	MX6_PAD_NAND_DQS__QSPI_A_SS0_B	| MUX_PAD_CTRL(QSPI_PAD_CTRL1),
-};
-
-int board_qspi_init(void)
-{
-	/* Set the iomux */
-	imx_iomux_v3_setup_multiple_pads(quadspi_pads,
-					 ARRAY_SIZE(quadspi_pads));
-
-	/* Set the clock */
-	enable_qspi_clk(0);
-
-	return 0;
 }
 
 static struct fsl_esdhc_cfg usdhc_cfg[2] = {
@@ -360,7 +309,7 @@ static struct fsl_esdhc_cfg usdhc_cfg[2] = {
 	{USDHC2_BASE_ADDR, 0, 4},
 };
 
-#define USDHC2_VSELECT IMX_GPIO_NR(1, 5)
+#define USDHC1_VSELECT IMX_GPIO_NR(1, 5)
 
 int board_mmc_getcd(struct mmc *mmc)
 {
@@ -378,7 +327,7 @@ int board_mmc_init(bd_t *bis)
 	fpga_mmc_init();
 
 	/* For the SD Select 3.3V instead of 1.8V */
-	gpio_direction_output(USDHC2_VSELECT, 0);
+	gpio_direction_output(USDHC1_VSELECT, 1);
 
 	imx_iomux_v3_setup_multiple_pads(
 		usdhc1_sd_pads, ARRAY_SIZE(usdhc1_sd_pads));
@@ -401,14 +350,20 @@ int board_mmc_init(bd_t *bis)
 int board_eth_init(bd_t *bis)
 {
 	int ret;
+	uchar enetaddr[6];
 
-	setup_iomux_fec(CONFIG_FEC_ENET_DEV);
+	setup_iomux_fec();
 
 	ret = fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
 		CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
 	if (ret)
 		printf("FEC%d MXC: %s:failed\n", CONFIG_FEC_ENET_DEV, __func__);
 
+	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
+		printf("(No programmed ethaddr, using random) ");
+		eth_random_addr(enetaddr);
+		eth_setenv_enetaddr("ethaddr", enetaddr);
+	}
 	return 0;
 }
 
@@ -464,12 +419,21 @@ int board_early_init_f(void)
 	imx_iomux_v3_setup_multiple_pads(fpga_jtag_pads,
 					 ARRAY_SIZE(fpga_jtag_pads));
 
+	// Keep as inputs to allow offboard programming
+	gpio_direction_input(JTAG_FPGA_TDI);
+	gpio_direction_input(JTAG_FPGA_TCK);
+	gpio_direction_input(JTAG_FPGA_TMS);
+	gpio_direction_input(JTAG_FPGA_TDO);
+
+	setup_iomux_fec();
+
 	/* reset the FGPA */
+	gpio_direction_output(EN_FPGA_PWR, 0);
+	// off is 70us max
+	udelay(70);
 	gpio_direction_output(EN_FPGA_PWR, 1);
-	mdelay(30);
-	gpio_direction_output(EN_FPGA_PWR, 1);
-	mdelay(20);
-	printf("Reset the FPGA\n");
+	// on is typical 11ms,
+	mdelay(15);
 
 	/* Enable LVDS clock output.  
 	 * Writing CCM_ANALOG_MISC1 to use output from 24M OSC */
@@ -478,6 +442,9 @@ int board_early_init_f(void)
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
 	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
 	i2c_set_bus_num(2);
+
+	red_led_on();
+	green_led_off();
 
 	return 0;
 }
@@ -495,16 +462,13 @@ int board_init(void)
 	ts4100_fpga_init();
 	#endif
 
-	board_qspi_init();
-
 	return 0;
 }
 
 #ifdef CONFIG_CMD_BMODE
 static const struct boot_mode board_boot_modes[] = {
-	{"sd1", MAKE_CFGVAL(0x42, 0x20, 0x00, 0x00)},
-	{"sd2", MAKE_CFGVAL(0x40, 0x28, 0x00, 0x00)},
-	{"qspi1", MAKE_CFGVAL(0x10, 0x00, 0x00, 0x00)},
+	{"sd", MAKE_CFGVAL(0x42, 0x20, 0x00, 0x00)},
+	{"emmc1", MAKE_CFGVAL(0x74, 0xa8, 0x00, 0x00)},
 	{NULL,	 0},
 };
 #endif
@@ -558,7 +522,6 @@ iomux_v3_cfg_t const usb_otg1_pads[] = {
 
 int board_usb_phy_mode(int port)
 {
-	printf("Setting up port %d\n", port);
 	if (port == 1)
 		return USB_INIT_HOST;
 	else
