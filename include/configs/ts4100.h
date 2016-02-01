@@ -16,11 +16,10 @@
 
 /* Env is at the 1MB boundary in emmc boot partition 1 */
 #define CONFIG_ENV_IS_IN_MMC
-#define CONFIG_SYS_MMC_ENV_DEV  1
-#define CONFIG_SYS_MMC_ENV_PART 1
+#define CONFIG_SYS_MMC_ENV_DEV  	1
+#define CONFIG_SYS_MMC_ENV_PART 	1
 #define CONFIG_ENV_OFFSET		0x100000     /* 1MB */
 #define CONFIG_ENV_SIZE			SZ_16K
-
 
 #define CONFIG_FSL_USDHC
 #define CONFIG_MX6
@@ -92,14 +91,16 @@
 
 #undef CONFIG_CMD_IMLS
 
-#define CONFIG_BOOTDELAY	       1
-#define CONFIG_AUTOBOOT_KEYED 1
+#define CONFIG_BOOTDELAY	       	1
+#define CONFIG_AUTOBOOT_KEYED 		1
 #define CONFIG_AUTOBOOT_PROMPT "Press Ctrl+C to abort autoboot in %d second(s)\n", bootdelay
 #define CTRL(c) ((c)&0x1F)     
 #define CONFIG_AUTOBOOT_STOP_STR  (char []){CTRL('C'), 0}
 
 #define CONFIG_LOADADDR			0x80800000
 #define CONFIG_SYS_TEXT_BASE		0x87800000
+
+#define CONFIG_PREBOOT ""
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"fdt_high=0xffffffff\0" \
@@ -247,10 +248,8 @@
 #define CONFIG_USB_EHCI_MX6
 #define CONFIG_USB_STORAGE
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
-#define CONFIG_USB_HOST_ETHER
 #define CONFIG_USB_GADGET
 #define CONFIG_CI_UDC
-#define CONFIG_USB_ETHER_ASIX
 #define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
 #define CONFIG_MXC_USB_FLAGS   0
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 2
@@ -269,7 +268,10 @@
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_MII
 #define CONFIG_FEC_MXC
+#define CONFIG_USB_HOST_ETHER
+#define CONFIG_USB_ETHER_ASIX
 #define CONFIG_MII
+#define CONFIG_LIB_RAND
 #define CONFIG_FEC_ENET_DEV 0
 
 #if (CONFIG_FEC_ENET_DEV == 0)
