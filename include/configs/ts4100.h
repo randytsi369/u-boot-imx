@@ -108,6 +108,7 @@
 	"fdtaddr=0x83000000\0" \
 	"boot_fdt=try\0" \
 	"ip_dyn=yes\0" \
+	"model=4100\0" \
 	"autoload=no\0" \
 	"nfsip=192.168.1.139\0" \
 	"nfsroot=/mnt/storage/imx6\0" \
@@ -165,14 +166,17 @@
 		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/uImage;" \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
-		"bootm ${loadaddr} - ${fdtaddr};\0"
+		"bootm ${loadaddr} - ${fdtaddr};\0" \
+	"bootcmd_mfg=exit; dhcp;" \
+		"nfs ${loadaddr} 192.168.0.11:/u/x/jessie-armel/boot-imx6ul/boot-ts4100.ub;" \
+		"source ${loadaddr};\0"
 
 #define CONFIG_BOOTCOMMAND \
 	"run usbprod;" \
 	"if test ${jpsdboot} = 'on' ;" \
 		"then run sdboot;" \
 		"else run emmcboot;" \
-	"fi; "
+	"fi;"
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP
