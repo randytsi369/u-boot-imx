@@ -1,48 +1,32 @@
 #include <common.h>
 #include <i2c.h>
 #include <status_led.h>
+#include "fpga.h"
 
-static unsigned int saved_state[3] = {STATUS_LED_OFF,
-	STATUS_LED_OFF, STATUS_LED_OFF};
+static unsigned int saved_state[2] = {STATUS_LED_OFF,
+	STATUS_LED_OFF};
 
 void red_led_on(void)
 {
-	uint8_t val;
-	i2c_read(0x28, 59, 2, &val, 1);
-	val &= ~(1 << 2);
-	i2c_write(0x28, 59, 2, &val, 1);
-
+	fpga_gpio_output(RED_LED_PADN, 0);
 	saved_state[STATUS_LED_RED] = STATUS_LED_ON;
 }
 
 void red_led_off(void)
 {
-	uint8_t val;
-	i2c_read(0x28, 59, 2, &val, 1);
-	val |= (1 << 2);
-	i2c_write(0x28, 59, 2, &val, 1);
-
+	fpga_gpio_output(RED_LED_PADN, 1);
 	saved_state[STATUS_LED_RED] = STATUS_LED_OFF;
 }
 
 void green_led_on(void)
 {
-	uint8_t val;
-	i2c_read(0x28, 59, 2, &val, 1);
-	val &= ~(1 << 1);
-	
-	i2c_write(0x28, 59, 2, &val, 1);
-
+	fpga_gpio_output(GREEN_LED_PADN, 0);
 	saved_state[STATUS_LED_GREEN] = STATUS_LED_ON;
 }
 
 void green_led_off(void)
 {
-	uint8_t val;
-	i2c_read(0x28, 59, 2, &val, 1);
-	val |= (1 << 1);
-	i2c_write(0x28, 59, 2, &val, 1);
-
+	fpga_gpio_output(GREEN_LED_PADN, 1);
 	saved_state[STATUS_LED_GREEN] = STATUS_LED_OFF;
 }
 

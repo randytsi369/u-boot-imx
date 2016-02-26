@@ -28,6 +28,7 @@
 #include <netdev.h>
 #include <usb.h>
 #include <usb/ehci-fsl.h>
+#include "fpga.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -108,6 +109,7 @@ int dram_init(void)
 #define JTAG_FPGA_TMS                 IMX_GPIO_NR(5, 6)
 #define JTAG_FPGA_TCK                 IMX_GPIO_NR(5, 7)
 
+
 iomux_v3_cfg_t const fpga_jtag_pads[] = {
 	MX6_PAD_SNVS_TAMPER4__GPIO5_IO04 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TDO
 	MX6_PAD_SNVS_TAMPER5__GPIO5_IO05 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TDI
@@ -118,35 +120,28 @@ iomux_v3_cfg_t const fpga_jtag_pads[] = {
 
 void fpga_mmc_init(void)
 {
-	uint8_t val;
-	i2c_read(0x28, 59, 2, &val, 1);
-	val |= (1 << 6);
-	i2c_write(0x28, 59, 2, &val, 1);
+	fpga_gpio_output(EN_SD_POWER_PAD, 1);
 }
 
 void fpga_late_init(void)
 {
-	uint8_t val;
-	/* Enable offbd 3.3v */
-	i2c_read(0x28, 59, 2, &val, 1);
-	val |= (1 << 4);
-	i2c_write(0x28, 59, 2, &val, 1);
+	int sdboot;
 
-	/* Pulse off_bd_reset */
-	i2c_read(0x28, 59, 2, &val, 1);
-	val &= ~(0x1);
-	i2c_write(0x28, 59, 2, &val, 1);
-	mdelay(20);
+	fpga_gpio_output(EN_SW_3V3_PAD, 1);
+	fpga_gpio_output(OFF_BD_RESET_PADN, 0);
+	sdboot = fpga_gpio_input(DIO_20);
 
-	/* While off_bd_reset is low read CN1_98 which 
-	 * will have a pulldown to off_bd_reset if the sd
+	/* While OFF_BD_RESET_PADN is low read CN1_98 which 
+	 * will have a pulldown to OFF_BD_RESET_PADN if the sd
 	 * boot jumper is on */
+	if(sdboot)
+		setenv("jpsdboot", "on");
+	else
+		setenv("jpsdboot", "off");
 
-	setenv("jpsdboot", "off");
-
-	// EN_USB_5V
-	val |= (1 << 5);
-	i2c_write(0x28, 59, 2, &val, 1);
+	mdelay(10);
+	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
+	fpga_gpio_output(EN_USB_HOST_5V_PAD, 1);
 }
 
 #if defined(CONFIG_FPGA)
@@ -491,8 +486,6 @@ int board_late_init(void)
 
 	fpga_late_init();
 
-	setenv("model", "4100");
-
 	/* Detect the carrier board id to pick the right 
 	 * device tree */
 	do_bbdetect();
@@ -507,7 +500,9 @@ u32 get_board_rev(void)
 
 int checkboard(void)
 {
+	int fpgarev = fpga_get_rev();
 	puts("Board: Technologic Systems TS-4100\n");
+	printf("FPGA:  Revision %d\n", fpgarev);
 
 	return 0;
 }
