@@ -32,9 +32,6 @@ void green_led_off(void)
 
 void __led_init(led_id_t mask, int state)
 {
-	/* LEDs are all off of the FPGA I2C Regs */
-	i2c_set_bus_num(2);
-
 	__led_set(mask, state);
 }
 
