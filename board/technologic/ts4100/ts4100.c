@@ -68,6 +68,21 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 
+#define EN_FPGA_PWR             IMX_GPIO_NR(5, 2)
+#define JTAG_FPGA_TDO           IMX_GPIO_NR(5, 4)
+#define JTAG_FPGA_TDI           IMX_GPIO_NR(5, 5)
+#define JTAG_FPGA_TMS           IMX_GPIO_NR(5, 6)
+#define JTAG_FPGA_TCK           IMX_GPIO_NR(5, 7)
+#define EN_ETH_PHY_PWR 		IMX_GPIO_NR(1, 10)
+#define PHY1_DUPLEX		IMX_GPIO_NR(2, 0)
+#define PHY1_PHY_ADD_2		IMX_GPIO_NR(2, 1)
+#define PHY1_CONFIG2		IMX_GPIO_NR(2, 2)
+#define PHY1_ISO		IMX_GPIO_NR(2, 7)
+#define PHY2_DUPLEX		IMX_GPIO_NR(2, 11)
+#define PHY2_PHY_ADD_2		IMX_GPIO_NR(2, 12)
+#define PHY2_CONFIG2		IMX_GPIO_NR(2, 10)
+#define PHY2_ISO		IMX_GPIO_NR(2, 15)
+
 /* I2C1 for Silabs */
 struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
@@ -102,13 +117,6 @@ int dram_init(void)
 
 	return 0;
 }
-
-#define EN_FPGA_PWR                   IMX_GPIO_NR(5, 2)
-#define JTAG_FPGA_TDO                 IMX_GPIO_NR(5, 4)
-#define JTAG_FPGA_TDI                 IMX_GPIO_NR(5, 5)
-#define JTAG_FPGA_TMS                 IMX_GPIO_NR(5, 6)
-#define JTAG_FPGA_TCK                 IMX_GPIO_NR(5, 7)
-
 
 iomux_v3_cfg_t const fpga_jtag_pads[] = {
 	MX6_PAD_SNVS_TAMPER4__GPIO5_IO04 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TDO
@@ -267,17 +275,6 @@ static iomux_v3_cfg_t const fec_enet_pads[] = {
 	MX6_PAD_ENET2_TX_CLK__ENET2_REF_CLK2 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 };
 
-#define EN_ETH_PHY_PWR 		IMX_GPIO_NR(1, 10)
-#define PHY1_DUPLEX		IMX_GPIO_NR(2, 0)
-#define PHY1_PHY_ADD_2		IMX_GPIO_NR(2, 1)
-#define PHY1_CONFIG2		IMX_GPIO_NR(2, 2)
-#define PHY1_ISO		IMX_GPIO_NR(2, 7)
-
-#define PHY2_DUPLEX		IMX_GPIO_NR(2, 11)
-#define PHY2_PHY_ADD_2		IMX_GPIO_NR(2, 12)
-#define PHY2_CONFIG2		IMX_GPIO_NR(2, 10)
-#define PHY2_ISO		IMX_GPIO_NR(2, 15)
-
 static void setup_iomux_fec(void)
 {
 	static int reset = 0;
@@ -288,7 +285,8 @@ static void setup_iomux_fec(void)
 						 ARRAY_SIZE(fec_enet_pads));
 		/* Reset */
 		gpio_direction_output(EN_ETH_PHY_PWR, 0);
-		mdelay(10);
+		/* FET only requires < 500us */
+		mdelay(1);
 		gpio_direction_output(EN_ETH_PHY_PWR, 1);
 		reset = 1;
 	}
@@ -347,8 +345,6 @@ int board_eth_init(bd_t *bis)
 	int ret;
 	uchar enetaddr[6];
 
-	setup_iomux_fec();
-
 	ret = fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
 		CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
 	if (ret)
@@ -393,11 +389,14 @@ static int setup_fec(int fec_id)
 int board_phy_config(struct phy_device *phydev)
 {
 	if (CONFIG_FEC_ENET_DEV == 0) {
+		// no bcast, rmii
 		phy_write(phydev, MDIO_DEVAD_NONE, 0x16, 0x202);
-		phy_write(phydev, MDIO_DEVAD_NONE, 0x1f, 0x8190);
+		// led speed/link-activity
+		// 50mhz clock mode
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1f, 0x8180);
 	} else if (CONFIG_FEC_ENET_DEV == 1) {
-		phy_write(phydev, MDIO_DEVAD_NONE, 0x16, 0x201);
-		phy_write(phydev, MDIO_DEVAD_NONE, 0x1f, 0x8110);
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x16, 0x202);
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1f, 0x8180);
 	}
 
 	if (phydev->drv->config)
@@ -502,7 +501,7 @@ int checkboard(void)
 {
 	int fpgarev = fpga_get_rev();
 	puts("Board: Technologic Systems TS-4100\n");
-	printf("FPGA:  Revision %d\n", fpgarev);
+	printf("FPGA:  Rev %d\n", fpgarev);
 
 	return 0;
 }
