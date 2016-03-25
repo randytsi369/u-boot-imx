@@ -9,6 +9,7 @@
 #define GREEN_LED_PADN		30
 #define RED_LED_PADN		31
 #define DIO_20			52
+#define DIO_05			37
 
 void fpga_gpio_output(int io, int value);
 int fpga_gpio_input(int io);
