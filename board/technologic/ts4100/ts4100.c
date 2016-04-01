@@ -345,6 +345,8 @@ int board_eth_init(bd_t *bis)
 	int ret;
 	uchar enetaddr[6];
 
+	setup_iomux_fec();
+
 	ret = fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
 		CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
 	if (ret)
@@ -419,12 +421,10 @@ int board_early_init_f(void)
 	gpio_direction_input(JTAG_FPGA_TMS);
 	gpio_direction_input(JTAG_FPGA_TDO);
 
-	setup_iomux_fec();
-
 	/* reset the FGPA */
 	gpio_direction_output(EN_FPGA_PWR, 0);
 	// off is 70us max
-	udelay(70);
+	mdelay(1);
 	gpio_direction_output(EN_FPGA_PWR, 1);
 	// on is typical 11ms,
 	mdelay(15);
