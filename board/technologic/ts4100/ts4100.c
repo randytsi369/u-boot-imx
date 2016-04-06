@@ -421,24 +421,9 @@ int board_early_init_f(void)
 	gpio_direction_input(JTAG_FPGA_TMS);
 	gpio_direction_input(JTAG_FPGA_TDO);
 
-	/* reset the FGPA */
-	gpio_direction_output(EN_FPGA_PWR, 0);
-	// off is 70us max
-	mdelay(1);
-	gpio_direction_output(EN_FPGA_PWR, 1);
-	// on is typical 11ms,
-	mdelay(15);
-
-	/* Enable LVDS clock output.  
+	/* Enable LVDS clock output.
 	 * Writing CCM_ANALOG_MISC1 to use output from 24M OSC */
 	setbits_le32(0x020C8160, 0x412);
-
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
-	i2c_set_bus_num(2);
-
-	red_led_on();
-	green_led_off();
 
 	return 0;
 }
@@ -503,6 +488,9 @@ int board_late_init(void)
 	 * device tree */
 	do_bbdetect();
 
+	red_led_on();
+	green_led_off();
+
 	return 0;
 }
 
@@ -513,9 +501,23 @@ u32 get_board_rev(void)
 
 int checkboard(void)
 {
-	int fpgarev = fpga_get_rev();
+	int fpgarev;
+	/* reset the FGPA */
+	gpio_direction_output(EN_FPGA_PWR, 0);
+	// off is 70us max
+	mdelay(1);
+	gpio_direction_output(EN_FPGA_PWR, 1);
+
+	// on is typical ~5ms, reset chip is about 230ms
+	mdelay(250);
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
+	fpgarev = fpga_get_rev();
 	puts("Board: Technologic Systems TS-4100\n");
-	printf("FPGA:  Rev %d\n", fpgarev);
+	if(fpgarev < 0)
+		printf("FPGA I2C communication failed: %d\n", fpgarev);
+	else
+		printf("FPGA:  Rev %d\n", fpgarev);
 
 	return 0;
 }

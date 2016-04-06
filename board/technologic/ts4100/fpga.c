@@ -4,8 +4,10 @@
 int fpga_get_rev(void)
 {
 	uint8_t val = 0;
+	int ret;
 	i2c_set_bus_num(2);
-	i2c_read(0x28, 306, 2, &val, 1);
+	ret = i2c_read(0x28, 306, 2, &val, 1);
+	if(ret != 0) return ret;
 	return val;
 }
 
