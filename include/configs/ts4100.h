@@ -20,6 +20,7 @@
 #define CONFIG_SYS_MMC_ENV_PART 	1
 #define CONFIG_ENV_OFFSET		0x100000     /* 1MB */
 #define CONFIG_ENV_SIZE			SZ_16K
+#define CONFIG_ENV_OFFSET_REDUND 0x200000
 
 #define CONFIG_FSL_USDHC
 #define CONFIG_MX6
@@ -106,13 +107,11 @@
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
-	"boot_fdt=try\0" \
-	"ip_dyn=yes\0" \
 	"model=4100\0" \
 	"autoload=no\0" \
 	"nfsip=192.168.1.139\0" \
 	"nfsroot=/mnt/storage/imx6\0" \
-	"clearenv=mmc dev 1 1; mmc erase 800 20;\0" \
+	"clearenv=mmc dev 1 1; mmc erase 800 20; mmc erase 1000 20;\0" \
 	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \
