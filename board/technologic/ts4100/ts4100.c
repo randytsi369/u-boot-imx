@@ -143,9 +143,9 @@ void fpga_late_init(void)
 	 * will have a pulldown to OFF_BD_RESET_PADN if the sd
 	 * boot jumper is on */
 	if(sdboot)
-		setenv("jpsdboot", "on");
-	else
 		setenv("jpsdboot", "off");
+	else
+		setenv("jpsdboot", "on");
 
 	mdelay(10);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
