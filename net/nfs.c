@@ -376,7 +376,7 @@ NfsSend(void)
 		nfs_mount_req(nfs_path);
 		break;
 	case STATE_UMOUNT_REQ:
-		nfs_umountall_req();
+		net_set_state(nfs_download_state);
 		break;
 	case STATE_LOOKUP_REQ:
 		nfs_lookup_req(nfs_filename);
@@ -641,10 +641,7 @@ NfsHandler(uchar *pkt, unsigned dest, IPaddr_t sip, unsigned src, unsigned len)
 		reply = nfs_umountall_reply(pkt, len);
 		if (reply == -NFS_RPC_DROP)
 			break;
-		else if (reply == -NFS_RPC_ERR) {
-			puts("*** ERROR: Cannot umount\n");
-			net_set_state(NETLOOP_FAIL);
-		} else {
+		else {
 			puts("\ndone\n");
 			net_set_state(nfs_download_state);
 		}
