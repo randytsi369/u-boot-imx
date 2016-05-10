@@ -53,6 +53,7 @@
 #define TS7990_SCL			IMX_GPIO_NR(3, 21)
 #define TS7990_SDA			IMX_GPIO_NR(3, 28)
 #define TS7990_BKL          IMX_GPIO_NR(2, 9)
+#define TS7990_FPGA_RESET   IMX_GPIO_NR(2, 28)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -85,12 +86,13 @@ iomux_v3_cfg_t const ecspi1_pads[] = {
 };
 
 iomux_v3_cfg_t const misc_pads[] = {
-	MX6_PAD_SD4_DAT3__GPIO2_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL), 	// USB_HUB_RESET#
-	MX6_PAD_EIM_A16__GPIO2_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL), 	// EN_USB_5V
-	MX6_PAD_EIM_RW__GPIO2_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL), 	// JP_SD_BOOT#
+	MX6_PAD_SD4_DAT3__GPIO2_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),   // USB_HUB_RESET#
+	MX6_PAD_EIM_A16__GPIO2_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL),    // EN_USB_5V
+	MX6_PAD_EIM_RW__GPIO2_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL),     // JP_SD_BOOT#
 	MX6_PAD_EIM_OE__GPIO2_IO25 | MUX_PAD_CTRL(NO_PAD_CTRL),     // JP_OPTION
-	MX6_PAD_EIM_D23__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL), 	// EN_RTC_PWR#
-	MX6_PAD_GPIO_3__XTALOSC_REF_CLK_24M | MUX_PAD_CTRL(NO_PAD_CTRL), 
+	MX6_PAD_EIM_D23__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL),    // EN_RTC_PWR#
+	MX6_PAD_GPIO_3__XTALOSC_REF_CLK_24M | MUX_PAD_CTRL(NO_PAD_CTRL),  // FPGA CLK
+	MX6_PAD_EIM_EB0__GPIO2_IO28 | MUX_PAD_CTRL(NO_PAD_CTRL),    // FPGA_RESET
 	MX6_PAD_SD4_DAT1__GPIO2_IO09 | MUX_PAD_CTRL(LCD_PAD_CTRL),  // PWM_LOCAL_LCD
 	MX6_PAD_EIM_DA9__GPIO3_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL),    // PUSH_SW_1 (Home)
 	MX6_PAD_EIM_DA10__GPIO3_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),   // PUSH_SW_2 (Back)
@@ -104,7 +106,6 @@ iomux_v3_cfg_t const usdhc2_pads[] = {
 	MX6_PAD_SD2_DAT1__SD2_DATA1	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD2_DAT2__SD2_DATA2	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD2_DAT3__SD2_DATA3	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_EIM_EB0__GPIO2_IO28 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_SD_POWER
 };
 
 /* MMC */
@@ -261,6 +262,11 @@ int ts7990_fpga_init(void)
 {
 	fpga_init();
 	fpga_add(fpga_lattice, &ts7990_fpga);
+
+	gpio_direction_output(TS7990_FPGA_RESET, 1);
+	udelay(1);
+	gpio_direction_output(TS7990_FPGA_RESET, 0);
+
 	return 0;
 }
 
@@ -670,6 +676,7 @@ int board_early_init_f(void)
 {
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
+
 	setup_display();
 
 	return 0;
@@ -691,7 +698,7 @@ int misc_init_r(void)
 	// bad things happen with most devices if the hub
 	// gets a reset and power doesn't.  This *might* not be
 	// enough for some devices
-	udelay(10000); 
+	mdelay(10); 
 	gpio_set_value(TS7990_ENUSB_5V, 1);
 	sdboot = gpio_get_value(TS7990_SDBOOT);
 	if(sdboot) setenv("jpsdboot", "off");
