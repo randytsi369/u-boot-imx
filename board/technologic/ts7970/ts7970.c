@@ -492,16 +492,6 @@ int misc_init_r(void)
 	if(sdboot) setenv("jpsdboot", "off");
 	else setenv("jpsdboot", "on");
 
-	setenv("imx_type", CONFIG_IMX_TYPE);
-
-	#ifdef CONFIG_MX6Q
-	setenv("cpu", "q");
-	#else
-	setenv("cpu", "dl");
-	#endif
-
-	setenv("model", "7970");
-
 	i2c_read(0x28, 31, 2, &val, 1);
 	if(val & 0x4) {
 		setenv("pushsw", "off");
