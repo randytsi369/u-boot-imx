@@ -216,6 +216,7 @@
 	"cmdline_append=console=ttymxc0,115200 rootwait ro init=/sbin/init\0" \
 	"clearenv=if sf probe; then " \
 		"sf erase 0x100000 0x2000;" \
+		"sf erase 0x180000 0x2000;" \
 		"echo restored environment to factory default; fi\0" \
 	"sdboot=echo Booting from the SD card ...;" \
 		"if load mmc 0:1 ${loadaddr} /boot/boot.ub;" \
@@ -285,8 +286,6 @@
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_VERSION_VARIABLE
 #define CONFIG_SYS_CBSIZE	       1024
-#define CONFIG_HW_WATCHDOG
-#define CONFIG_IMX_WATCHDOG
 
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
@@ -321,6 +320,8 @@
 #define CONFIG_ENV_SIZE			(8 * 1024)
 #define CONFIG_ENV_IS_IN_SPI_FLASH
 #define CONFIG_ENV_OFFSET		0x100000
+#define CONFIG_ENV_OFFSET_REDUND 0x180000
+#define CONFIG_SYS_REDUNDAND_ENVIRONMENT
 #define CONFIG_ENV_SECT_SIZE	(4 * 1024)
 #define CONFIG_SF_DEFAULT_BUS  0
 #define CONFIG_SF_DEFAULT_CS   0
