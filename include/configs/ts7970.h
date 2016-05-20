@@ -161,6 +161,7 @@
 #define CONFIG_G_DNL_VENDOR_NUM 0x0451
 #define CONFIG_G_DNL_PRODUCT_NUM 0x5678
 #define CONFIG_G_DNL_MANUFACTURER "Technologic"
+#undef is_boot_from_usb
 
 #define CONFIG_CMD_FASTBOOT
 
