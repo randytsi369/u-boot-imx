@@ -67,6 +67,10 @@ static int genphy_config_advert(struct phy_device *phydev)
 	if (advertise & ADVERTISED_1000baseX_Full)
 		adv |= ADVERTISE_1000XFULL;
 
+	if(getenv("disable_giga")) {
+		adv &= ~(ADVERTISE_1000XHALF | ADVERTISE_1000XFULL);
+	}
+
 	if (adv != oldadv) {
 		err = phy_write(phydev, MDIO_DEVAD_NONE, MII_ADVERTISE, adv);
 
@@ -83,11 +87,13 @@ static int genphy_config_advert(struct phy_device *phydev)
 		if (adv < 0)
 			return adv;
 
-		adv &= ~(ADVERTISE_1000FULL | ADVERTISE_1000HALF);
-		if (advertise & SUPPORTED_1000baseT_Half)
-			adv |= ADVERTISE_1000HALF;
-		if (advertise & SUPPORTED_1000baseT_Full)
-			adv |= ADVERTISE_1000FULL;
+		if(!getenv("disable_giga")) {
+			adv &= ~(ADVERTISE_1000FULL | ADVERTISE_1000HALF);
+			if (advertise & SUPPORTED_1000baseT_Half)
+				adv |= ADVERTISE_1000HALF;
+			if (advertise & SUPPORTED_1000baseT_Full)
+				adv |= ADVERTISE_1000FULL;
+		}
 
 		if (adv != oldadv) {
 			err = phy_write(phydev, MDIO_DEVAD_NONE, MII_CTRL1000,
