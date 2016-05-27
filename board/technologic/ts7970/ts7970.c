@@ -55,6 +55,7 @@
 #define TS7970_EN_SDPWR		IMX_GPIO_NR(2, 28)
 #define TS7970_SCL			IMX_GPIO_NR(3, 21)
 #define TS7970_SDA			IMX_GPIO_NR(3, 28)
+#define TS7970_FPGARST      IMX_GPIO_NR(5, 20)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -91,6 +92,7 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_EIM_D23__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL), 		 // EN_RTC_PWR#
 	MX6_PAD_GPIO_4__GPIO1_IO04 | MUX_PAD_CTRL(NO_PAD_CTRL), 		 // FPGA_IRQ_1#
 	MX6_PAD_GPIO_3__XTALOSC_REF_CLK_24M | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
+	MX6_PAD_CSI0_DATA_EN__GPIO5_IO20 | MUX_PAD_CTRL(NO_PAD_CTRL),    // FPGA_RESET
 };
 
 /* SD card */
@@ -225,6 +227,12 @@ Lattice_desc ts7970_fpga = {
 
 int ts7970_fpga_init(void)
 {
+	/* Pulse FPGA Reset */
+	gpio_direction_output(TS7970_FPGARST, 0);
+	mdelay(1);
+	gpio_set_value(TS7970_FPGARST, 1);
+	mdelay(1);
+
 	fpga_init();
 	fpga_add(fpga_lattice, &ts7970_fpga);
 
