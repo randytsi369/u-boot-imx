@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2016 Technologic Systems
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
 #ifndef __FPGA_H__
 #define __FPGA_H__
 

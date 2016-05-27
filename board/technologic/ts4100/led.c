@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2016 Technologic Systems
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
 #include <common.h>
 #include <i2c.h>
 #include <status_led.h>

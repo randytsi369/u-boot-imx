@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Freescale Semiconductor, Inc.
+ * Copyright (C) 2016 Technologic Systems
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
