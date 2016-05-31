@@ -538,6 +538,9 @@ int board_init(void)
 	i2c_read(0x28, 51, 2, &val, 1);
 	printf("FPGA Rev: %d\n", val >> 4);
 
+	i2c_read(0x10, 30, 1, &val, 1);
+	printf("SilabRev: %d\n", val);
+
 	return 0;
 }
 
