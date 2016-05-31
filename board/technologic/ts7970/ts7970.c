@@ -53,7 +53,7 @@
 #define TS7970_EN_SDPWR		IMX_GPIO_NR(2, 28)
 #define TS7970_SCL			IMX_GPIO_NR(3, 21)
 #define TS7970_SDA			IMX_GPIO_NR(3, 28)
-#define TS7970_FPGARST      IMX_GPIO_NR(5, 20)
+#define TS7970_FPGARST		IMX_GPIO_NR(5, 20)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -367,6 +367,8 @@ int board_mmc_init(bd_t *bis)
 int board_phy_config(struct phy_device *phydev)
 {
 	ksz9031_phy_extended_write(phydev, 0x2, 0x8, 0x8000, 0x3EF);
+	ksz9031_phy_extended_write(phydev, 0x0, 0x3, 0x8000, 0x1A80);
+	ksz9031_phy_extended_write(phydev, 0x0, 0x4, 0x8000, 0x0006);
 
 	if (phydev->drv->config)
 		phydev->drv->config(phydev); 
