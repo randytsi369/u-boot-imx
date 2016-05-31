@@ -519,6 +519,8 @@ int misc_init_r(void)
 
 int board_init(void)
 {
+	uint8_t val;
+
 	fixup_i2c();
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
@@ -532,6 +534,9 @@ int board_init(void)
 	#ifdef CONFIG_FPGA
 	ts7970_fpga_init();
 	#endif
+
+	i2c_read(0x28, 51, 2, &val, 1);
+	printf("FPGA Rev: %d\n", val >> 4);
 
 	return 0;
 }
