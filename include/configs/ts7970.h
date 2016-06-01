@@ -228,7 +228,7 @@
 			"then fpga load 0 ${loadaddr} ${filesize};" \
 		"fi;" \
 		"load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7970.dtb;" \
-		"load mmc 0:1 ${loadaddr} ${uimage};" \
+		"load mmc 0:1 ${loadaddr} /boot/uImage;" \
 		"setenv bootargs root=/dev/mmcblk1p1 ${cmdline_append};" \
 		"bootm ${loadaddr} - ${fdtaddr};\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
@@ -240,7 +240,7 @@
 			"then fpga load 0 ${loadaddr} ${filesize};" \
 		"fi;" \
 		"load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7970.dtb;" \
-		"load mmc 1:1 ${loadaddr} ${uimage};" \
+		"load mmc 1:1 ${loadaddr} /boot/uImage;" \
 		"setenv bootargs root=/dev/mmcblk2p1 ${cmdline_append};" \
 		"bootm ${loadaddr} - ${fdtaddr};\0" \
 	"sataboot=echo Booting from SATA ...;" \
@@ -253,7 +253,7 @@
 			"then fpga load 0 ${loadaddr} ${filesize};" \
 		"fi;" \
 		"load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7970.dtb;" \
-		"load sata 0:1 ${loadaddr} ${uimage};" \
+		"load sata 0:1 ${loadaddr} /boot/uImage;" \
 		"setenv bootargs root=/dev/sda1 rootwait ${cmdline_append};" \
 		"bootm ${loadaddr} - ${fdtaddr};\0" \
 	"usbprod=usb start;" \
