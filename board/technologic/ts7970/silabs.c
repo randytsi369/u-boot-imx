@@ -61,7 +61,6 @@ void read_adcs(void)
 
 void board_sleep(int deciseconds)
 {
-	int ret;
 	uint8_t dat[4] = {0};
 	uint8_t opt_resetswitchwkup = 1;
 	uint8_t opt_sleepmode = 1;
@@ -71,7 +70,7 @@ void board_sleep(int deciseconds)
 	dat[3] = (deciseconds & 0xff);
 	dat[2] = ((deciseconds >> 8) & 0xff);
 	dat[1] = ((deciseconds >> 16) & 0xff);
-	ret = i2c_write(0x10, 0, 0, dat, 4);
+	i2c_write(0x10, 0, 0, dat, 4);
 }
 
 static int do_microctl(cmd_tbl_t *cmdtp, int flag, 
