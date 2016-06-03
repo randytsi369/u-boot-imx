@@ -225,12 +225,6 @@ Lattice_desc ts7970_fpga = {
 
 int ts7970_fpga_init(void)
 {
-	/* Pulse FPGA Reset */
-	gpio_direction_output(TS7970_FPGARST, 0);
-	mdelay(1);
-	gpio_set_value(TS7970_FPGARST, 1);
-	mdelay(1);
-
 	fpga_init();
 	fpga_add(fpga_lattice, &ts7970_fpga);
 
@@ -480,6 +474,9 @@ int misc_init_r(void)
 
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 
+	/* Pulse FPGA Reset */
+	gpio_direction_output(TS7970_FPGARST, 0);
+
 	// Turn off USB hub until hub is reset
 	// Set DC_SEL_USB to use usb on the standard header
 	gpio_direction_input(TS7970_SDBOOT);
@@ -494,6 +491,7 @@ int misc_init_r(void)
 	// gets a reset and power doesn't.  This *might* not be
 	// enough for some devices
 	udelay(10000); 
+	gpio_set_value(TS7970_FPGARST, 1); // Take FPGA out of reset
 	gpio_set_value(TS7970_EN_5V, 1);
 	sdboot = gpio_get_value(TS7970_SDBOOT);
 
@@ -513,6 +511,12 @@ int misc_init_r(void)
 	clrbits_le32(&iomuxc_regs->gpr[1], IOMUXC_GPR1_REF_SSP_EN);
 
 	setenv_hex("reset_cause", get_imx_reset_cause());
+
+	i2c_read(0x28, 51, 2, &val, 1);
+	printf("FPGA Rev: %d\n", val >> 4);
+
+	i2c_read(0x10, 30, 1, &val, 1);
+	printf("SilabRev: %d\n", val);
 
 	return 0;
 }
@@ -534,12 +538,6 @@ int board_init(void)
 	#ifdef CONFIG_FPGA
 	ts7970_fpga_init();
 	#endif
-
-	i2c_read(0x28, 51, 2, &val, 1);
-	printf("FPGA Rev: %d\n", val >> 4);
-
-	i2c_read(0x10, 30, 1, &val, 1);
-	printf("SilabRev: %d\n", val);
 
 	return 0;
 }
