@@ -277,7 +277,6 @@ static void setup_iomux_enet(void)
 	gpio_direction_output(TS7970_RGMII_RD1, 1);
 	gpio_direction_output(TS7970_RGMII_RD2, 1);
 	gpio_direction_output(TS7970_RGMII_RD3, 1);
-	imx_iomux_v3_setup_multiple_pads(enet_pads1, ARRAY_SIZE(enet_pads1));
 	gpio_direction_output(TS7970_RGMII_RX_CTL, 1);
 
 	/* Need delay at least 10ms according to KSZ9031 spec */
