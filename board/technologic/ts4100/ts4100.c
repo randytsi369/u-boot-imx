@@ -69,6 +69,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 
 #define EN_FPGA_PWR             IMX_GPIO_NR(5, 2)
+#define FPGA_RESETN             IMX_GPIO_NR(4, 11)
 #define JTAG_FPGA_TDO           IMX_GPIO_NR(5, 4)
 #define JTAG_FPGA_TDI           IMX_GPIO_NR(5, 5)
 #define JTAG_FPGA_TMS           IMX_GPIO_NR(5, 6)
@@ -124,6 +125,7 @@ iomux_v3_cfg_t const fpga_jtag_pads[] = {
 	MX6_PAD_SNVS_TAMPER6__GPIO5_IO06 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TMS
 	MX6_PAD_SNVS_TAMPER7__GPIO5_IO07 | MUX_PAD_CTRL(NO_PAD_CTRL), // JTAG_FPGA_TCK
 	MX6_PAD_SNVS_TAMPER2__GPIO5_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_FPGA_PWR
+	MX6_PAD_NAND_WP_B__GPIO4_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA_RESET#
 };
 
 void fpga_mmc_init(void)
@@ -470,7 +472,8 @@ static void do_bbdetect(void)
 		id = (id >> 1);
 		if(fpga_gpio_input(DIO_05)) id |= 0x80;
 	}
-	printf("Baseboard ID: 0x%X, Rev %d\n", id & ~0xc0, ((id & 0xc0) >> 6));
+	printf("Baseboard ID: 0x%X\n", id & ~0xc0);
+	printf("Baseboard Rev: %d\n", ((id & 0xc0) >> 6));
 	setenv_hex("baseboardid", id & ~0xc0);
 	setenv_hex("baseboardrev", ((id & 0xc0) >> 6));
 }
@@ -503,13 +506,15 @@ int checkboard(void)
 {
 	int fpgarev;
 	/* reset the FGPA */
+	gpio_direction_output(FPGA_RESETN, 0);
 	gpio_direction_output(EN_FPGA_PWR, 0);
 	// off is 70us max
 	mdelay(1);
 	gpio_direction_output(EN_FPGA_PWR, 1);
+	// on is typical ~5ms
+	mdelay(10);
+	gpio_direction_output(FPGA_RESETN, 1);
 
-	// on is typical ~5ms, reset chip is about 230ms
-	mdelay(250);
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
 	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
 	fpgarev = fpga_get_rev();
