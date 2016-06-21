@@ -166,7 +166,7 @@
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
 		"bootm ${loadaddr} - ${fdtaddr};\0" \
-	"bootcmd_mfg=exit; dhcp;" \
+	"bootcmd_mfg=dhcp;" \
 		"nfs ${loadaddr} 192.168.0.11:/u/x/jessie-armel/boot-imx6ul/boot-ts4100.ub;" \
 		"source ${loadaddr};\0"
 
