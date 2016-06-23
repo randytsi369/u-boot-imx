@@ -166,8 +166,8 @@
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
 		"bootm ${loadaddr} - ${fdtaddr};\0" \
-	"bootcmd_mfg=dhcp;" \
-		"nfs ${loadaddr} 192.168.0.11:/u/x/jessie-armel/boot-imx6ul/boot-ts4100.ub;" \
+	"bootcmd_mfg=if mmc dev 0; then load mmc 0:1 ${loadaddr} /prime-ts4100.ub; fi;dhcp;" \
+		"nfs ${loadaddr} 192.168.0.11:/u/x/jessie-armel/boot-imx6ul/prime-ts4100.ub;" \
 		"source ${loadaddr};\0"
 
 #define CONFIG_BOOTCOMMAND \
