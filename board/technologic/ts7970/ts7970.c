@@ -467,7 +467,7 @@ int board_early_init_f(void)
 
 int misc_init_r(void)
 {
-	uint8_t val = 0x2;
+	uint8_t val;
 	int sdboot = 0;
 	struct iomuxc *iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 
