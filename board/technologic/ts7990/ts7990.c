@@ -50,8 +50,8 @@
 #define TS7990_EN_RTC		IMX_GPIO_NR(3, 23)
 #define TS7990_SCL			IMX_GPIO_NR(3, 21)
 #define TS7990_SDA			IMX_GPIO_NR(3, 28)
-#define TS7990_BKL          IMX_GPIO_NR(2, 9)
-#define TS7990_FPGA_RESET   IMX_GPIO_NR(2, 28)
+#define TS7990_BKL			IMX_GPIO_NR(2, 9)
+#define TS7990_FPGA_RESET	IMX_GPIO_NR(2, 28)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -210,6 +210,8 @@ iomux_v3_cfg_t const fpga_jtag_pads[] = {
 
 static void ts7990_jtag_init(void)
 {
+	imx_iomux_v3_setup_multiple_pads(fpga_jtag_pads,
+					 ARRAY_SIZE(fpga_jtag_pads));
 	gpio_direction_output(CONFIG_FPGA_TDI, 1);
 	gpio_direction_output(CONFIG_FPGA_TCK, 1);
 	gpio_direction_output(CONFIG_FPGA_TMS, 1);
@@ -261,14 +263,58 @@ int ts7990_fpga_init(void)
 	fpga_init();
 	fpga_add(fpga_lattice, &ts7990_fpga);
 
-	gpio_direction_output(TS7990_FPGA_RESET, 1);
-	udelay(1);
-	gpio_direction_output(TS7990_FPGA_RESET, 0);
-
 	return 0;
 }
 
 #endif
+
+static void setup_display(void)
+{
+	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
+	int reg;
+
+	enable_ipu_clock();
+
+	/* Turn on LDB0,IPU,IPU DI0 clocks */
+	reg = __raw_readl(&mxc_ccm->CCGR3);
+	reg |=  MXC_CCM_CCGR3_LDB_DI0_MASK;
+	writel(reg, &mxc_ccm->CCGR3);
+
+	/* set LDB0, LDB1 clk select to 011/011 */
+	reg = readl(&mxc_ccm->cs2cdr);
+	reg &= ~(MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_MASK
+		 |MXC_CCM_CS2CDR_LDB_DI1_CLK_SEL_MASK);
+	reg |= (3<<MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_OFFSET);
+	writel(reg, &mxc_ccm->cs2cdr);
+
+	reg = readl(&mxc_ccm->cscmr2);
+	reg |= MXC_CCM_CSCMR2_LDB_DI0_IPU_DIV;
+	writel(reg, &mxc_ccm->cscmr2);
+
+	reg = readl(&mxc_ccm->chsccdr);
+	reg |= (CHSCCDR_CLK_SEL_LDB_DI0
+		<<MXC_CCM_CHSCCDR_IPU1_DI0_CLK_SEL_OFFSET);
+	writel(reg, &mxc_ccm->chsccdr);
+
+	reg = IOMUXC_GPR2_BGREF_RRMODE_EXTERNAL_RES
+	     |IOMUXC_GPR2_DI0_VS_POLARITY_ACTIVE_LOW
+	     |IOMUXC_GPR2_BIT_MAPPING_CH1_SPWG
+	     |IOMUXC_GPR2_DATA_WIDTH_CH1_18BIT
+	     |IOMUXC_GPR2_BIT_MAPPING_CH0_SPWG
+	     |IOMUXC_GPR2_DATA_WIDTH_CH0_18BIT
+	     |IOMUXC_GPR2_LVDS_CH1_MODE_DISABLED
+	     |IOMUXC_GPR2_LVDS_CH0_MODE_ENABLED_DI0;
+	writel(reg, &iomux->gpr[2]);
+
+	reg = readl(&iomux->gpr[3]);
+	reg = (reg & ~(IOMUXC_GPR3_LVDS0_MUX_CTL_MASK
+			|IOMUXC_GPR3_HDMI_MUX_CTL_MASK))
+	    | (IOMUXC_GPR3_MUX_SRC_IPU1_DI0
+	       <<IOMUXC_GPR3_LVDS0_MUX_CTL_OFFSET);
+	writel(reg, &iomux->gpr[3]);
+}
+
 
 static int detect_lcd(void)
 {
@@ -313,34 +359,36 @@ static int is_microtips(struct display_info_t const *dev)
 static void setup_lxd(struct display_info_t const *dev)
 {
 	uint8_t val;
+	u32 reg;
 	struct iomuxc *iomux = (struct iomuxc *)
 				IOMUXC_BASE_ADDR;
-	u32 reg = readl(&iomux->gpr[2]);
-	reg |= IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT;
-	writel(reg, &iomux->gpr[2]);
 
-	// EN_LCD_POWER
+	// EN_LCD_POWER (VDD)
 	val = 0x14;
 	i2c_write(0x28, 59, 2, &val, 1);
-	udelay(50000);
-	// Deassert LCD_RESET#
+
+	udelay(65000);
+	// 50ms after (VDD) power stable:
+	// deassert LCD_RESET#
 	val = 0x1c;
 	i2c_write(0x28, 59, 2, &val, 1);
-	udelay(20000);
-
-	// enable LCD_11V
+	// Enable LCD_11V (AVDD), and wait until stable
 	val = 0x18;
 	i2c_write(0x28, 59, 2, &val, 1);
-	udelay(20000);
-	// enable LCD_NEG_7V
-	val = 0x1a;
+	udelay(10000);
+	// Enable LCD_NEG_7V and LCD_20V (VGL + VGH) (no delay)
+	val = 0x1B;
 	i2c_write(0x28, 59, 2, &val, 1);
-	udelay(30000);
-	// enable LCD_20V
-	val = 0x1b;
-	i2c_write(0x28, 59, 2, &val, 1);
-	// Wait 20ms more before enabling the backlight
+	// Wait 70ms more before enabling the backlight
+	// TODO, trim this down.  It might already be 70ms before data/backlight happen
 	udelay(20000);
+	udelay(50000);
+
+	setup_display();
+
+	reg = readl(&iomux->gpr[2]);
+	reg |= IOMUXC_GPR2_DATA_WIDTH_CH0_24BIT;
+	writel(reg, &iomux->gpr[2]);
 }
 
 static void setup_microtips(struct display_info_t const *dev)
@@ -372,6 +420,7 @@ static void setup_microtips(struct display_info_t const *dev)
 	// Drive MT_LCD_PRESENT to limit the backlight current for 400 nits
 	val = 0x2;
 	i2c_write(0x28, 60, 2, &val, 1);
+	setup_display();
 }
 
 static void setup_okaya(struct display_info_t const *dev)
@@ -388,6 +437,7 @@ static void setup_okaya(struct display_info_t const *dev)
 	i2c_write(0x28, 60, 2, &val, 1);
 
 	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
+	setup_display();
 }
 
 struct display_info_t const displays[] = { {
@@ -447,53 +497,6 @@ struct display_info_t const displays[] = { {
 } } };
 size_t display_count = ARRAY_SIZE(displays);
 
-static void setup_display(void)
-{
-	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
-	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
-	int reg;
-
-	enable_ipu_clock();
-
-	/* Turn on LDB0,IPU,IPU DI0 clocks */
-	reg = __raw_readl(&mxc_ccm->CCGR3);
-	reg |=  MXC_CCM_CCGR3_LDB_DI0_MASK;
-	writel(reg, &mxc_ccm->CCGR3);
-
-	/* set LDB0, LDB1 clk select to 011/011 */
-	reg = readl(&mxc_ccm->cs2cdr);
-	reg &= ~(MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_MASK
-		 |MXC_CCM_CS2CDR_LDB_DI1_CLK_SEL_MASK);
-	reg |= (3<<MXC_CCM_CS2CDR_LDB_DI0_CLK_SEL_OFFSET);
-	writel(reg, &mxc_ccm->cs2cdr);
-
-	reg = readl(&mxc_ccm->cscmr2);
-	reg |= MXC_CCM_CSCMR2_LDB_DI0_IPU_DIV;
-	writel(reg, &mxc_ccm->cscmr2);
-
-	reg = readl(&mxc_ccm->chsccdr);
-	reg |= (CHSCCDR_CLK_SEL_LDB_DI0
-		<<MXC_CCM_CHSCCDR_IPU1_DI0_CLK_SEL_OFFSET);
-	writel(reg, &mxc_ccm->chsccdr);
-
-	reg = IOMUXC_GPR2_BGREF_RRMODE_EXTERNAL_RES
-	     |IOMUXC_GPR2_DI0_VS_POLARITY_ACTIVE_LOW
-	     |IOMUXC_GPR2_BIT_MAPPING_CH1_SPWG
-	     |IOMUXC_GPR2_DATA_WIDTH_CH1_18BIT
-	     |IOMUXC_GPR2_BIT_MAPPING_CH0_SPWG
-	     |IOMUXC_GPR2_DATA_WIDTH_CH0_18BIT
-	     |IOMUXC_GPR2_LVDS_CH1_MODE_DISABLED
-	     |IOMUXC_GPR2_LVDS_CH0_MODE_ENABLED_DI0;
-	writel(reg, &iomux->gpr[2]);
-
-	reg = readl(&iomux->gpr[3]);
-	reg = (reg & ~(IOMUXC_GPR3_LVDS0_MUX_CTL_MASK
-			|IOMUXC_GPR3_HDMI_MUX_CTL_MASK))
-	    | (IOMUXC_GPR3_MUX_SRC_IPU1_DI0
-	       <<IOMUXC_GPR3_LVDS0_MUX_CTL_OFFSET);
-	writel(reg, &iomux->gpr[3]);
-}
-
 int board_spi_cs_gpio(unsigned bus, unsigned cs)
 {
 	return (bus == 0 && cs == 0) ? (TS7990_SPI_CS) : -1;
@@ -543,6 +546,11 @@ struct fsl_esdhc_cfg usdhc_cfg[2] = {
 	{USDHC2_BASE_ADDR},
 	{USDHC3_BASE_ADDR},
 };
+
+int board_mmc_getcd(struct mmc *mmc)
+{
+	return 1;
+}
 
 int board_mmc_init(bd_t *bis)
 {
@@ -676,7 +684,9 @@ int board_early_init_f(void)
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
 
-	setup_display();
+	gpio_direction_output(TS7990_BKL, 0);
+	gpio_direction_output(TS7990_FPGA_RESET, 1);
+	gpio_direction_output(TS7990_FPGA_RESET, 0);
 
 	return 0;
 }
@@ -684,6 +694,8 @@ int board_early_init_f(void)
 int misc_init_r(void)
 {
 	int sdboot, jpuboot;
+	uint8_t val;
+	struct iomuxc *iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 
 	// Turn off USB hub until hub is reset
 	// Set DC_SEL_USB to use usb on the standard header
@@ -697,7 +709,7 @@ int misc_init_r(void)
 	// bad things happen with most devices if the hub
 	// gets a reset and power doesn't.  This *might* not be
 	// enough for some devices
-	mdelay(10); 
+	udelay(10000); 
 	gpio_set_value(TS7990_ENUSB_5V, 1);
 	sdboot = gpio_get_value(TS7990_SDBOOT);
 	if(sdboot) setenv("jpsdboot", "off");
@@ -717,6 +729,17 @@ int misc_init_r(void)
 
 	setenv("model", "7990");
 	setenv_hex("reset_cause", get_imx_reset_cause());
+
+	/* PCIE does not get properly disabled from a watchdog reset.  This prevents 
+	 * a hang in the kernel if pcie was enabled in a previous boot. */
+	setbits_le32(&iomuxc_regs->gpr[1], IOMUXC_GPR1_TEST_POWERDOWN);
+	clrbits_le32(&iomuxc_regs->gpr[1], IOMUXC_GPR1_REF_SSP_EN);
+
+	i2c_read(0x28, 51, 2, &val, 1);
+	printf("FPGA Rev: %d\n", val >> 4);
+
+	i2c_read(0x4a, 30, 1, &val, 1);
+	printf("SilabRev: %d\n", val);
 
 	if(is_lxd(NULL)) setenv("lcd", "lxd");
 	else if (is_okaya(NULL)) setenv("lcd", "okaya");
@@ -744,7 +767,6 @@ void bmp_display_post(void)
 
 int board_init(void)
 {
-	uint8_t val;
 	int i;
 
 	imx_iomux_v3_setup_multiple_pads(i2c_pads, ARRAY_SIZE(i2c_pads));
@@ -800,9 +822,6 @@ int board_init(void)
 	#ifdef CONFIG_FPGA
 	ts7990_fpga_init();
 	#endif
-
-	i2c_read(0x28, 51, 2, &val, 1);
-	printf("FPGA Rev: %d\n", val >> 4);
 
 	return 0;
 }
