@@ -176,6 +176,7 @@
 #define CONFIG_G_DNL_VENDOR_NUM 0x0451
 #define CONFIG_G_DNL_PRODUCT_NUM 0x5678
 #define CONFIG_G_DNL_MANUFACTURER "Technologic"
+#undef is_boot_from_usb
 
 #define CONFIG_CMD_FASTBOOT
 
@@ -203,6 +204,14 @@
 
 #define CONFIG_NFS_TIMEOUT 100UL
 
+ /* Create build specific env vars */
+#define ENV_IMX_TYPE "imx_type="CONFIG_IMX_TYPE"\0"
+#ifdef CONFIG_MX6Q
+#define ENV_CPU_TYPE "cpu=q\0"
+#else
+#define ENV_CPU_TYPE "cpu=dl\0"
+#endif
+
 #define CONFIG_PREBOOT \
  	"run splash; " \
 	"if test ${jpuboot} = 'on'; then " \
@@ -216,6 +225,9 @@
 	"ip_dyn=yes\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x18000000\0" \
+	ENV_IMX_TYPE \
+	ENV_CPU_TYPE \
+	"model=7990\0" \
 	"splashpos=m,m\0" \
 	"fdt_high=0xffffffff\0" \
 	"serverip=192.168.0.11\0" \
@@ -279,7 +291,7 @@
 		"dhcp; " \
 		"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
 		"nfs ${loadaddr} ${nfsroot}/boot/uImage; " \
-		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${serverip}:${nfsroot} ${cmdline_append}; " \
+		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 
 #define CONFIG_BOOTCOMMAND \
@@ -295,8 +307,6 @@
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_VERSION_VARIABLE
 #define CONFIG_SYS_CBSIZE	       1024
-#define CONFIG_HW_WATCHDOG
-#define CONFIG_IMX_WATCHDOG
 
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
@@ -331,6 +341,8 @@
 #define CONFIG_ENV_SIZE			(8 * 1024)
 #define CONFIG_ENV_IS_IN_SPI_FLASH
 #define CONFIG_ENV_OFFSET		0x100000
+#define CONFIG_ENV_OFFSET_REDUND 0x180000
+#define CONFIG_SYS_REDUNDAND_ENVIRONMENT
 #define CONFIG_ENV_SECT_SIZE	(4 * 1024)
 #define CONFIG_SF_DEFAULT_BUS  0
 #define CONFIG_SF_DEFAULT_CS   0
