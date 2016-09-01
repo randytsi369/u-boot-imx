@@ -60,7 +60,6 @@
 #define IMX_OTP_ADDR_MAX			0x7F
 #define IMX_OTP_DATA_ERROR_VAL		0xBADABADA
 #define IMX_OTPWRITE_ENABLED
-#define CONFIG_RANDOM_MACADDR
 
 /* MMC Configs */
 #define CONFIG_FSL_ESDHC
@@ -179,6 +178,8 @@
 #undef is_boot_from_usb
 
 #define CONFIG_CMD_FASTBOOT
+#define CONFIG_ANDROID_BOOT_IMAGE
+#define CONFIG_SERIAL_TAG
 
 /* Miscellaneous commands */
 #define CONFIG_CMD_SETEXPR
@@ -238,8 +239,9 @@
 	"cmdline_append=console=ttymxc0,115200 ro init=/sbin/init\0" \
 	"splash=sf probe; sf read ${loadaddr} 200000 1de7; bmp display ${loadaddr}\0" \
 	"clearenv=if sf probe; then " \
-		"sf erase 0x100000 0x2000 && " \
-		"echo restored environment to factory default ; fi\0" \
+		"sf erase 0x100000 0x2000;" \
+		"sf erase 0x180000 0x2000;" \
+		"echo restored environment to factory default; fi\0" \
 	"sdboot=echo Booting from SD ...; " \
 		"if load mmc 0:1 ${loadaddr} /boot/boot.ub; " \
 			"then echo Booting from custom /boot/boot.ub; " \
