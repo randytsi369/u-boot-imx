@@ -580,6 +580,10 @@ config TARGET_TS4100
 	bool "Support TS-4100"
 	select CPU_V7
 
+config TARGET_TS4900
+	bool "Support TS-4900"
+	select CPU_V7
+
 config TARGET_TS7970
 	bool "Support TS-7970"
 	select CPU_V7
@@ -936,6 +940,7 @@ source "board/sunxi/Kconfig"
 source "board/syteco/zmx25/Kconfig"
 source "board/tbs/tbs2910/Kconfig"
 source "board/technologic/ts4100/Kconfig"
+source "board/technologic/ts4900/Kconfig"
 source "board/technologic/ts7970/Kconfig"
 source "board/technologic/ts7990/Kconfig"
 source "board/ti/am335x/Kconfig"
