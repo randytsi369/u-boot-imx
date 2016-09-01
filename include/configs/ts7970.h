@@ -61,7 +61,6 @@
 #define IMX_OTP_ADDR_MAX			0x7F
 #define IMX_OTP_DATA_ERROR_VAL		0xBADABADA
 #define IMX_OTPWRITE_ENABLED
-#define CONFIG_RANDOM_MACADDR
 
 /* MMC Configs */
 #define CONFIG_FSL_ESDHC
@@ -164,6 +163,8 @@
 #undef is_boot_from_usb
 
 #define CONFIG_CMD_FASTBOOT
+#define CONFIG_ANDROID_BOOT_IMAGE
+#define CONFIG_SERIAL_TAG
 
 /* Miscellaneous commands */
 #define CONFIG_CMD_SETEXPR
@@ -209,6 +210,7 @@
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x18000000\0" \
 	"fdt_high=0xffffffff\0" \
+	"initrd_addr=0x10800000\0 " \
 	ENV_IMX_TYPE \
 	ENV_CPU_TYPE \
 	"model=7970\0" \
