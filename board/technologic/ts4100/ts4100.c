@@ -136,10 +136,13 @@ void fpga_mmc_init(void)
 void fpga_late_init(void)
 {
 	int sdboot;
+	int uboot;
 
+	/* Onboard jumpers to boot to SD or break in u-boot */
 	fpga_gpio_output(EN_SW_3V3_PAD, 1);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 0);
 	sdboot = fpga_gpio_input(DIO_20);
+	uboot = fpga_gpio_input(DIO_43);
 
 	/* While OFF_BD_RESET_PADN is low read CN1_98 which 
 	 * will have a pulldown to OFF_BD_RESET_PADN if the sd
@@ -148,6 +151,11 @@ void fpga_late_init(void)
 		setenv("jpsdboot", "off");
 	else
 		setenv("jpsdboot", "on");
+
+	if(uboot)
+		setenv("jpuboot", "off");
+	else
+		setenv("jpuboot", "on");
 
 	mdelay(10);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
