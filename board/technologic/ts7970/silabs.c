@@ -17,7 +17,7 @@
 
 // Scale voltage to silabs 0-2.5V
 uint16_t inline sscale(uint16_t data){
-	return data * 2.5 * 1024/1000;
+	return data * (2.5/1023) * 1000;
 }
 
 // Scale voltage for resistor dividers

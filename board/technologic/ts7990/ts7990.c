@@ -35,6 +35,8 @@
 #include <fpga.h>
 #include <lattice.h>
 
+#include "tsfpga.h"
+
 #define TS7990_HUB_RESETN	IMX_GPIO_NR(2, 11)
 #define TS7990_ENUSB_5V		IMX_GPIO_NR(2, 22)
 #define TS7990_SDBOOT		IMX_GPIO_NR(2, 26)
@@ -315,22 +317,25 @@ static void setup_display(void)
 	writel(reg, &iomux->gpr[3]);
 }
 
+#define LCD_LXD 0
+#define LCD_OKAYA 1
+#define LCD_MICROTIPS 2
 
 static int detect_lcd(void)
 {
 	static int lcd = -1;
 	if(lcd == -1) {
 		uint8_t val = 0;
-		i2c_read(0x28, 51, 2, &val, 1);
-		if(val & 0x8) {
-			i2c_read(0x28, 57, 2, &val, 1);
-			if(val & 8){
-				lcd = 1; // Okaya
+		i2c_read(0x28, FPGA_REV_OPS, 2, &val, 1);
+		if(val & FPGA_OPS_R152) {
+			i2c_read(0x28, FPGA_OPS2, 2, &val, 1);
+			if(val & FPGA_OPS_OKAYA) {
+				lcd = LCD_OKAYA; // Okaya
 			} else {
-				lcd = 2; // Microtips
+				lcd = LCD_MICROTIPS; // Microtips
 			}
 		} else { // LXD
-			lcd = 0;
+			lcd = LCD_LXD;
 		}
 	}
 	return lcd;
@@ -338,20 +343,20 @@ static int detect_lcd(void)
 
 static int is_lxd(struct display_info_t const *dev)
 {
-	if(detect_lcd() == 0)
+	if(detect_lcd() == LCD_LXD)
 		return 1;
 	return 0;
 }
 static int is_okaya(struct display_info_t const *dev)
 {
-	if(detect_lcd() == 1)
+	if(detect_lcd() == LCD_OKAYA)
 		return 1;
 	return 0;
 }
 
 static int is_microtips(struct display_info_t const *dev)
 {
-	if(detect_lcd() == 2)
+	if(detect_lcd() == LCD_MICROTIPS)
 		return 1;
 	return 0;
 }
@@ -383,6 +388,12 @@ static void setup_lxd(struct display_info_t const *dev)
 	// TODO, trim this down.  It might already be 70ms before data/backlight happen
 	udelay(20000);
 	udelay(50000);
+
+	val = 0x14;
+	i2c_write(0x28, 59, 2, &val, 1);
+	udelay(50000);
+	val = 0x1b;
+	i2c_write(0x28, 59, 2, &val, 1);
 
 	setup_display();
 
@@ -694,7 +705,7 @@ int board_early_init_f(void)
 int misc_init_r(void)
 {
 	int sdboot, jpuboot;
-	uint8_t val;
+	uint8_t val[33];
 	struct iomuxc *iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 
 	// Turn off USB hub until hub is reset
@@ -735,11 +746,11 @@ int misc_init_r(void)
 	setbits_le32(&iomuxc_regs->gpr[1], IOMUXC_GPR1_TEST_POWERDOWN);
 	clrbits_le32(&iomuxc_regs->gpr[1], IOMUXC_GPR1_REF_SSP_EN);
 
-	i2c_read(0x28, 51, 2, &val, 1);
-	printf("FPGA Rev: %d\n", val >> 4);
+	i2c_read(0x28, FPGA_REV_OPS, 2, val, 1);
+	printf("FPGA Rev: %d\n", val[0] >> 4);
 
-	i2c_read(0x4a, 30, 1, &val, 1);
-	printf("SilabRev: %d\n", val);
+	i2c_read(0x4a, 0, 0, val, 32);
+	printf("SilabRev: %d\n", val[31]);
 
 	if(is_lxd(NULL)) setenv("lcd", "lxd");
 	else if (is_okaya(NULL)) setenv("lcd", "okaya");
