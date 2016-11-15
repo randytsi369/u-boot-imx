@@ -1,0 +1,21 @@
+#ifndef _TSFPGA_H_
+#define _TSFPGA_H_
+
+#include <common.h>
+
+#define FPGA_DIO_0 19
+#define FPGA_DIO_1 20
+#define FPGA_DIO_2 21
+#define FPGA_DIO_3 22
+#define FPGA_DIO_4 23
+#define FPGA_DIO_5 24
+#define FPGA_DIO_6 25
+#define FPGA_REV_OPS 51
+#define FPGA_OPS_R152 (1 << 3)
+#define FPGA_OPS2 57
+#define FPGA_OPS_OKAYA (1 << 3)
+
+void fpga_gpio_output(int io, int value);
+int fpga_gpio_input(int io);
+
+#endif
