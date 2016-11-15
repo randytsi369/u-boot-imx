@@ -96,7 +96,7 @@ void block_charge(int blkpct)
 
 		if(fpga_gpio_input(FPGA_DIO_6) == 1) {
 			if(i % 250)
-				printf("No input power, at %dmV/12000mV\r", 
+				printf("Need 18V to charge, at %dmV\r",
 					rscale(data[0], 2870, 147));
 		} else {
 			chgmv = rscale(data[5], 100, 22);
