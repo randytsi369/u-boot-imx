@@ -71,6 +71,17 @@ void board_sleep(int seconds)
 {
 	uint8_t dat[4] = {0};
 
+	/* Only relevant on cap touch variants */
+	if(i2c_probe(0x5c)) {
+		/* Put touch controller into sleep mode (scan slower) */
+		dat[0] = 0x1;
+		i2c_write(0x5c, 51, 1, dat, 1);
+
+		/* Change touch controller to assert int only on touch*/
+		dat[0] = 0xa;
+		i2c_write(0x5c, 52, 1, dat, 1);
+	}
+
 	dat[0] = 0x0;
 	dat[1] = ((seconds >> 16) & 0xff);
 	dat[2] = ((seconds >> 8) & 0xff);
