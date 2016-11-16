@@ -70,9 +70,8 @@ void disable_supercaps(void)
 void board_sleep(int seconds)
 {
 	uint8_t dat[4] = {0};
-	uint8_t touchwake_en = 1;
 
-	dat[0] = touchwake_en;
+	dat[0] = 0x0;
 	dat[1] = ((seconds >> 16) & 0xff);
 	dat[2] = ((seconds >> 8) & 0xff);
 	dat[3] = (seconds & 0xff);

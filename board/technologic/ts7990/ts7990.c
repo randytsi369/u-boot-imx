@@ -716,13 +716,23 @@ int misc_init_r(void)
 	udelay(1);
 	gpio_set_value(TS7990_HUB_RESETN, 1);
 
+	i2c_read(0x28, FPGA_ENS, 2, val, 1);
+	val[0] |= FPGA_ENS_TOUCHRST;
+	i2c_write(0x28, FPGA_ENS, 2, val, 1);
+
 	// Magic number for usb power on reset
 	// bad things happen with most devices if the hub
 	// gets a reset and power doesn't.  This *might* not be
 	// enough for some devices
 	udelay(10000); 
+
 	gpio_set_value(TS7990_ENUSB_5V, 1);
 	sdboot = gpio_get_value(TS7990_SDBOOT);
+
+	/* Take touch out of reset */
+	val[0] &= ~(FPGA_ENS_TOUCHRST);
+	i2c_write(0x28, FPGA_ENS, 2, val, 1);
+
 	if(sdboot) setenv("jpsdboot", "off");
 	else setenv("jpsdboot", "on");
 
