@@ -239,12 +239,16 @@ signed char ispVM(void)
 
 	printf("VME file checked: starting downloading to FPGA\n");
 
+	if(pfns->jtag_init) pfns->jtag_init();
+
 	ispVMStart();
 
 	cRetCode = ispVMCode();
 
 	ispVMEnd();
 	ispVMFreeMem();
+
+	if(pfns->jtag_done) pfns->jtag_done();
 	puts("\n");
 
 	if (cRetCode == 0 && expectedCRC != 0 &&
