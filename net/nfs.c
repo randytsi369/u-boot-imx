@@ -682,8 +682,7 @@ static void nfs_handler(uchar *pkt, unsigned dest, struct in_addr sip,
 		} else {
 			if (!rlen)
 				nfs_download_state = NETLOOP_SUCCESS;
-			nfs_state = STATE_UMOUNT_REQ;
-			nfs_send();
+			net_set_state(nfs_download_state);
 		}
 		break;
 	}
