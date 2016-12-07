@@ -25,7 +25,7 @@ void board_sleep(int seconds)
 	dat[3] = (seconds & 0xff);
 	
 	i2c_set_bus_num(0);
-	i2c_write(0x78, 0, 0, dat, 4);
+	i2c_write(0x4a, 0, 0, dat, 4);
 }
 
 static int do_microctl(cmd_tbl_t *cmdtp, int flag, 
