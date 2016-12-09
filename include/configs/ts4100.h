@@ -79,13 +79,6 @@
 #define CTRL(c) ((c)&0x1F)     
 #define CONFIG_AUTOBOOT_STOP_STR  (char []){CTRL('C'), 0}
 
-#define CONFIG_PREBOOT \
-	"if test ${jpuboot} = 'on'; then " \
-		" setenv bootdelay -1; " \
-	" else " \
-		" setenv bootdelay 0; " \
-	"fi" 
-
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
