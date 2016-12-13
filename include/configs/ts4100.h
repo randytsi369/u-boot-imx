@@ -112,9 +112,9 @@
 			"echo Booting default device tree;" \
 			"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
-		"load mmc 0:1 ${loadaddr} /boot/uImage;" \
+		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
 		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append};" \
-		"bootm ${loadaddr} - ${fdtaddr};\0" \
+		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
 		"if load mmc 1:1 ${loadaddr} /boot/boot.ub;" \
 			"then echo Booting from custom /boot/boot.ub;" \
@@ -126,9 +126,9 @@
 			"echo Booting default device tree;" \
 			"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
-		"load mmc 1:1 ${loadaddr} /boot/uImage;" \
+		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
 		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append};" \
-		"bootm ${loadaddr} - ${fdtaddr};\0" \
+		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"dhcp;" \
 		"mw.l ${fdtaddr} 0 1000;" \
@@ -140,10 +140,10 @@
 			"echo Booting default device tree;" \
 			"nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
-		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/uImage;" \
+		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
-		"bootm ${loadaddr} - ${fdtaddr};\0" \
+		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"bootcmd_mfg=echo MFG boot;" \
 		"if mmc dev 0;" \
 			"then load mmc 0:1 ${loadaddr} /prime-ts4100.ub;" \
