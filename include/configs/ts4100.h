@@ -14,13 +14,15 @@
 #include <asm/imx-common/gpio.h>
 #include "mx6_common.h"
 
-/* Env is at the 1MB boundary in emmc boot partition 1 */
+/* Env is at the 1MB boundary in emmc boot partition 0 */
 #define CONFIG_ENV_IS_IN_MMC
-#define CONFIG_SYS_MMC_ENV_DEV  	1
-#define CONFIG_SYS_MMC_ENV_PART 	1
-#define CONFIG_ENV_OFFSET		0x100000     /* 1MB */
+#define CONFIG_SYS_MMC_ENV_DEV  	1 /* mmcblk0 */
+#define CONFIG_SYS_MMC_ENV_PART 	1 /* boot0 */
+/* Erase block on our Micron emmc is 4MiB.  Separate redund by this */
+
+#define CONFIG_ENV_OFFSET		0x400000 /* 8MiB */
 #define CONFIG_ENV_SIZE			SZ_128K
-#define CONFIG_ENV_OFFSET_REDUND 0x200000
+#define CONFIG_ENV_OFFSET_REDUND 	0x800000 /* 12MiB */
 
 #define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 #define CONFIG_MODULE_FUSE
@@ -89,7 +91,7 @@
 	"autoload=no\0" \
 	"nfsip=192.168.0.36\0" \
 	"nfsroot=/mnt/storage/imx6ul/\0" \
-	"clearenv=mmc dev 1 1; mmc erase 800 20; mmc erase 1000 20;\0" \
+	"clearenv=mmc dev 1 1; mmc erase 2000 2000; mmc erase 4000 2000;\0" \
 	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \
