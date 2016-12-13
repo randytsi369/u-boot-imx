@@ -74,6 +74,8 @@
 #define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
 #define CONFIG_SYS_I2C_SPEED		100000
 
+#undef CONFIG_BOOTDELAY
+#define CONFIG_BOOTDELAY		1
 #define CONFIG_AUTOBOOT_KEYED 		1
 #define CONFIG_AUTOBOOT_PROMPT "Press Ctrl+C to abort autoboot in %d second(s)\n"
 #define CTRL(c) ((c)&0x1F)     
