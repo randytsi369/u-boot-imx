@@ -75,14 +75,14 @@ DECLARE_GLOBAL_DATA_PTR;
 #define JTAG_FPGA_TMS           IMX_GPIO_NR(5, 6)
 #define JTAG_FPGA_TCK           IMX_GPIO_NR(5, 7)
 #define EN_ETH_PHY_PWR 		IMX_GPIO_NR(1, 10)
-#define PHY1_DUPLEX		IMX_GPIO_NR(2, 0)
-#define PHY1_PHY_ADD_2		IMX_GPIO_NR(2, 1)
-#define PHY1_CONFIG2		IMX_GPIO_NR(2, 2)
-#define PHY1_ISO		IMX_GPIO_NR(2, 7)
-#define PHY2_DUPLEX		IMX_GPIO_NR(2, 11)
-#define PHY2_PHY_ADD_2		IMX_GPIO_NR(2, 12)
-#define PHY2_CONFIG2		IMX_GPIO_NR(2, 10)
-#define PHY2_ISO		IMX_GPIO_NR(2, 15)
+#define PHY1_DUPLEX 		IMX_GPIO_NR(2, 0)
+#define PHY2_DUPLEX 		IMX_GPIO_NR(2, 8)
+#define PHY1_PHYADDR2 		IMX_GPIO_NR(2, 1)
+#define PHY2_PHYADDR2		IMX_GPIO_NR(2, 9)
+#define PHY1_CONFIG_2 		IMX_GPIO_NR(2, 2)
+#define PHY2_CONFIG_2		IMX_GPIO_NR(2, 10)
+#define PHY1_ISOLATE		IMX_GPIO_NR(2, 7)
+#define PHY2_ISOLATE		IMX_GPIO_NR(2, 15)
 
 /* I2C1 for Silabs */
 struct i2c_pads_info i2c_pad_info1 = {
@@ -340,16 +340,52 @@ static iomux_v3_cfg_t const fec_enet_pads[] = {
 	MX6_PAD_ENET2_TX_CLK__ENET2_REF_CLK2 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 };
 
+static iomux_v3_cfg_t const fec_enet_pads1[] = {
+	MX6_PAD_GPIO1_IO06__ENET1_MDIO | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_GPIO1_IO07__ENET1_MDC | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* DUPLEX */
+	MX6_PAD_ENET1_RX_DATA0__GPIO2_IO00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* DUPLEX */
+	MX6_PAD_ENET2_RX_DATA0__GPIO2_IO08 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* PHYADDR2 */
+	MX6_PAD_ENET1_RX_DATA1__GPIO2_IO01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* PHYADDR2 */
+	MX6_PAD_ENET2_RX_DATA1__GPIO2_IO09 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* CONFIG_2 */
+	MX6_PAD_ENET1_RX_EN__GPIO2_IO02 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* CONFIG_2 */
+	MX6_PAD_ENET2_RX_EN__GPIO2_IO10 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* Isolate */
+	MX6_PAD_ENET1_RX_ER__GPIO2_IO07 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* Isolate */
+	MX6_PAD_ENET2_RX_ER__GPIO2_IO15 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* EN_ETH_PHY_PWR */
+	MX6_PAD_JTAG_MOD__GPIO1_IO10 | MUX_PAD_CTRL(ENET_PAD_CTRL)
+};
+
 int board_eth_init(bd_t *bis)
 {
-	imx_iomux_v3_setup_pad(
-			       MX6_PAD_JTAG_MOD__GPIO1_IO10 | 
-			       MUX_PAD_CTRL(NO_PAD_CTRL));
+	/* Set pins to strapping GPIO modes */
+	imx_iomux_v3_setup_multiple_pads(fec_enet_pads1,
+					 ARRAY_SIZE(fec_enet_pads1));
+
 	/* Reset */
 	gpio_direction_output(EN_ETH_PHY_PWR, 0);
-	mdelay(50);
+	mdelay(5); // falls in ~2ms
 	gpio_direction_output(EN_ETH_PHY_PWR, 1);
-	udelay(100);
+
+	gpio_direction_output(PHY1_DUPLEX, 0);
+	gpio_direction_output(PHY2_DUPLEX, 0);
+	gpio_direction_output(PHY1_PHYADDR2, 0);
+	gpio_direction_output(PHY2_PHYADDR2, 0);
+	gpio_direction_output(PHY1_CONFIG_2, 0);
+	gpio_direction_output(PHY2_CONFIG_2, 0);
+	gpio_direction_output(PHY1_ISOLATE, 0);
+	gpio_direction_output(PHY2_ISOLATE, 0);
+
+	/* PHY_RESET automatically deasserts 140-280ms after we turn on power.
+	 * where it will strap in the startup values from GPIO. */
+	mdelay(320);
 
 	/* Set pins to enet modes */
 	imx_iomux_v3_setup_multiple_pads(fec_enet_pads,
@@ -364,29 +400,24 @@ static int setup_fec(int fec_id)
 	struct iomuxc *const iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 	int ret;
 
-	if (fec_id == 0) {
-		if (check_module_fused(MX6_MODULE_ENET1))
-			return -1;
+	if (check_module_fused(MX6_MODULE_ENET1))
+		return -1;
 
-		/*
-		 * Use 50M anatop loopback REF_CLK1 for ENET1,
-		 * clear gpr1[13], set gpr1[17].
-		 */
-		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
-				IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
-	} else {
-		if (check_module_fused(MX6_MODULE_ENET2))
-			return -1;
+	if (check_module_fused(MX6_MODULE_ENET2))
+		return -1;
 
-		/*
-		 * Use 50M anatop loopback REF_CLK2 for ENET2,
-		 * clear gpr1[14], set gpr1[18].
-		 */
-		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
-				IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
-	}
+	/*
+	 * Use 50M anatop loopback REF_CLK1 for ENET1,
+	 * clear gpr1[13], set gpr1[17].
+	 */
+	clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
+			IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
 
-	ret = enable_fec_anatop_clock(fec_id, ENET_50MHZ);
+	clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
+			IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
+
+	ret = enable_fec_anatop_clock(0, ENET_50MHZ);
+	ret |= enable_fec_anatop_clock(1, ENET_50MHZ);
 	if (ret)
 		return ret;
 
@@ -397,8 +428,14 @@ static int setup_fec(int fec_id)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x16, 0x202);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1f, 0x8080);
+	/* Reset phy 1, phy 2 is reset by default */
+	phydev->bus->write(phydev->bus, 0x1, MDIO_DEVAD_NONE, 0x0, 0x8000);
+	/* Disable BCAST, select RMII */
+	phydev->bus->write(phydev->bus, 0x1, MDIO_DEVAD_NONE, 0x16, 0x202);
+	phydev->bus->write(phydev->bus, 0x2, MDIO_DEVAD_NONE, 0x16, 0x202);
+	/* Enable 50MHZ Clock */
+	phydev->bus->write(phydev->bus, 0x1, MDIO_DEVAD_NONE, 0x1f, 0x8180);
+	phydev->bus->write(phydev->bus, 0x2, MDIO_DEVAD_NONE, 0x1f, 0x8180);
 
 	return 0;
 }
