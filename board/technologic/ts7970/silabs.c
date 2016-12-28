@@ -29,11 +29,11 @@ uint16_t inline rscale(uint16_t data, uint16_t r1, uint16_t r2)
 
 void read_adcs(void)
 {
-	uint16_t data[20];
-	uint8_t tmp[30];
+	uint16_t data[16];
+	uint8_t tmp[32];
 	int i, ret;
 
-	ret = i2c_read(0x10, 0, 0, tmp, 30);
+	ret = i2c_read(0x10, 0, 0, tmp, 32);
 
 	if(ret){
 		printf("I2C Read failed with %d\n", ret);
