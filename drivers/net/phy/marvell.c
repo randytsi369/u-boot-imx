@@ -20,6 +20,7 @@
 #define MIIM_88E1xxx_PHYSTAT_DUPLEX	0x2000
 #define MIIM_88E1xxx_PHYSTAT_SPDDONE	0x0800
 #define MIIM_88E1xxx_PHYSTAT_LINK	0x0400
+#define MIIM_88E1xxx_PHYSTAT_DSHIFT	0x020
 
 #define MIIM_88E1xxx_PHY_SCR		0x10
 #define MIIM_88E1xxx_PHY_MDI_X_AUTO	0x0060
@@ -132,10 +133,13 @@ static uint m88e1xxx_parse_status(struct phy_device *phydev)
 		puts(" done\n");
 		udelay(500000);	/* another 500 ms (results in faster booting) */
 	} else {
-		if (mii_reg & MIIM_88E1xxx_PHYSTAT_LINK)
+		if (mii_reg & MIIM_88E1xxx_PHYSTAT_LINK){
 			phydev->link = 1;
-		else
+			if(mii_reg & MIIM_88E1xxx_PHYSTAT_DSHIFT)
+				puts("Link required downshift\n");
+		} else {
 			phydev->link = 0;
+		}
 	}
 
 	if (mii_reg & MIIM_88E1xxx_PHYSTAT_DUPLEX)
