@@ -37,8 +37,8 @@
 
 #define TS7970_HUB_RESETN	IMX_GPIO_NR(2, 11)
 #define TS7970_EN_RTC		IMX_GPIO_NR(3, 23)
-#define TS7970_SCL			IMX_GPIO_NR(3, 21)
-#define TS7970_SDA			IMX_GPIO_NR(3, 28)
+#define TS7970_SCL		IMX_GPIO_NR(3, 21)
+#define TS7970_SDA		IMX_GPIO_NR(3, 28)
 #define TS7970_EN_5V		IMX_GPIO_NR(2, 22)
 #define TS7970_SEL_DC		IMX_GPIO_NR(5, 17)
 #define TS7970_SDBOOT		IMX_GPIO_NR(2, 26)
@@ -51,9 +51,11 @@
 #define TS7970_RGMII_RD3	IMX_GPIO_NR(6, 29)
 #define TS7970_RGMII_RX_CTL	IMX_GPIO_NR(6, 24)
 #define TS7970_EN_SDPWR		IMX_GPIO_NR(2, 28)
-#define TS7970_SCL			IMX_GPIO_NR(3, 21)
-#define TS7970_SDA			IMX_GPIO_NR(3, 28)
+#define TS7970_SCL		IMX_GPIO_NR(3, 21)
+#define TS7970_SDA		IMX_GPIO_NR(3, 28)
 #define TS7970_FPGARST		IMX_GPIO_NR(5, 20)
+#define TS7970_REVB		IMX_GPIO_NR(7, 1)
+#define TS7970_REVD		IMX_GPIO_NR(7, 0)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -83,14 +85,16 @@ iomux_v3_cfg_t const ecspi1_pads[] = {
 };
 
 iomux_v3_cfg_t const misc_pads[] = {
-	MX6_PAD_SD4_DAT3__GPIO2_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL), 		 // USB_HUB_RESET#
-	MX6_PAD_EIM_A16__GPIO2_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL), 		 // EN_USB_5V
-	MX6_PAD_EIM_RW__GPIO2_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL), 		 // JP_SD_BOOT#
-	MX6_PAD_DISP0_DAT23__GPIO5_IO17 | MUX_PAD_CTRL(NO_PAD_CTRL), 	 // SEL_DC_USB#
-	MX6_PAD_EIM_D23__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL), 		 // EN_RTC_PWR#
-	MX6_PAD_GPIO_4__GPIO1_IO04 | MUX_PAD_CTRL(NO_PAD_CTRL), 		 // FPGA_IRQ_1#
+	MX6_PAD_SD4_DAT3__GPIO2_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),	 // USB_HUB_RESET#
+	MX6_PAD_EIM_A16__GPIO2_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL),	 // EN_USB_5V
+	MX6_PAD_EIM_RW__GPIO2_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL),		 // JP_SD_BOOT#
+	MX6_PAD_DISP0_DAT23__GPIO5_IO17 | MUX_PAD_CTRL(NO_PAD_CTRL),	 // SEL_DC_USB#
+	MX6_PAD_EIM_D23__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL),	 // EN_RTC_PWR#
+	MX6_PAD_GPIO_4__GPIO1_IO04 | MUX_PAD_CTRL(NO_PAD_CTRL),		 // FPGA_IRQ_1#
 	MX6_PAD_GPIO_3__XTALOSC_REF_CLK_24M | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA CLK
-	MX6_PAD_CSI0_DATA_EN__GPIO5_IO20 | MUX_PAD_CTRL(NO_PAD_CTRL),    // FPGA_RESET
+	MX6_PAD_CSI0_DATA_EN__GPIO5_IO20 | MUX_PAD_CTRL(NO_PAD_CTRL),	 // FPGA_RESET
+	MX6_PAD_SD3_DAT4__GPIO7_IO01 | MUX_PAD_CTRL(UART_PAD_CTRL),	 // REV B strap
+	MX6_PAD_SD3_DAT5__GPIO7_IO00 | MUX_PAD_CTRL(UART_PAD_CTRL),	 // REV C strap
 };
 
 /* SD card */
@@ -127,11 +131,11 @@ iomux_v3_cfg_t const uart1_gpio_pads[] = {
 iomux_v3_cfg_t const enet_pads1[] = {
 	MX6_PAD_ENET_MDIO__ENET_MDIO		| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET_MDC__ENET_MDC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_TXC__RGMII_TXC	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_TD0__RGMII_TD0	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_TD1__RGMII_TD1	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_TD2__RGMII_TD2	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_TD3__RGMII_TD3	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TXC__RGMII_TXC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD0__RGMII_TD0		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD1__RGMII_TD1		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD2__RGMII_TD2		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD3__RGMII_TD3		| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_TX_CTL__RGMII_TX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET_REF_CLK__ENET_TX_CLK	| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	/* pin 35 - 1 (PHY_AD2) on reset */
@@ -146,18 +150,28 @@ iomux_v3_cfg_t const enet_pads1[] = {
 	MX6_PAD_RGMII_RD3__GPIO6_IO29		| MUX_PAD_CTRL(NO_PAD_CTRL),
 	/* pin 33 - 1 - (CLK125_EN) 125Mhz clockout enabled */
 	MX6_PAD_RGMII_RX_CTL__GPIO6_IO24	| MUX_PAD_CTRL(NO_PAD_CTRL),
-	
 	// PHY RESET
 	MX6_PAD_DI0_PIN4__GPIO4_IO20		| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 iomux_v3_cfg_t const enet_pads2[] = {
-	MX6_PAD_RGMII_RXC__RGMII_RXC	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_RD0__RGMII_RD0	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_RD1__RGMII_RD1	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_RD2__RGMII_RD2	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_RD3__RGMII_RD3	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RXC__RGMII_RXC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD0__RGMII_RD0		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD1__RGMII_RD1		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD2__RGMII_RD2		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD3__RGMII_RD3		| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_RX_CTL__RGMII_RX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET_MDIO__ENET_MDIO		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET_MDC__ENET_MDC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TXC__RGMII_TXC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD0__RGMII_TD0		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD1__RGMII_TD1		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD2__RGMII_TD2		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD3__RGMII_TD3		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TX_CTL__RGMII_TX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET_REF_CLK__ENET_TX_CLK	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	// PHY RESET
+	MX6_PAD_DI0_PIN4__GPIO4_IO20		| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 iomux_v3_cfg_t const i2c_pads[] = {
@@ -246,6 +260,29 @@ struct i2c_pads_info i2c_pad_info0 = {
 	}
 };
 
+char board_rev(void)
+{
+	static int rev = -1;
+
+	if(rev == -1) {
+		gpio_direction_input(TS7970_REVB);
+		/* REV C boards were never built */
+		gpio_direction_input(TS7970_REVD);
+
+		if(!gpio_get_value(TS7970_REVB)){
+			if(!gpio_get_value(TS7970_REVD)){
+				rev = 'D';
+			} else {
+				rev = 'B';
+			}
+		} else {
+			rev = 'A';
+		}
+	}
+
+	return (char)rev;
+}
+
 int board_spi_cs_gpio(unsigned bus, unsigned cs)
 {
 	return (bus == 0 && cs == 0) ? (TS7970_SPI_CS) : -1;
@@ -270,25 +307,26 @@ static void setup_iomux_enet(void)
 {
 	// Assert reset
 	gpio_direction_output(TS7970_PHY_RST, 1);
-	imx_iomux_v3_setup_multiple_pads(enet_pads1, ARRAY_SIZE(enet_pads1));
+	if(board_rev() == 'A' || board_rev() == 'B') {
+		imx_iomux_v3_setup_multiple_pads(enet_pads1, ARRAY_SIZE(enet_pads1));
+		gpio_direction_output(TS7970_RGMII_RXC, 1);
+		gpio_direction_output(TS7970_RGMII_RD0, 1);
+		gpio_direction_output(TS7970_RGMII_RD1, 1);
+		gpio_direction_output(TS7970_RGMII_RD2, 1);
+		gpio_direction_output(TS7970_RGMII_RD3, 1);
+		gpio_direction_output(TS7970_RGMII_RX_CTL, 1);
+	}
 
-	gpio_direction_output(TS7970_RGMII_RXC, 1);
-	gpio_direction_output(TS7970_RGMII_RD0, 1);
-	gpio_direction_output(TS7970_RGMII_RD1, 1);
-	gpio_direction_output(TS7970_RGMII_RD2, 1);
-	gpio_direction_output(TS7970_RGMII_RD3, 1);
-	gpio_direction_output(TS7970_RGMII_RX_CTL, 1);
-
-	/* Need delay at least 10ms according to KSZ9031 spec */
-	udelay(1000 * 100);
+	/* Need delay at least 10ms according to KSZ9031 spec, and
+	 * per the 88E1512 on REV C and higher*/
+	mdelay(10);
 
 	// De-assert reset
 	gpio_direction_output(TS7970_PHY_RST, 0);
-
-	/* Need 100us delay to exit from reset. */
-	udelay(1000 * 100);
-
 	imx_iomux_v3_setup_multiple_pads(enet_pads2, ARRAY_SIZE(enet_pads2));
+
+	// Need up to 1ms for the phy to come out of reset
+	mdelay(1);
 }
 
 struct fsl_esdhc_cfg usdhc_cfg[2] = {
@@ -359,9 +397,22 @@ int board_mmc_init(bd_t *bis)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	ksz9031_phy_extended_write(phydev, 0x2, 0x8, 0x8000, 0x3EF);
-	ksz9031_phy_extended_write(phydev, 0x0, 0x3, 0x8000, 0x1A80);
-	ksz9031_phy_extended_write(phydev, 0x0, 0x4, 0x8000, 0x0006);
+	if(board_rev() == 'A' || board_rev() == 'B') {
+		ksz9031_phy_extended_write(phydev, 0x2, 0x8, 0x8000, 0x3EF);
+		ksz9031_phy_extended_write(phydev, 0x0, 0x3, 0x8000, 0x1A80);
+		ksz9031_phy_extended_write(phydev, 0x0, 0x4, 0x8000, 0x0006);
+	} else {
+		/* reg page 0 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x0000);
+		/* Enable downshift after 1 try */
+		phy_write(phydev, MDIO_DEVAD_NONE, 16, 0x1860);
+		/* reg page 3 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x0003);
+		/* Change LED */
+		phy_write(phydev, MDIO_DEVAD_NONE, 16, 0x1017);
+		/* reset to reg page 0 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x0000);
+	}
 
 	if (phydev->drv->config)
 		phydev->drv->config(phydev); 
@@ -421,7 +472,10 @@ int board_eth_init(bd_t *bis)
 	if (!bus)
 		return 0;
 	/* scan phy 4,5,6,7 */
-	phydev = phy_find_by_mask(bus, (0xf << 4), PHY_INTERFACE_MODE_RGMII);
+	if(board_rev() == 'A' || board_rev() == 'B')
+		phydev = phy_find_by_mask(bus, (0xf << 4), PHY_INTERFACE_MODE_RGMII);
+	else
+		phydev = phy_find_by_mask(bus, 0xf, PHY_INTERFACE_MODE_RGMII);	
 
 	if (!phydev) {
 		free(bus);
@@ -467,14 +521,14 @@ int board_early_init_f(void)
 
 int misc_init_r(void)
 {
-	uint8_t val;
+	uint8_t val[32];
 	int sdboot = 0;
 	struct iomuxc *iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 
 	/* Pulse FPGA Reset */
-	gpio_direction_output(TS7970_FPGARST, 0);
+	gpio_direction_output(TS7970_FPGARST, 1);
 
 	// Turn off USB hub until hub is reset
 	// Set DC_SEL_USB to use usb on the standard header
@@ -490,15 +544,15 @@ int misc_init_r(void)
 	// gets a reset and power doesn't.  This *might* not be
 	// enough for some devices
 	udelay(10000); 
-	gpio_set_value(TS7970_FPGARST, 1); // Take FPGA out of reset
+	gpio_set_value(TS7970_FPGARST, 0); // Take FPGA out of reset
 	gpio_set_value(TS7970_EN_5V, 1);
 	sdboot = gpio_get_value(TS7970_SDBOOT);
 
 	if(sdboot) setenv("jpsdboot", "off");
 	else setenv("jpsdboot", "on");
 
-	i2c_read(0x28, 31, 2, &val, 1);
-	if(val & 0x4) {
+	i2c_read(0x28, 31, 2, val, 1);
+	if(val[0] & 0x4) {
 		setenv("pushsw", "off");
 	} else {
 		setenv("pushsw", "on");
@@ -511,19 +565,18 @@ int misc_init_r(void)
 
 	setenv_hex("reset_cause", get_imx_reset_cause());
 
-	i2c_read(0x28, 51, 2, &val, 1);
-	printf("FPGA Rev: %d\n", val >> 4);
+	i2c_read(0x28, 51, 2, val, 1);
+	printf("FPGA Rev: %d\n", val[0] >> 4);
 
-	i2c_read(0x10, 30, 1, &val, 1);
-	printf("SilabRev: %d\n", val);
+	i2c_read(0x10, 0, 0, val, 32);
+	printf("SilabRev: %d\n", val[31]);
+	setenv_hex("pcbrev", board_rev());
 
 	return 0;
 }
 
 int board_init(void)
 {
-	uint8_t val;
-
 	fixup_i2c();
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
@@ -548,6 +601,6 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	puts("Board: TS-7970\n");
+	printf("Board: TS-7970 REV %c\n", board_rev());
 	return 0;
 }
