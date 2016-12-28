@@ -130,6 +130,7 @@
 #define CONFIG_FEC_MXC_PHYADDR		  7
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_MICREL
+#define CONFIG_PHY_MARVELL
 #define PHY_ANEG_TIMEOUT              50000
 
 /* USB Configs */ 
