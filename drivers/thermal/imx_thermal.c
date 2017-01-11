@@ -19,9 +19,13 @@
 #include <imx_thermal.h>
 
 #if defined(CONFIG_MX6)
-#define TEMPERATURE_MIN		-40
+
+#if defined(CONFIG_MX6Q)
 #define TEMPERATURE_HOT		80
-#define TEMPERATURE_MAX		125
+#else
+#define TEMPERATURE_HOT		85
+#endif
+
 #define FACTOR0			10000000
 #define FACTOR1			15423
 #define FACTOR2			4148468
@@ -122,9 +126,7 @@ static int read_cpu_temperature(struct udevice *dev)
 	return temperature;
 }
 #elif defined(CONFIG_MX7)
-#define TEMPERATURE_MIN		-40
 #define TEMPERATURE_HOT		85
-#define TEMPERATURE_MAX		125
 #define MEASURE_FREQ		327
 
 static int read_cpu_temperature(struct udevice *dev)
@@ -197,18 +199,15 @@ static int read_cpu_temperature(struct udevice *dev)
 int imx_thermal_get_temp(struct udevice *dev, int *temp)
 {
 	int cpu_tmp = 0;
-
-	cpu_tmp = read_cpu_temperature(dev);
-	while (cpu_tmp > TEMPERATURE_MIN) {
-		if (cpu_tmp >= TEMPERATURE_HOT) {
-			printf("CPU Temperature is %d C, too hot to boot, waiting...\n",
-			       cpu_tmp);
+	do
+	{
+		cpu_tmp = read_cpu_temperature(dev);
+		if(cpu_tmp > TEMPERATURE_HOT){
+			printf("CPU Temperature is %d C, too hot to boot. Waiting for <= %d C...\n",
+			       cpu_tmp, TEMPERATURE_HOT);
 			udelay(5000000);
-			cpu_tmp = read_cpu_temperature(dev);
-		} else {
-			break;
 		}
-	}
+	} while (cpu_tmp > TEMPERATURE_HOT);
 
 	*temp = cpu_tmp;
 
