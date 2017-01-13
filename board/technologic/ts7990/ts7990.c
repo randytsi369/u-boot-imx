@@ -54,6 +54,7 @@
 #define TS7990_SDA			IMX_GPIO_NR(3, 28)
 #define TS7990_BKL			IMX_GPIO_NR(2, 9)
 #define TS7990_FPGA_RESET	IMX_GPIO_NR(2, 28)
+#define TS7990_REVB			IMX_GPIO_NR(3, 2)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -96,6 +97,7 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_SD4_DAT1__GPIO2_IO09 | MUX_PAD_CTRL(LCD_PAD_CTRL),  // PWM_LOCAL_LCD
 	MX6_PAD_EIM_DA9__GPIO3_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL),    // PUSH_SW_1 (Home)
 	MX6_PAD_EIM_DA10__GPIO3_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),   // PUSH_SW_2 (Back)
+	MX6_PAD_EIM_DA2__GPIO3_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL),    // TS7990_REVB strap
 };
 
 /* SD card */
@@ -145,18 +147,28 @@ iomux_v3_cfg_t const enet_pads1[] = {
 	MX6_PAD_RGMII_RD3__GPIO6_IO29		| MUX_PAD_CTRL(NO_PAD_CTRL),
 	/* pin 33 - 1 - (CLK125_EN) 125Mhz clockout enabled */
 	MX6_PAD_RGMII_RX_CTL__GPIO6_IO24	| MUX_PAD_CTRL(NO_PAD_CTRL),
-	
 	// PHY RESET
 	MX6_PAD_DI0_PIN4__GPIO4_IO20		| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 iomux_v3_cfg_t const enet_pads2[] = {
-	MX6_PAD_RGMII_RXC__RGMII_RXC	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_RD0__RGMII_RD0	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_RD1__RGMII_RD1	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_RD2__RGMII_RD2	| MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_RGMII_RD3__RGMII_RD3	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RXC__RGMII_RXC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD0__RGMII_RD0		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD1__RGMII_RD1		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD2__RGMII_RD2		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_RD3__RGMII_RD3		| MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_RGMII_RX_CTL__RGMII_RX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET_MDIO__ENET_MDIO		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET_MDC__ENET_MDC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TXC__RGMII_TXC		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD0__RGMII_TD0		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD1__RGMII_TD1		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD2__RGMII_TD2		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TD3__RGMII_TD3		| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_RGMII_TX_CTL__RGMII_TX_CTL	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET_REF_CLK__ENET_TX_CLK	| MUX_PAD_CTRL(ENET_PAD_CTRL),
+	// PHY RESET
+	MX6_PAD_DI0_PIN4__GPIO4_IO20		| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 iomux_v3_cfg_t const lcd_pads[] = {
@@ -200,6 +212,23 @@ struct i2c_pads_info i2c_pad_info0 = {
 		.gp = TS7990_SDA
 	}
 };
+
+char board_rev(void)
+{
+	static int rev = -1;
+
+	if(rev == -1) {
+		gpio_direction_input(TS7990_REVB);
+
+		if(!gpio_get_value(TS7990_REVB)){
+			rev = 'B';
+		} else {
+			rev = 'A';
+		}
+	}
+
+	return (char)rev;
+}
 
 #if defined(CONFIG_FPGA)
 
@@ -532,25 +561,27 @@ static void setup_iomux_enet(void)
 {
 	// Assert reset
 	gpio_direction_output(TS7990_PHY_RST, 1);
-	imx_iomux_v3_setup_multiple_pads(enet_pads1, ARRAY_SIZE(enet_pads1));
+	if(board_rev() == 'A') {
+		imx_iomux_v3_setup_multiple_pads(enet_pads1, ARRAY_SIZE(enet_pads1));
 
-	gpio_direction_output(TS7990_RGMII_RXC, 1);
-	gpio_direction_output(TS7990_RGMII_RD0, 1);
-	gpio_direction_output(TS7990_RGMII_RD1, 1);
-	gpio_direction_output(TS7990_RGMII_RD2, 1);
-	gpio_direction_output(TS7990_RGMII_RD3, 1);
-	gpio_direction_output(TS7990_RGMII_RX_CTL, 1);
+		gpio_direction_output(TS7990_RGMII_RXC, 1);
+		gpio_direction_output(TS7990_RGMII_RD0, 1);
+		gpio_direction_output(TS7990_RGMII_RD1, 1);
+		gpio_direction_output(TS7990_RGMII_RD2, 1);
+		gpio_direction_output(TS7990_RGMII_RD3, 1);
+		gpio_direction_output(TS7990_RGMII_RX_CTL, 1);
+	}
 
-	/* Need delay at least 10ms according to KSZ9031 spec */
-	udelay(1000 * 100);
+	/* Need delay at least 10ms according to KSZ9031 spec, and
+	 * per the 88E1512 on REV B and higher*/
+	mdelay(10);
 
 	// De-assert reset
 	gpio_direction_output(TS7990_PHY_RST, 0);
 
-	/* Need 100us delay to exit from reset. */
-	udelay(1000 * 100);
-
 	imx_iomux_v3_setup_multiple_pads(enet_pads2, ARRAY_SIZE(enet_pads2));
+	// Need up to 1ms for the phy to come out of reset
+	mdelay(1);
 }
 
 struct fsl_esdhc_cfg usdhc_cfg[2] = {
@@ -605,9 +636,23 @@ int board_mmc_init(bd_t *bis)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	ksz9031_phy_extended_write(phydev, 0x2, 0x8, 0x8000, 0x3EF);
-	ksz9031_phy_extended_write(phydev, 0x0, 0x3, 0x8000, 0x1A80);
-	ksz9031_phy_extended_write(phydev, 0x0, 0x4, 0x8000, 0x0006);
+	/* Microchip KSZ9031RNX */
+	if(board_rev() == 'A') {
+		ksz9031_phy_extended_write(phydev, 0x2, 0x8, 0x8000, 0x3EF);
+		ksz9031_phy_extended_write(phydev, 0x0, 0x3, 0x8000, 0x1A80);
+		ksz9031_phy_extended_write(phydev, 0x0, 0x4, 0x8000, 0x0006);
+	} else { /* Marvell 88E1512 */
+		/* reg page 0 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x0000);
+		/* Enable downshift after 1 try */
+		phy_write(phydev, MDIO_DEVAD_NONE, 16, 0x1860);
+		/* reg page 3 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x0003);
+		/* Change LED */
+		phy_write(phydev, MDIO_DEVAD_NONE, 16, 0x1017);
+		/* reset to reg page 0 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x0000);
+	}
 
 	if (phydev->drv->config)
 		phydev->drv->config(phydev); 
@@ -637,8 +682,11 @@ int board_eth_init(bd_t *bis)
 	bus = fec_get_miibus(base, -1);
 	if (!bus)
 		return 0;
-	/* scan phy 4,5,6,7 */
-	phydev = phy_find_by_mask(bus, (0xf << 4), PHY_INTERFACE_MODE_RGMII);
+
+	if(board_rev() == 'A')
+		phydev = phy_find_by_mask(bus, (0xf << 4), PHY_INTERFACE_MODE_RGMII);
+	else
+		phydev = phy_find_by_mask(bus, 0xf, PHY_INTERFACE_MODE_RGMII);	
 
 	if (!phydev) {
 		free(bus);
@@ -854,6 +902,6 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	puts("Board: TS-TPC-7990\n");
+	printf("Board: TS-TPC-7990 REV %c\n", board_rev());
 	return 0;
 }
