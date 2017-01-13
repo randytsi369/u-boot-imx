@@ -570,7 +570,6 @@ int misc_init_r(void)
 
 	i2c_read(0x10, 0, 0, val, 32);
 	printf("SilabRev: %d\n", val[31]);
-	setenv_hex("pcbrev", board_rev());
 
 	return 0;
 }
