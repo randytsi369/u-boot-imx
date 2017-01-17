@@ -232,8 +232,7 @@
 	"model=7990\0" \
 	"splashpos=m,m\0" \
 	"fdt_high=0xffffffff\0" \
-	"serverip=192.168.0.11\0" \
-	"nfsroot=/u/x/ts7990/rootfs/\0" \
+	"nfsroot=192.168.0.36:/mnt/storage/imx6\0" \
 	"autoload=no\0" \
 	"disable_giga=1\0" \
 	"initrd_addr=0x10800000\0 " \
@@ -251,7 +250,11 @@
 		"if load mmc 0:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
 		"fi; " \
-		"load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
+		"if test ${pcbrev} -ge 'b';" \
+			"then load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
+		"else " \
+			"load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
+		"fi;" \
 		"load mmc 0:1 ${loadaddr} /boot/uImage; " \
 		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
@@ -263,7 +266,11 @@
 		"if load mmc 1:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
 		"fi; " \
-		"load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
+		"if test ${pcbrev} -ge 'b';" \
+			"then load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
+		"else " \
+			"load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
+		"fi;" \
 		"load mmc 1:1 ${loadaddr} /boot/uImage; " \
 		"setenv bootargs root=/dev/mmcblk2p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
@@ -276,7 +283,11 @@
 		"if load sata 0:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
 		"fi; " \
-		"load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
+		"if test ${pcbrev} -ge 'b';" \
+			"then load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
+		"else " \
+			"load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
+		"fi;" \
 		"load sata 0:1 ${loadaddr} /boot/uImage; " \
 		"setenv bootargs root=/dev/sda1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
@@ -292,7 +303,11 @@
 		"fi; \0" \
 	"nfsboot=echo Booting from NFS ...; " \
 		"dhcp; " \
-		"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
+		"if test ${pcbrev} -ge 'b';" \
+			"then nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
+		"else " \
+			"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
+		"fi;" \
 		"nfs ${loadaddr} ${nfsroot}/boot/uImage; " \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
