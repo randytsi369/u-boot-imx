@@ -275,6 +275,7 @@
 		"setenv bootargs root=/dev/mmcblk2p1 rootwait rw ${cmdline_append}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"sataboot=echo Booting from SATA ...; " \
+		"gpio set 200;" \
 		"sata init; " \
 		"if load sata 0:1 ${loadaddr} /boot/boot.ub; " \
 			"then echo Booting from custom /boot/boot.ub; " \
