@@ -15,6 +15,7 @@
 #include <asm/imx-common/boot_mode.h>
 #include <asm/imx-common/video.h>
 #include <asm/imx-common/sata.h>
+#include <linux/ctype.h>
 #include <mmc.h>
 #include <malloc.h>
 #include <spi.h>
@@ -56,6 +57,7 @@
 #define TS7990_BKL_EN		IMX_GPIO_NR(3, 0)
 #define TS7990_FPGA_RESET	IMX_GPIO_NR(2, 28)
 #define TS7990_REVB			IMX_GPIO_NR(3, 2)
+#define TS7990_SATASEL		IXM_GPIO_NR(7, 8)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -100,6 +102,7 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_EIM_DA9__GPIO3_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL),    // PUSH_SW_1 (Home)
 	MX6_PAD_EIM_DA10__GPIO3_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),   // PUSH_SW_2 (Back)
 	MX6_PAD_EIM_DA2__GPIO3_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL),    // TS7990_REVB strap
+	MX6_PAD_SD3_RST__GPIO7_IO08 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 /* SD card */
@@ -742,6 +745,7 @@ int board_eth_init(bd_t *bis)
 				 enetaddr[4],
 				 enetaddr[5]);
 		setenv("eth1addr", enet1addr);
+		setenv("usbethaddr", enet1addr);
 	}
 #endif
 	
