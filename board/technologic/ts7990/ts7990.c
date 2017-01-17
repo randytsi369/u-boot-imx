@@ -53,6 +53,7 @@
 #define TS7990_SCL			IMX_GPIO_NR(3, 21)
 #define TS7990_SDA			IMX_GPIO_NR(3, 28)
 #define TS7990_BKL			IMX_GPIO_NR(2, 9)
+#define TS7990_BKL_EN		IMX_GPIO_NR(3, 0)
 #define TS7990_FPGA_RESET	IMX_GPIO_NR(2, 28)
 #define TS7990_REVB			IMX_GPIO_NR(3, 2)
 
@@ -95,6 +96,7 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_GPIO_3__XTALOSC_REF_CLK_24M | MUX_PAD_CTRL(NO_PAD_CTRL),  // FPGA CLK
 	MX6_PAD_EIM_EB0__GPIO2_IO28 | MUX_PAD_CTRL(NO_PAD_CTRL),    // FPGA_RESET
 	MX6_PAD_SD4_DAT1__GPIO2_IO09 | MUX_PAD_CTRL(LCD_PAD_CTRL),  // PWM_LOCAL_LCD
+	MX6_PAD_EIM_DA0__GPIO3_IO00 | MUX_PAD_CTRL(LCD_PAD_CTRL),   // EN_BKLT
 	MX6_PAD_EIM_DA9__GPIO3_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL),    // PUSH_SW_1 (Home)
 	MX6_PAD_EIM_DA10__GPIO3_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),   // PUSH_SW_2 (Back)
 	MX6_PAD_EIM_DA2__GPIO3_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL),    // TS7990_REVB strap
@@ -354,17 +356,33 @@ static int detect_lcd(void)
 {
 	static int lcd = -1;
 	if(lcd == -1) {
-		uint8_t val = 0;
-		i2c_read(0x28, FPGA_REV_OPS, 2, &val, 1);
-		if(val & FPGA_OPS_R152) {
+		/* Rev B and on added current sense circuits
+		 * rather than individual strap resistors for
+		 * differeing LCDs */
+		if(board_rev() == 'A') {
+			uint8_t val = 0;
+
+			i2c_read(0x28, FPGA_REV_OPS, 2, &val, 1);
+			if(val & FPGA_OPS_R152) {
+				i2c_read(0x28, FPGA_OPS2, 2, &val, 1);
+				if(val & FPGA_OPS_OKAYA) {
+					lcd = LCD_OKAYA; // Okaya
+				} else {
+					lcd = LCD_MICROTIPS; // Microtips
+				}
+			} else { // LXD
+				lcd = LCD_LXD;
+			}
+		} else {
+			uint8_t val = 0;
 			i2c_read(0x28, FPGA_OPS2, 2, &val, 1);
 			if(val & FPGA_OPS_OKAYA) {
-				lcd = LCD_OKAYA; // Okaya
+				lcd = LCD_OKAYA;
+			} else if(val & FPGA_OPS_LXD) {
+				lcd = LCD_LXD;
 			} else {
-				lcd = LCD_MICROTIPS; // Microtips
+				lcd = LCD_MICROTIPS;
 			}
-		} else { // LXD
-			lcd = LCD_LXD;
 		}
 	}
 	return lcd;
@@ -744,6 +762,7 @@ int board_early_init_f(void)
 	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
 
 	gpio_direction_output(TS7990_BKL, 0);
+	gpio_direction_output(TS7990_BKL_EN, 0);
 	gpio_direction_output(TS7990_FPGA_RESET, 1);
 	gpio_direction_output(TS7990_FPGA_RESET, 0);
 
@@ -753,6 +772,7 @@ int board_early_init_f(void)
 int misc_init_r(void)
 {
 	int sdboot, jpuboot;
+	char rev[2] = {0, 0};
 	uint8_t val[33];
 	struct iomuxc *iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 
@@ -776,6 +796,9 @@ int misc_init_r(void)
 
 	gpio_set_value(TS7990_ENUSB_5V, 1);
 	sdboot = gpio_get_value(TS7990_SDBOOT);
+
+	rev[0] = tolower(board_rev());
+	setenv("pcbrev", rev);
 
 	/* Take touch out of reset */
 	val[0] &= ~(FPGA_ENS_TOUCHRST);
@@ -828,6 +851,7 @@ void bmp_display_post(void)
 	uint8_t val;
 
 	gpio_direction_output(TS7990_BKL, 1);
+	gpio_direction_output(TS7990_BKL_EN, 1);
 	/* Enable backlight late in boot */
 	// (REV A only) backlight enable
 	val = 0x1;
