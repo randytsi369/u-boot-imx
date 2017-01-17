@@ -14,6 +14,7 @@
 #define FPGA_OPS_R152 (1 << 3)
 #define FPGA_OPS2 57
 #define FPGA_OPS_OKAYA (1 << 3)
+#define FPGA_OPS_LXD (1 << 4)
 #define FPGA_ENS 59
 #define FPGA_ENS_TOUCHRST (1 << 5)
 
