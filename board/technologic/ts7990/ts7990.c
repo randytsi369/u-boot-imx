@@ -57,7 +57,8 @@
 #define TS7990_BKL_EN		IMX_GPIO_NR(3, 0)
 #define TS7990_FPGA_RESET	IMX_GPIO_NR(2, 28)
 #define TS7990_REVB			IMX_GPIO_NR(3, 2)
-#define TS7990_SATASEL		IXM_GPIO_NR(7, 8)
+#define TS7990_SATASEL		IMX_GPIO_NR(7, 8)
+#define TS7990_NOCHRG		IMX_GPIO_NR(5, 28)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -103,6 +104,7 @@ iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_EIM_DA10__GPIO3_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),   // PUSH_SW_2 (Back)
 	MX6_PAD_EIM_DA2__GPIO3_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL),    // TS7990_REVB strap
 	MX6_PAD_SD3_RST__GPIO7_IO08 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_CSI0_DAT10__GPIO5_IO28 | MUX_PAD_CTRL(NO_PAD_CTRL), // NO_CHRG jumper
 };
 
 /* SD card */
@@ -825,6 +827,13 @@ int misc_init_r(void)
 
 	setenv("model", "7990");
 	setenv_hex("reset_cause", get_imx_reset_cause());
+
+	gpio_direction_input(TS7990_NOCHRG);
+	if (gpio_get_value(TS7990_NOCHRG) == 0) {
+		setenv("nochrgjp", "1");
+	} else {
+		setenv("nochrgjp", "0");
+	}
 
 	/* PCIE does not get properly disabled from a watchdog reset.  This prevents 
 	 * a hang in the kernel if pcie was enabled in a previous boot. */
