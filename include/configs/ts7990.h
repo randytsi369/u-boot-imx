@@ -314,6 +314,10 @@
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 
 #define CONFIG_BOOTCOMMAND \
+	"if test -n $silopresent ; " \
+		"then echo 'TS-DC799-Silo is present'; " \
+		"tsmicroctl b 100; " \
+	"fi;" \
 	"if test ${jpsdboot} = 'on' ; " \
 		"then run sdboot; " \
 		"else run emmcboot; " \
