@@ -49,15 +49,13 @@ void enable_supercaps(void)
 {
 	uint8_t val = 0x1;
 	/* Set all pins to GPIO and inputs */
-	fpga_gpio_input(FPGA_DIO_0);
 	fpga_gpio_input(FPGA_DIO_1);
 	fpga_gpio_input(FPGA_DIO_2);
-	fpga_gpio_input(FPGA_DIO_3);
 	fpga_gpio_input(FPGA_DIO_4);
 	fpga_gpio_input(FPGA_DIO_5);
 	fpga_gpio_input(FPGA_DIO_6);
 
-	//Tell supercaps to charge:
+	/*Tell supercaps to charge */
 	i2c_write(0x4a, 0, 0, &val, 1);
 }
 
@@ -104,7 +102,10 @@ void block_charge(int blkpct)
 		if(ctrlc())
 			break;
 
-		if(fpga_gpio_input(FPGA_DIO_6) == 1) {
+		if(fpga_gpio_input(FPGA_POWER_FAIL) == 1) {
+			if(i % 250)
+				puts("Cannot boot with POWER_FAIL asserted\n");
+		} else if(fpga_gpio_input(FPGA_DIO_6) == 1) {
 			if(i % 250)
 				printf("Need 18V to charge, at %dmV\r",
 					rscale(data[0], 2870, 147));
@@ -121,6 +122,7 @@ void block_charge(int blkpct)
 		udelay(1000);
 	}
 	puts("\n");
+	puts("Fully charged caps\n");
 }
 
 static int do_microctl(cmd_tbl_t *cmdtp, int flag, 
