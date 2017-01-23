@@ -3,6 +3,7 @@
 
 #include <common.h>
 
+#define FPGA_POWER_FAIL 14
 #define FPGA_DIO_0 19
 #define FPGA_DIO_1 20
 #define FPGA_DIO_2 21
