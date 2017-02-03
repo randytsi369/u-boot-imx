@@ -100,7 +100,7 @@ void block_charge(int blkpct)
 		read_adcs(data);
 
 		if(ctrlc())
-			break;
+			return;
 
 		if(fpga_gpio_input(FPGA_POWER_FAIL) == 1) {
 			if(i % 250)
