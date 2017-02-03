@@ -37,6 +37,7 @@
 #include <lattice.h>
 
 #include "tsfpga.h"
+#include "silabs.h"
 
 #define TS7990_HUB_RESETN	IMX_GPIO_NR(2, 11)
 #define TS7990_ENUSB_5V		IMX_GPIO_NR(2, 22)
@@ -59,6 +60,7 @@
 #define TS7990_REVB			IMX_GPIO_NR(3, 2)
 #define TS7990_SATASEL		IMX_GPIO_NR(7, 8)
 #define TS7990_NOCHRG		IMX_GPIO_NR(5, 28)
+#define TS7990_FPGA_SPI_CS	IMX_GPIO_NR(5, 31)
 
 DECLARE_GLOBAL_DATA_PTR;
 int random_mac = 0;
@@ -91,6 +93,7 @@ iomux_v3_cfg_t const ecspi1_pads[] = {
 };
 
 iomux_v3_cfg_t const misc_pads[] = {
+	MX6_PAD_CSI0_DAT13__GPIO5_IO31 | MUX_PAD_CTRL(NO_PAD_CTRL), // FPGA_SPI_CS0#
 	MX6_PAD_SD4_DAT3__GPIO2_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),   // USB_HUB_RESET#
 	MX6_PAD_EIM_A16__GPIO2_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL),    // EN_USB_5V
 	MX6_PAD_EIM_RW__GPIO2_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL),     // JP_SD_BOOT#
@@ -665,6 +668,10 @@ int board_phy_config(struct phy_device *phydev)
 		ksz9031_phy_extended_write(phydev, 0x0, 0x3, 0x8000, 0x1A80);
 		ksz9031_phy_extended_write(phydev, 0x0, 0x4, 0x8000, 0x0006);
 	} else { /* Marvell 88E1512 */
+		/* reg page 2 */
+		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x0002);
+		/* Delay RGMII TX and RX */
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x15, 0x1070);
 		/* reg page 0 */
 		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x0000);
 		/* Enable downshift after 1 try */
@@ -827,6 +834,16 @@ int misc_init_r(void)
 
 	setenv("model", "7990");
 	setenv_hex("reset_cause", get_imx_reset_cause());
+
+	if(tssilo_is_detected()) {
+		setenv("silopresent", "1");
+	} else {
+		setenv("silopresent", "0");
+	}
+
+	/* Drive chip select high so FPGA does not interfere
+	 * with FPGA_SPI_MISO, which is the no chrg jumper */
+	gpio_direction_output(TS7990_FPGA_SPI_CS, 1);
 
 	gpio_direction_input(TS7990_NOCHRG);
 	if (gpio_get_value(TS7990_NOCHRG) == 0) {
