@@ -65,6 +65,17 @@ void disable_supercaps(void)
 	i2c_write(0x4a, 0, 0, &val, 1);
 }
 
+int tssilo_is_detected(void)
+{
+	/* Silabs does not reset on reboot, so this
+	 * must be reset manually */
+	disable_supercaps();
+	if(fpga_gpio_input(FPGA_DIO_1) == 0) {
+		return true;
+	}
+	return false;
+}
+
 void board_sleep(int seconds)
 {
 	uint8_t dat[4] = {0};
