@@ -549,6 +549,10 @@ config TARGET_TS7180
 	bool "Support TS7180"
 	select CPU_V7
 
+config TARGET_TS7553V2
+	bool "Support TS7553V2"
+	select CPU_V7
+
 config TARGET_VF610TWR
 	bool "Support vf610twr"
 	select CPU_V7
@@ -863,6 +867,7 @@ source "board/toradex/colibri_vf/Kconfig"
 source "board/technologic/ts4100/Kconfig"
 source "board/technologic/ts4800/Kconfig"
 source "board/technologic/ts7180/Kconfig"
+source "board/technologic/ts7553v2/Kconfig"
 source "board/vscom/baltos/Kconfig"
 source "board/woodburn/Kconfig"
 source "board/work-microwave/work_92105/Kconfig"
