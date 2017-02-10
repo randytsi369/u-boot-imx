@@ -53,6 +53,7 @@
 #define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
 
 #define CONFIG_BOARD_EARLY_INIT_F
+#define CONFIG_MISC_INIT_R
 #define CONFIG_BOARD_LATE_INIT
 
 #define CONFIG_MXC_UART
@@ -81,16 +82,25 @@
 #define CTRL(c) ((c)&0x1F)     
 #define CONFIG_AUTOBOOT_STOP_STR  (char []){CTRL('C'), 0}
 
+#define CONFIG_PREBOOT \
+	"if test \"${jpuboot}\" = \"on\"; then " \
+		" setenv bootdelay -1; " \
+		" echo UBoot jumper installed, checking usb and stopping boot.; " \
+		" run usbprod; " \
+	"else" \
+		" setenv bootdelay 0; " \
+	"fi" \
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	"do_usb_prod=yes\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
-	"model=7553\0" \
 	"autoload=no\0" \
 	"nfsip=192.168.0.36\0" \
 	"nfsroot=/mnt/storage/imx6ul/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 2000; mmc erase 4000 2000;\0" \
-	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
+	"cmdline_append=rw rootwait console=ttymxc0,115200 loglevel=3\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \
 			"then echo Checking USB storage for updates;" \
@@ -145,7 +155,9 @@
 		"mmc write ${loadaddr} 2 ${filesize};\0"
 
 #define CONFIG_BOOTCOMMAND \
-	"if test ${jpuboot} = 'on'; then " \
+	"if test ${do_usb_prod} = 'yes'; then " \
+		"echo Attempting to run USB production scripts, to disable run:;" \
+		"echo \"env set do_usb_prod no && saveenv\" ;" \
 		"run usbprod;" \
 	"fi;" \
 	"if test ${jpsdboot} = 'on';" \

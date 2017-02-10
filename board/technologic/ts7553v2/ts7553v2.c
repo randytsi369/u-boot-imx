@@ -66,10 +66,11 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 
-#define U_BOOT_JMPN		IMX_GPIO_NR(3, 16)
+#define U_BOOT_JMPN		IMX_GPIO_NR(3, 19)
+#define SD_BOOT_JMPN		IMX_GPIO_NR(3, 17)
 #define PUSH_SW_CPUN		IMX_GPIO_NR(3, 18)
-#define NO_CHRG_JMPN		IMX_GPIO_NR(3, 19)
-#define EN_ETH_PHY_PWR 		IMX_GPIO_NR(1, 10)
+#define NO_CHRG_JMPN		IMX_GPIO_NR(3, 11)
+#define EN_ETH_PHY_PWR 		IMX_GPIO_NR(2, 10)
 #define PHY1_DUPLEX 		IMX_GPIO_NR(2, 0)
 #define PHY1_PHYADDR2 		IMX_GPIO_NR(2, 1)
 #define PHY1_CONFIG_2 		IMX_GPIO_NR(2, 2)
@@ -317,6 +318,27 @@ int board_early_init_f(void)
 	/* Enable LVDS clock output.
 	 * Writing CCM_ANALOG_MISC1 to use output from 24M OSC */
 	setbits_le32(0x020C8160, 0x412);
+
+	return 0;
+}
+
+int misc_init_r(void)
+{
+	int jpr;
+
+	/* Onboard jumpers to boot to SD or break in u-boot */
+	gpio_direction_input(SD_BOOT_JMPN);
+	gpio_direction_input(U_BOOT_JMPN);
+
+	jpr = gpio_get_value(SD_BOOT_JMPN);
+	if(jpr) setenv("jpsdboot", "off");
+	else setenv("jpsdboot", "on");
+
+	jpr = gpio_get_value(U_BOOT_JMPN);
+	if(jpr) setenv("jpuboot", "off");
+	else setenv("jpuboot", "on");
+
+	setenv("model", "7553");
 
 	return 0;
 }
