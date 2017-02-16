@@ -71,11 +71,13 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PUSH_SW_CPUN		IMX_GPIO_NR(3, 18)
 #define NO_CHRG_JMPN		IMX_GPIO_NR(3, 11)
 #define EN_ETH_PHY_PWR 		IMX_GPIO_NR(2, 10)
+#define ETH_PHY_RSTN 		IMX_GPIO_NR(1, 4)
 #define PHY1_DUPLEX 		IMX_GPIO_NR(2, 0)
 #define PHY1_PHYADDR2 		IMX_GPIO_NR(2, 1)
 #define PHY1_CONFIG_2 		IMX_GPIO_NR(2, 2)
 #define PHY1_ISOLATE		IMX_GPIO_NR(2, 7)
 #define EN_SD_PWR		IMX_GPIO_NR(3, 12)
+#define USDHC1_VSELECT		IMX_GPIO_NR(1, 5)
 
 /* I2C1 for Silabs */
 struct i2c_pads_info i2c_pad_info1 = {
@@ -118,9 +120,10 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 };
 
 static iomux_v3_cfg_t const misc_pads[] = {
-	MX6_PAD_LCD_DATA11__GPIO3_IO16 | MUX_PAD_CTRL(NO_PAD_CTRL), /* U_BOOT_JMP# */
+	MX6_PAD_LCD_DATA14__GPIO3_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL), /* U_BOOT_JMP# */
+	MX6_PAD_LCD_DATA12__GPIO3_IO17 | MUX_PAD_CTRL(NO_PAD_CTRL), /* SD_BOOT_JMP# */
 	MX6_PAD_LCD_DATA13__GPIO3_IO18 | MUX_PAD_CTRL(NO_PAD_CTRL), /* PUSH_SW_CPU# */
-	MX6_PAD_LCD_DATA14__GPIO3_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL), /* NO_CHRG_JMP# */
+	MX6_PAD_LCD_DATA06__GPIO3_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL), /* NO_CHRG_JMP# */
 };
 
 static iomux_v3_cfg_t const usdhc1_sd_pads[] = {
@@ -130,7 +133,7 @@ static iomux_v3_cfg_t const usdhc1_sd_pads[] = {
 	MX6_PAD_SD1_DATA1__USDHC1_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_DATA2__USDHC1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_DATA3__USDHC1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_GPIO1_IO05__USDHC1_VSELECT | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_GPIO1_IO05__USDHC1_VSELECT | MUX_PAD_CTRL(NO_PAD_CTRL), /* VSELECT */
 };
 
 static iomux_v3_cfg_t const usdhc2_emmc_pads[] = {
@@ -151,8 +154,6 @@ static struct fsl_esdhc_cfg usdhc_cfg[2] = {
 	{USDHC1_BASE_ADDR, 0, 4},
 	{USDHC2_BASE_ADDR, 0, 4},
 };
-
-#define USDHC1_VSELECT IMX_GPIO_NR(1, 5)
 
 int board_mmc_getcd(struct mmc *mmc)
 {
@@ -202,16 +203,6 @@ static iomux_v3_cfg_t const fec_enet_pads[] = {
 	MX6_PAD_ENET1_RX_DATA1__ENET1_RDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET1_RX_ER__ENET1_RX_ER | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET1_RX_EN__ENET1_RX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_TX_DATA0__ENET2_TDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_TX_DATA1__ENET2_TDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_RX_DATA0__ENET2_RDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_RX_DATA1__ENET2_RDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_RX_EN__ENET2_RX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_RX_ER__ENET2_RX_ER | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_TX_DATA0__ENET2_TDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_TX_DATA1__ENET2_TDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_TX_EN__ENET2_TX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_TX_CLK__ENET2_REF_CLK2 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 };
 
 static iomux_v3_cfg_t const fec_enet_pads1[] = {
@@ -219,22 +210,16 @@ static iomux_v3_cfg_t const fec_enet_pads1[] = {
 	MX6_PAD_GPIO1_IO07__ENET1_MDC | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	/* DUPLEX */
 	MX6_PAD_ENET1_RX_DATA0__GPIO2_IO00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	/* DUPLEX */
-	MX6_PAD_ENET2_RX_DATA0__GPIO2_IO08 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	/* PHYADDR2 */
 	MX6_PAD_ENET1_RX_DATA1__GPIO2_IO01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	/* PHYADDR2 */
-	MX6_PAD_ENET2_RX_DATA1__GPIO2_IO09 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	/* CONFIG_2 */
 	MX6_PAD_ENET1_RX_EN__GPIO2_IO02 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	/* CONFIG_2 */
-	MX6_PAD_ENET2_RX_EN__GPIO2_IO10 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	/* Isolate */
 	MX6_PAD_ENET1_RX_ER__GPIO2_IO07 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	/* Isolate */
-	MX6_PAD_ENET2_RX_ER__GPIO2_IO15 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	/* EN_ETH_PHY_PWR */
-	MX6_PAD_JTAG_MOD__GPIO1_IO10 | MUX_PAD_CTRL(ENET_PAD_CTRL)
+	MX6_PAD_ENET2_RX_EN__GPIO2_IO10 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	/* ETH_PHY_RSTN */
+	MX6_PAD_GPIO1_IO04__GPIO1_IO04 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 };
 
 int board_eth_init(bd_t *bis)
@@ -243,19 +228,25 @@ int board_eth_init(bd_t *bis)
 	imx_iomux_v3_setup_multiple_pads(fec_enet_pads1,
 					 ARRAY_SIZE(fec_enet_pads1));
 
-	/* Reset */
-	gpio_direction_output(EN_ETH_PHY_PWR, 0);
-	mdelay(5); // falls in ~2ms
-	gpio_direction_output(EN_ETH_PHY_PWR, 1);
-
+	/* Set up strapping pins */
 	gpio_direction_output(PHY1_DUPLEX, 0);
 	gpio_direction_output(PHY1_PHYADDR2, 0);
 	gpio_direction_output(PHY1_CONFIG_2, 0);
 	gpio_direction_output(PHY1_ISOLATE, 0);
 
-	/* PHY_RESET automatically deasserts 140-280ms after we turn on power.
-	 * where it will strap in the startup values from GPIO. */
-	mdelay(320);
+	/* Reset */
+	gpio_direction_output(ETH_PHY_RSTN, 0);
+	gpio_direction_output(EN_ETH_PHY_PWR, 0);
+	mdelay(5); // falls in ~2ms
+	gpio_direction_output(EN_ETH_PHY_PWR, 1);
+
+	mdelay(10);
+	gpio_direction_output(ETH_PHY_RSTN, 1);
+
+	/* Once reset is deasserted, strapping pins are latched in withing
+	 * 1 ms.
+	 */
+	mdelay(1);
 
 	/* Set pins to enet modes */
 	imx_iomux_v3_setup_multiple_pads(fec_enet_pads,
@@ -273,9 +264,6 @@ static int setup_fec(int fec_id)
 	if (check_module_fused(MX6_MODULE_ENET1))
 		return -1;
 
-	if (check_module_fused(MX6_MODULE_ENET2))
-		return -1;
-
 	/*
 	 * Use 50M anatop loopback REF_CLK1 for ENET1,
 	 * clear gpr1[13], set gpr1[17].
@@ -283,11 +271,7 @@ static int setup_fec(int fec_id)
 	clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
 			IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
 
-	clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
-			IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
-
 	ret = enable_fec_anatop_clock(0, ENET_50MHZ);
-	ret |= enable_fec_anatop_clock(1, ENET_50MHZ);
 	if (ret)
 		return ret;
 
@@ -298,13 +282,13 @@ static int setup_fec(int fec_id)
 
 int board_phy_config(struct phy_device *phydev)
 {
-	/* Reset phy 1, phy 2 is reset by default */
-	phydev->bus->write(phydev->bus, 0x1, MDIO_DEVAD_NONE, 0x0, 0x8000);
+	/* PHY addressing is a little odd, phy 2 is the only PHY */
+
+	/* Reset PHY */
+	phydev->bus->write(phydev->bus, 0x2, MDIO_DEVAD_NONE, 0x0, 0x8000);
 	/* Disable BCAST, select RMII */
-	phydev->bus->write(phydev->bus, 0x1, MDIO_DEVAD_NONE, 0x16, 0x202);
 	phydev->bus->write(phydev->bus, 0x2, MDIO_DEVAD_NONE, 0x16, 0x202);
 	/* Enable 50MHZ Clock */
-	phydev->bus->write(phydev->bus, 0x1, MDIO_DEVAD_NONE, 0x1f, 0x8180);
 	phydev->bus->write(phydev->bus, 0x2, MDIO_DEVAD_NONE, 0x1f, 0x8180);
 
 	return 0;
@@ -380,7 +364,7 @@ int checkboard(void)
 #define USB_OTHERREGS_OFFSET	0x800
 #define UCTRL_PWR_POL		(1 << 9)
 iomux_v3_cfg_t const usb_otg1_pads[] = {
-	MX6_PAD_GPIO1_IO04__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
+	//MX6_PAD_GPIO1_IO04__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
 	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
 };
 
