@@ -600,6 +600,13 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	printf("Board: TS-7970 REV %c\n", board_rev());
+	char *rev = board_rev();
+
+	if(rev == 'D') {
+		printf("Board: TS-7970 REV D/E\n");
+	} else {
+		printf("Board: TS-7970 REV %c\n", rev);
+	}
+
 	return 0;
 }
