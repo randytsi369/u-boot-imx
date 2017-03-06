@@ -250,7 +250,7 @@
 		"if load mmc 0:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
 		"fi; " \
-		"if test ${pcbrev} -ge 'b';" \
+		"if test ${pcbrev} != 'a';" \
 			"then load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
 		"else " \
 			"load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
@@ -266,7 +266,7 @@
 		"if load mmc 1:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
 		"fi; " \
-		"if test ${pcbrev} -ge 'b';" \
+		"if test ${pcbrev} != 'a';" \
 			"then load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
 		"else " \
 			"load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
@@ -284,7 +284,7 @@
 		"if load sata 0:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
 		"fi; " \
-		"if test ${pcbrev} -ge 'b';" \
+		"if test ${pcbrev} != 'a';" \
 			"then load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
 		"else " \
 			"load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
@@ -304,7 +304,7 @@
 		"fi; \0" \
 	"nfsboot=echo Booting from NFS ...; " \
 		"dhcp; " \
-		"if test ${pcbrev} -ge 'b';" \
+		"if test ${pcbrev} != 'a';" \
 			"then nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
 		"else " \
 			"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
