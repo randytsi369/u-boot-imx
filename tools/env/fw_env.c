@@ -12,17 +12,17 @@
 #include <env_flags.h>
 #include <fcntl.h>
 #include <linux/stringify.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #ifdef MTD_OLD
-# include <stdint.h>
 # include <linux/mtd/mtd.h>
 #else
 # define  __user	/* nothing */
