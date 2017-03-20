@@ -345,6 +345,8 @@
 #define CONFIG_CMD_CACHE
 #endif
 
+#define CONFIG_CMD_FUSE
+#define CONFIG_MXC_OCOTP
 #define CONFIG_CMD_BMODE
 
 #define CONFIG_CMD_TIME
