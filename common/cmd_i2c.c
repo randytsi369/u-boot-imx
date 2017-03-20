@@ -148,7 +148,7 @@ static int cmd_i2c_set_bus_num(unsigned int busnum)
 	return 0;
 }
 
-static int i2c_get_cur_bus(struct udevice **busp)
+int i2c_get_cur_bus(struct udevice **busp)
 {
 	if (!i2c_cur_bus) {
 		puts("No I2C bus selected\n");
