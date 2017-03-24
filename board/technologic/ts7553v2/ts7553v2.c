@@ -93,20 +93,6 @@ struct i2c_pads_info i2c_pad_info1 = {
 	},
 };
 
-/* I2C3 for FPGA/offbd */
-struct i2c_pads_info i2c_pad_info3 = {
-	.scl = {
-		.i2c_mode = MX6_PAD_LCD_DATA01__I2C3_SCL | PC,
-		.gpio_mode = MX6_PAD_LCD_DATA01__GPIO3_IO06 | PC,
-		.gp = IMX_GPIO_NR(3, 6),
-	},
-	.sda = {
-		.i2c_mode = MX6_PAD_LCD_DATA00__I2C3_SDA | PC,
-		.gpio_mode = MX6_PAD_LCD_DATA00__GPIO3_IO05 | PC,
-		.gp = IMX_GPIO_NR(3, 5),
-	},
-};
-
 int dram_init(void)
 {
 	gd->ram_size = PHYS_SDRAM_SIZE;
@@ -309,10 +295,14 @@ int board_early_init_f(void)
 int misc_init_r(void)
 {
 	int jpr;
+	uint8_t dat = 0x1;
 
 	/* Onboard jumpers to boot to SD or break in u-boot */
 	gpio_direction_input(SD_BOOT_JMPN);
 	gpio_direction_input(U_BOOT_JMPN);
+	gpio_direction_input(NO_CHRG_JMPN);
+
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x2a, &i2c_pad_info1);
 
 	jpr = gpio_get_value(SD_BOOT_JMPN);
 	if(jpr) setenv("jpsdboot", "off");
@@ -321,6 +311,13 @@ int misc_init_r(void)
 	jpr = gpio_get_value(U_BOOT_JMPN);
 	if(jpr) setenv("jpuboot", "off");
 	else setenv("jpuboot", "on");
+
+	if(gpio_get_value(NO_CHRG_JMPN)) {
+		i2c_write(0x2a, 0x0, 0, &dat, 1);
+	} else {
+		dat = 0;
+		i2c_write(0x2a, 0x0, 0, &dat, 1);
+	}
 
 	setenv("model", "7553");
 
