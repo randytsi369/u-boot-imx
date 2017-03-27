@@ -440,11 +440,22 @@ void fixup_i2c(void)
 			gpio_get_value(TS7970_SDA) == 1)
 			break;
 		puts("Attempting to reset RTC\n");
+
+		// Drive I2C pins low
+		imx_iomux_v3_setup_pad(i2c_pad_info0.sda.gpio_mode);
+		imx_iomux_v3_setup_pad(i2c_pad_info0.scl.gpio_mode);
+		gpio_direction_output(i2c_pad_info0.sda.gp, 0);
+		gpio_direction_output(i2c_pad_info0.scl.gp, 0);
+
 		// Enable RTC FET
 		gpio_direction_output(TS7970_EN_RTC, 1);
 		udelay(1000*200); // at least 140ms to discharge
 		gpio_direction_output(TS7970_EN_RTC, 0);
 		udelay(1000*2); // 2ms to turn on
+
+		imx_iomux_v3_setup_pad(i2c_pad_info0.sda.i2c_mode);
+		imx_iomux_v3_setup_pad(i2c_pad_info0.scl.i2c_mode);
+
 		if(i == 4) puts ("Not able to force bus idle.  Giving up.\n");
 	}
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info0);
@@ -600,7 +611,7 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	char *rev = board_rev();
+	char rev = board_rev();
 
 	if(rev == 'D') {
 		printf("Board: TS-7970 REV D/E\n");
