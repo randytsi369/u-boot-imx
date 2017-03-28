@@ -90,9 +90,9 @@
 #define CONFIG_YEL_LED                  IMX_GPIO_NR(1, 9)
 #define CONFIG_BLUE_LED                 IMX_GPIO_NR(4, 25)
 #define STATUS_LED_RED                  0
-#define STATUS_LED_GREEN                0
-#define STATUS_LED_YELLOW               0
-#define STATUS_LED_BLUE                 0
+#define STATUS_LED_GREEN                1
+#define STATUS_LED_YELLOW               2
+#define STATUS_LED_BLUE                 3
 
 #define STATUS_LED_BIT                  STATUS_LED_RED
 #define STATUS_LED_STATE                STATUS_LED_ON
