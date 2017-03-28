@@ -53,13 +53,13 @@ void blue_led_off(void)
 	saved_state[STATUS_LED_BLUE] = STATUS_LED_OFF;
 }
 
-void yel_led_on(void)
+void yellow_led_on(void)
 {
 	gpio_direction_output(CONFIG_YEL_LED, 0);
 	saved_state[STATUS_LED_YELLOW] = STATUS_LED_ON;
 }
 
-void yel_led_off(void)
+void yellow_led_off(void)
 {
 	gpio_direction_output(CONFIG_YEL_LED, 1);
 	saved_state[STATUS_LED_YELLOW] = STATUS_LED_OFF;
@@ -98,9 +98,9 @@ void __led_toggle(led_id_t mask)
 	}
 	if (STATUS_LED_YELLOW == mask) {
 		if (STATUS_LED_ON == saved_state[STATUS_LED_YELLOW])
-			yel_led_off();
+			yellow_led_off();
 		else
-			yel_led_on();
+			yellow_led_on();
 	}
 	if (STATUS_LED_BLUE == mask) {
 		if (STATUS_LED_ON == saved_state[STATUS_LED_BLUE])
@@ -128,9 +128,9 @@ void __led_set(led_id_t mask, int state)
 	}
 	if (STATUS_LED_YELLOW == mask) {
 		if (STATUS_LED_ON == state)
-			yel_led_on();
+			yellow_led_on();
 		else
-			yel_led_off();
+			yellow_led_off();
 	}
 	if (STATUS_LED_BLUE == mask) {
 		if (STATUS_LED_ON == state)
