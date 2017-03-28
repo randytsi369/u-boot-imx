@@ -296,6 +296,32 @@ int silabs_test(void)
 	return ret;
 }
 
+void leds_test(void)
+{
+	int i;
+	red_led_on();
+	green_led_on();
+	blue_led_on();
+	yellow_led_on();
+
+	for(i = 0; i < 24; i++){
+		if(i % 4 == 0) red_led_on();
+		else red_led_off();
+		if(i % 4 == 1) yellow_led_on();
+		else yellow_led_off();
+		if(i % 4 == 2) green_led_on();
+		else green_led_off();
+		if(i % 4 == 3) blue_led_on();
+		else blue_led_off();
+		mdelay(100);
+	}
+
+	red_led_on();
+	green_led_on();
+	blue_led_on();
+	yellow_led_on();
+}
+
 static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret = 0;
@@ -305,6 +331,8 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	int opt_r34;
 	int opt_r39;
 	uint8_t val;
+
+	leds_test();
 
 	imx_iomux_v3_setup_multiple_pads(posttest_pads, ARRAY_SIZE(posttest_pads));
 
