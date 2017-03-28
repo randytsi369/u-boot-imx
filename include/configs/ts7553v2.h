@@ -90,6 +90,8 @@
 	"fi" \
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
+        "chrg_pct=0\0" \
+        "chrg_verb=0\0" \
 	"do_usb_prod=yes\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
@@ -158,6 +160,7 @@
 		"echo \"env set do_usb_prod no && saveenv\" ;" \
 		"run usbprod;" \
 	"fi;" \
+	"tsmicroctl w ${chrg_pct} ${chrg_verb};"\
 	"if test ${jpsdboot} = 'on';" \
 		"then run sdboot;" \
 		"else run emmcboot;" \

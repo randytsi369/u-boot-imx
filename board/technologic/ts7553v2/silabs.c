@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <console.h>
 #include <stdlib.h>
 #include <asm/io.h>
 #include <asm/arch/gpio.h>
@@ -24,21 +25,57 @@ void board_sleep(int seconds)
 	dat[2] = ((seconds >> 8) & 0xff);
 	dat[3] = (seconds & 0xff);
 	
-	i2c_set_bus_num(0);
-	i2c_write(0x4a, 0, 0, dat, 4);
+	i2c_write(0x2a, 0, 0, dat, 4);
+}
+
+int wait_for_supercaps(int pct, int verbose)
+{
+	unsigned char buf[4] = {0};
+	unsigned int check;
+
+	gpio_direction_input(IMX_GPIO_NR(3, 11));
+	if(!gpio_get_value(IMX_GPIO_NR(3, 11))) {
+		printf("NO CHRG jumper is set, not waiting for SuperCaps to"
+		  " charge\n");
+		return 0;
+	}
+
+	if(pct == 0) {
+		printf("Not waiting for SuperCaps to charge\n");
+		return 0;
+	} else {
+		printf("Waiting until SuperCaps are charged to %d%%\n", pct);
+	}
+	if(pct > 100) pct = 100;
+
+	while(1) {
+		i2c_read(0x2a, 0x0, 0, &buf[0], 4);
+		check = (((buf[2]<<8|buf[3])*100/237));
+		if(check > 311 ) {
+			check = check-311;
+			if(check > 100) check = 100;
+			if(verbose) printf("%d%%\n", check);
+			if(check >= pct) return 0;
+		} else {
+			if(verbose) printf("0%%\n");
+		}
+		if(ctrlc()) return 1;
+		udelay(1000000);
+	}
 }
 
 static int do_microctl(cmd_tbl_t *cmdtp, int flag, 
 	int argc, char * const argv[])
 {
 	int i;
+	unsigned int verbose = 0;
+	unsigned int pct = 0;
+	unsigned int micros;
+	char *p;
 
+	i2c_set_bus_num(0);
 	for (i = 1; i < argc; i++)
 	{
-		int micros;
-		int pct;
-		char *p;
-		uint16_t data[10];
 		if(argv[i][0] == '-')
 			p = &argv[i][1];
 		else
@@ -54,18 +91,33 @@ static int do_microctl(cmd_tbl_t *cmdtp, int flag,
 				printf("Sleep for %d seconds\n", micros);
 				board_sleep(micros);
 				break;
+			case '0':
+				break;
+			case '1':
+				verbose = 1;
+				break;
+			case 'w':
+				if(i+1 == argc) {
+					printf("Missing argument for percent to charge\n");
+					return 1;
+				}
+				pct = simple_strtoul(argv[++i], NULL, 10);
+				break;
 			default:
 				printf("Unknown option '%s'\n", argv[i]);
 				return 1;
 		}
 	}
 
+	if (pct) wait_for_supercaps(pct, verbose);
+
 	return 0;
 }
 
-U_BOOT_CMD(tsmicroctl, 3, 0, do_microctl,
+U_BOOT_CMD(tsmicroctl, 4, 0, do_microctl,
 	"TS supervisory microcontroller access",
 	"  Usage: tsmicroctl <options>\n"
-	"    -s <seconds> sleep for x seconds\n"
-	"  If the seconds argument is supplied the board will sleep.\n"
+	"    -s <seconds> Sleep for <seconds>\n"
+	"    -w <pct>     Wait until Supercaps are charged to <pct>%\n"
+	"    -1           Verbose output when -w is supplied\n"
 );
