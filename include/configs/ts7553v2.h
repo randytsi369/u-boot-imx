@@ -74,25 +74,13 @@
 #define CONFIG_SYS_I2C_SPEED		100000
 
 #undef CONFIG_BOOTDELAY
-#define CONFIG_BOOTDELAY		1
-#define CONFIG_AUTOBOOT_KEYED 		1
-#define CONFIG_AUTOBOOT_PROMPT "Press Ctrl+C to abort autoboot in %d second(s)\n"
-#define CTRL(c) ((c)&0x1F)     
-#define CONFIG_AUTOBOOT_STOP_STR  (char []){CTRL('C'), 0}
-
-#define CONFIG_PREBOOT \
-	"if test \"${jpuboot}\" = \"on\"; then " \
-		" setenv bootdelay -1; " \
-		" echo UBoot jumper installed, checking usb and stopping boot.; " \
-		" run usbprod; " \
-	"else" \
-		" setenv bootdelay 0; " \
-	"fi" \
+#define CONFIG_BOOTDELAY               0
+#define CONFIG_AUTOBOOT_KEYED          1
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "chrg_pct=0\0" \
         "chrg_verb=0\0" \
-	"do_usb_prod=yes\0" \
+	"rstuboot=1\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
@@ -118,7 +106,7 @@
 		"fi;" \
 		"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;" \
 		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
-		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append};" \
+		"setenv bootargs root=/dev/mmcblk0p1 ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
 		"if load mmc 1:1 ${loadaddr} /boot/boot.ub;" \
@@ -127,7 +115,7 @@
 		"fi;" \
 		"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;" \
 		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
-		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append};" \
+		"setenv bootargs root=/dev/mmcblk1p1 ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"dhcp;" \
@@ -135,8 +123,7 @@
 		"mw.l ${loadaddr} 0 1000;" \
 		"nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/imx6ul-ts7553v2.dtb;" \
 		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
-		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
-			"rootwait rw ${cmdline_append};" \
+		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"bootcmd_mfg=echo MFG boot;" \
 		"if mmc dev 0;" \
@@ -155,15 +142,14 @@
 		"mmc write ${loadaddr} 2 ${filesize};\0"
 
 #define CONFIG_BOOTCOMMAND \
-	"if test ${do_usb_prod} = 'yes'; then " \
-		"echo Attempting to run USB production scripts, to disable run:;" \
-		"echo \"env set do_usb_prod no && saveenv\" ;" \
+	"if test \"${jpuboot}\" = \"on\"; then " \
 		"run usbprod;" \
-	"fi;" \
-	"tsmicroctl w ${chrg_pct} ${chrg_verb};"\
-	"if test ${jpsdboot} = 'on';" \
-		"then run sdboot;" \
-		"else run emmcboot;" \
+	"else;"\
+		"tsmicroctl w ${chrg_pct} ${chrg_verb};"\
+		"if test ${jpsdboot} = 'on';" \
+			"then run sdboot;" \
+			"else run emmcboot;" \
+		"fi;" \
 	"fi;"
 
 #define CONFIG_CMD_MEMTEST

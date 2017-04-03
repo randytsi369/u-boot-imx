@@ -299,6 +299,7 @@ int misc_init_r(void)
 
 	/* Onboard jumpers to boot to SD or break in u-boot */
 	gpio_direction_input(SD_BOOT_JMPN);
+	gpio_direction_input(PUSH_SW_CPUN);
 	gpio_direction_input(U_BOOT_JMPN);
 	gpio_direction_input(NO_CHRG_JMPN);
 
@@ -309,8 +310,17 @@ int misc_init_r(void)
 	else setenv("jpsdboot", "on");
 
 	jpr = gpio_get_value(U_BOOT_JMPN);
-	if(jpr) setenv("jpuboot", "off");
-	else setenv("jpuboot", "on");
+	if(!jpr) setenv("jpuboot", "on");
+	else {
+		if(getenv_ulong("rstuboot", 10, 1)) {
+			jpr = gpio_get_value(PUSH_SW_CPUN);
+			if(!jpr) {
+				setenv("jpuboot", "on");
+			}
+		} else {
+			setenv("jpuboot", "off");
+		}
+	}
 
 	if(gpio_get_value(NO_CHRG_JMPN)) {
 		i2c_write(0x2a, 0x0, 0, &dat, 1);
