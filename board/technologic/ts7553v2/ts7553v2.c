@@ -310,15 +310,12 @@ int misc_init_r(void)
 	else setenv("jpsdboot", "on");
 
 	jpr = gpio_get_value(U_BOOT_JMPN);
+	setenv("jpuboot", "off");
 	if(!jpr) setenv("jpuboot", "on");
 	else {
 		if(getenv_ulong("rstuboot", 10, 1)) {
 			jpr = gpio_get_value(PUSH_SW_CPUN);
-			if(!jpr) {
-				setenv("jpuboot", "on");
-			}
-		} else {
-			setenv("jpuboot", "off");
+			if(!jpr) setenv("jpuboot", "on");
 		}
 	}
 
