@@ -29,20 +29,18 @@
 #define CONFIG_MX6
 #define CONFIG_SYS_CONSOLE_INFO_QUIET
 
-#if 0
 #define CONFIG_BOARD_SPECIFIC_LED
 #define CONFIG_STATUS_LED
 #define CONFIG_CMD_LED
 
+#define CONFIG_RED_LED                  115
+#define CONFIG_GREEN_LED                116
 #define STATUS_LED_RED                  0
 #define STATUS_LED_GREEN                1
-#define STATUS_LED_BLUE                 2
-#define STATUS_LED_YELLOW               3
 
 #define STATUS_LED_BIT                  STATUS_LED_RED
 #define STATUS_LED_STATE                STATUS_LED_ON
 #define STATUS_LED_PERIOD               (CONFIG_SYS_HZ / 2)
-#endif
 
 /* #define CONFIG_USE_PLUGIN */
 

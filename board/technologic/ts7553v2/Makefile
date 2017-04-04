@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier:	GPL-2.0+
 #
-#led.o
 
-obj-y  := ts7553v2.o silabs.o
+obj-y  := ts7553v2.o silabs.o led.o
 
 extra-$(CONFIG_USE_PLUGIN) :=  plugin.bin
 $(obj)/plugin.bin: $(obj)/plugin.o
