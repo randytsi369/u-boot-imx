@@ -292,7 +292,7 @@ int silabs_test(void)
 	}
 
 	if (ret == 0) printf("Silabs test passed\n");
-	else printf("RAM test failed\n");
+	else printf("Silabs test failed\n");
 	return ret;
 }
 
