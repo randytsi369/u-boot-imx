@@ -56,8 +56,8 @@ int fpga_test(void)
 	 */
 	for(i = 19; i < 25; i++) {
 		ret |= i2c_read(0x28, i, 2, &val, 1);
-		if(val != 0x7c) {
-			printf("Read back 0x%X from addr %d.  Should be 0x7c\n", val, i);
+		if((val & 0x7c) != 0x7c) {
+			printf("Read back 0x%X from addr %d.  Should be 0x7c\n", (val & 0x7c), i);
 			ret = 1;
 		}
 	}
