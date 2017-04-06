@@ -44,7 +44,6 @@ int fpga_test(void)
 	 * The TS-7970 has no model register, so we can only verify
 	 * some sane values in existing registers
 	 */
-
 	ret |= i2c_read(0x28, 51, 2, &val, 1);
 	if(val == 0) {
 		printf("Read back 0 for addr 51.  FPGA not sane?\n");
@@ -86,6 +85,33 @@ int marvell_phy_test(void)
 
 	if(model != 0x1d) {
 		printf("Wrong PHY?  Bad model 0x%X not 0x1d\n", oui);
+		ret |= 1;
+	}
+
+	if (ret == 0) printf("PHY test passed\n");
+	else printf("PHY test failed\n");
+	return ret;
+}
+
+int micrel_phy_test(void)
+{
+	int ret = 0;
+	unsigned int oui;
+	unsigned char model;
+	unsigned char rev;
+
+	if (miiphy_info ("FEC", 0x7, &oui, &model, &rev) != 0) {
+		printf("Failed to find PHY\n");
+		return 1;
+	}
+
+	if(oui != 0x0885) {
+		printf("Wrong PHY?  Bad OUI 0x%X 0x0885\n", oui);
+		ret |= 1;
+	}
+
+	if(model != 0x22) {
+		printf("Wrong PHY?  Bad model 0x%X not 0x22\n", oui);
 		ret |= 1;
 	}
 
@@ -256,13 +282,6 @@ int silabs_test(void)
 	for (i = 0; i <= 15; i++)
 		data[i] = (tmp[i*2] << 8) | tmp[(i*2)+1];
 
-	/* Should never see a rev earlier than 2 with POST tests,
-	 */
-	if(data[15] < 2) {
-		printf("Bad Silabs Revision %d - failed\n", data[15]);
-		ret = 1;
-	}
-
 	/* 5V_A is between 4.5 and 5.5 VDC */
 	if(rscale(data[8], 147, 107) > 5500 ||
 	   rscale(data[8], 147, 107) < 4500) {
@@ -322,6 +341,20 @@ void leds_test(void)
 	yellow_led_on();
 }
 
+static int silab_rev(void)
+{
+	uint8_t val[32];
+	i2c_read(0x10, 0, 0, val, 32);
+	return val[31];
+}
+
+static int fpga_rev(void)
+{
+	uint8_t val;
+	i2c_read(0x28, 51, 2, &val, 1);
+	return (val & 0xf0) >> 4;
+}
+
 static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret = 0;
@@ -346,43 +379,114 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	opt_r39 = ((~val) & 0x8) >> 3;
 	build_variant = (opt_r39 << 3) | (opt_r37 << 2) | (opt_r36 << 1) | (opt_r34);
 
-	printf("TS-7970 build variant %d\n", build_variant);
-
 	switch (build_variant) {
-		case 1: /* TS-7970-1G-4GF-S8S-RTC-I */
+		case 1:
+			printf("Build variant %d, TS-7970-1G-4GF-S8S-RTC-I\n", build_variant);
 			if(is_quad()) {
 				ret = 1;
 				printf("Build variant should not be a quad.\n");
 			}
 
+			if(fpga_rev() <= 6) {
+				ret = 1;
+				printf("FPGA REV is old or invalid\n");
+			}
+			if(silab_rev() <= 1) {
+				ret = 1;
+				printf("Silab rev is old or invalid\n");
+			}
+			ret |= usbhub_test();
+			ret |= rtc_test();
+			ret |= marvell_phy_test();
+
 			break;
-		case 2: /* TS-7970-2G-4GF-Q10S-RTC-E */
+		case 2: 
+			printf("Build variant %d, TS-7970-2G-4GF-Q10S-RTC-E\n", build_variant);
 			if(!is_quad()) {
 				ret = 1;
 				printf("Build variant should not be a solo.\n");
 			}
 
+			if(fpga_rev() <= 6) {
+				ret = 1;
+				printf("FPGA REV is old or invalid\n");
+			}
+			if(silab_rev() <= 1) {
+				ret = 1;
+				printf("Silab rev is old or invalid\n");
+			}
+			ret |= usbhub_test();
+			ret |= rtc_test();
+			ret |= marvell_phy_test();
+
 			break;
-		case 3: /* TS-7970-1G-4GF-S8S-RTC-CP-WIFI-I */
+		case 3: /* */
+			printf("Build variant %d, TS-7970-1G-4GF-S8S-RTC-CP-WIFI-I \n", build_variant);
 			if(is_quad()) {
 				ret = 1;
 				printf("Build variant should not be a quad.\n");
 			}
 
+			if(fpga_rev() <= 6) {
+				ret = 1;
+				printf("FPGA REV is old or invalid\n");
+			}
+			if(silab_rev() <= 1) {
+				ret = 1;
+				printf("Silab rev is old or invalid\n");
+			}
+
 			ret |= wifi_test();
+			ret |= usbhub_test();
+			ret |= rtc_test();
+			ret |= marvell_phy_test();
 
 			break;
-		case 4: /* TS-7970-2G-4GF-Q10S-RTC-CP-WIFI-E */
+		case 4:
+			printf("Build variant %d, TS-7970-2G-4GF-Q10S-RTC-CP-WIFI-E \n", build_variant);
 			if(!is_quad()) {
 				ret = 1;
 				printf("Build variant should not be a solo.\n");
 			}
 
+			if(fpga_rev() <= 6) {
+				ret = 1;
+				printf("FPGA REV is old or invalid\n");
+			}
+			if(silab_rev() <= 1) {
+				ret = 1;
+				printf("Silab rev is old or invalid\n");
+			}
+
 			ret |= wifi_test();
+			ret |= usbhub_test();
+			ret |= rtc_test();
+			ret |= marvell_phy_test();
 			break;
+		case 15: /* Custom board or failure */
+			/* Some custom board was made before straps worked.  This checks
+			 * for that FPGA + silabs rev combination which will not happen in the field */
+			if(silab_rev() == 1 && fpga_rev() == 6)
+			{
+				printf("Build variant %d, CUSTOM1 \n", build_variant);
+
+				/* Turn on unique LEDs */
+				imx_iomux_v3_setup_pad(MX6_PAD_DISP0_DAT7__GPIO4_IO28);
+				imx_iomux_v3_setup_pad(MX6_PAD_DISP0_DAT10__GPIO4_IO31);
+				
+				gpio_direction_output(IMX_GPIO_NR(4, 28), 0);
+				gpio_direction_output(IMX_GPIO_NR(4, 31), 0);
+
+				if(is_quad()) {
+					ret = 1;
+					printf("Build variant should not be a quad.\n");
+				}
+				ret |= micrel_phy_test();
+				break;
+			}
 		default:
-			printf("unknown build variant.  Either failure or u-boot " \
-			       "must be updated to support this.\n");
+			printf("unknown build variant %d.  Either failure or u-boot " \
+			       "must be updated to support this.\n", build_variant);
 			printf("R37: %d\n", opt_r37);
 			printf("R36: %d\n", opt_r36);
 			printf("R34: %d\n", opt_r34);
@@ -391,13 +495,9 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 			ret = 1;
 	}
 
-	ret |= marvell_phy_test();
 	ret |= emmc_test();
 	ret |= mem_test();
-	ret |= usbhub_test();
-	ret |= rtc_test();
 	ret |= silabs_test();
-
 
 	if (ret == 0) printf("All POST tests passed\n");
 	else printf("One or more POST tests failed\n");
