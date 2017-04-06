@@ -39,8 +39,9 @@ void read_adcs(void)
 		printf("I2C Read failed with %d\n", ret);
 		return;
 	}
-    for (i = 0; i < 15; i++)
+    for (i = 0; i < 15; i++){
     	data[i] = (tmp[i*2] << 8) | tmp[(i*2)+1];
+    }
 
 	printf("VDD_ARM_CAP=%d\n", sscale(data[0]));
 	printf("VDD_HIGH_CAP=%d\n", sscale(data[1]));
