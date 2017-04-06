@@ -24,6 +24,15 @@
 
 #define LOOP_PAD_CTRL (PAD_CTL_HYS | PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST)
 
+iomux_v3_cfg_t const custom1_led_pads[] = {
+	MX6_PAD_GPIO_2__GPIO1_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL), // YEL_LED#
+	MX6_PAD_GPIO_9__GPIO1_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED2#
+	MX6_PAD_EIM_D27__GPIO3_IO27 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED3#
+	MX6_PAD_DISP0_DAT7__GPIO4_IO28 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED4#
+	MX6_PAD_EIM_D23__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED5#
+	MX6_PAD_DISP0_DAT10__GPIO4_IO31 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED6#
+};
+
 iomux_v3_cfg_t const posttest_pads[] = {
 	MX6_PAD_SD4_DAT6__GPIO2_IO14 | MUX_PAD_CTRL(LOOP_PAD_CTRL), // UART2_CTS
 	MX6_PAD_SD4_DAT5__GPIO2_IO13 | MUX_PAD_CTRL(LOOP_PAD_CTRL), // UART2_RTS
@@ -471,12 +480,14 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 				printf("Build variant %d, CUSTOM1 \n", build_variant);
 
 				/* Turn on unique LEDs */
-				imx_iomux_v3_setup_pad(MX6_PAD_DISP0_DAT7__GPIO4_IO28);
-				imx_iomux_v3_setup_pad(MX6_PAD_DISP0_DAT10__GPIO4_IO31);
-				
+				imx_iomux_v3_setup_multiple_pads(custom1_led_pads, ARRAY_SIZE(custom1_led_pads));
+				gpio_direction_output(IMX_GPIO_NR(1, 2), 0);
+				gpio_direction_output(IMX_GPIO_NR(1, 9), 0);
+				gpio_direction_output(IMX_GPIO_NR(3, 27), 0);
 				gpio_direction_output(IMX_GPIO_NR(4, 28), 0);
+				gpio_direction_output(IMX_GPIO_NR(3, 23), 0);
 				gpio_direction_output(IMX_GPIO_NR(4, 31), 0);
-
+				
 				if(is_quad()) {
 					ret = 1;
 					printf("Build variant should not be a quad.\n");
