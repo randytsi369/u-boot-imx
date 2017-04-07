@@ -205,11 +205,6 @@ iomux_v3_cfg_t const lcd_pads[] = {
 	MX6_PAD_DISP0_DAT23__IPU1_DISP0_DATA23	| MUX_PAD_CTRL(LCD_PAD_CTRL),
 };
 
-iomux_v3_cfg_t const i2c_pads[] = {
-	MX6_PAD_EIM_D21__GPIO3_IO21	| MUX_PAD_CTRL(I2C_PAD_CTRL),
-	MX6_PAD_EIM_D28__GPIO3_IO28	| MUX_PAD_CTRL(I2C_PAD_CTRL),
-};
-
 struct i2c_pads_info i2c_pad_info0 = {
 	.scl = {
 		.i2c_mode  = MX6_PAD_EIM_D21__I2C1_SCL | MUX_PAD_CTRL(I2C_PAD_CTRL),
@@ -892,43 +887,56 @@ int board_init(void)
 {
 	int i;
 
-	imx_iomux_v3_setup_multiple_pads(i2c_pads, ARRAY_SIZE(i2c_pads));
-
-	/* The Intersil RTC does not behave correctly on every boot.  When it
-	 * fails it locks up the I2C bus by driving it to ~1.5V.  It should only
-	 * be open drain, but the theory is that memory is corrupted on startup
-	 * on the RTC itself causing it to have a seemingly random behavior. If
-	 * we catch the force_idle_bus failing, then then off the fet, drive the pins 
-	 * low, wait, turn it back on, and this seems to fix the RTC issues. */
-	gpio_direction_output(TS7990_EN_RTC, 0);
-	udelay(1000*2); // 2ms to turn on
-
-	/* 5 is an arbitrary magic number.  2 should be enough, but 5 is 
-	 * including overkill and doesn't take very long if it were to fail up to 5 */
-	for (i = 0; i < 5; i++)
-	{
-		if (gpio_get_value(TS7990_SCL) == 1 &&
-			gpio_get_value(TS7990_SDA) == 1)
-			break;
-
-		// Drive I2C pins low
+	if(board_rev() == 'A') {
 		imx_iomux_v3_setup_pad(i2c_pad_info0.sda.gpio_mode);
 		imx_iomux_v3_setup_pad(i2c_pad_info0.scl.gpio_mode);
-		gpio_direction_output(i2c_pad_info0.sda.gp, 0);
-		gpio_direction_output(i2c_pad_info0.scl.gp, 0);
-
-		// Enable RTC FET
-		gpio_direction_output(TS7990_EN_RTC, 1);
-		udelay(1000*140); // 140ms to discharge
+		/* The Intersil RTC does not behave correctly on every boot.  When it
+		 * fails it locks up the I2C bus by driving it to ~1.5V.  It should only
+		 * be open drain, but the theory is that memory is corrupted on startup
+		 * on the RTC itself causing it to have a seemingly random behavior. If
+		 * we catch the force_idle_bus failing, then then off the fet, drive the pins 
+		 * low, wait, turn it back on, and this seems to fix the RTC issues. */
 		gpio_direction_output(TS7990_EN_RTC, 0);
 		udelay(1000*2); // 2ms to turn on
-		imx_iomux_v3_setup_pad(i2c_pad_info0.sda.i2c_mode);
-		imx_iomux_v3_setup_pad(i2c_pad_info0.scl.i2c_mode);
 
-		if(i == 4) puts ("Not able to force bus idle.  Giving up.\n");
+		/* 5 is an arbitrary magic number.  2 should be enough, but 5 is 
+		 * including overkill and doesn't take very long if it were to fail up to 5 */
+		for (i = 0; i < 5; i++)
+		{
+			if (gpio_get_value(TS7990_SCL) == 1 &&
+				gpio_get_value(TS7990_SDA) == 1)
+				break;
+
+			// Drive I2C pins low
+			imx_iomux_v3_setup_pad(i2c_pad_info0.sda.gpio_mode);
+			imx_iomux_v3_setup_pad(i2c_pad_info0.scl.gpio_mode);
+			gpio_direction_output(i2c_pad_info0.sda.gp, 0);
+			gpio_direction_output(i2c_pad_info0.scl.gp, 0);
+
+			// Enable RTC FET
+			gpio_direction_output(TS7990_EN_RTC, 1);
+			udelay(1000*140); // 140ms to discharge
+			gpio_direction_output(TS7990_EN_RTC, 0);
+			udelay(1000*2); // 2ms to turn on
+			imx_iomux_v3_setup_pad(i2c_pad_info0.sda.i2c_mode);
+			imx_iomux_v3_setup_pad(i2c_pad_info0.scl.i2c_mode);
+
+			if(i == 4) puts ("Not able to force bus idle.  Giving up.\n");
+		}
 	}
 	
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info0);
+
+	/* Reset pcap touch */
+	if(detect_lcd() == LCD_LXD) {
+		uint8_t val;
+
+		i2c_read(0x28, 59, 2, &val, 1);
+		val |= (1 << 5);
+		i2c_write(0x28, 59, 2, &val, 1);
+		val &= ~(1 << 5);
+		i2c_write(0x28, 59, 2, &val, 1);
+	}
 
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
