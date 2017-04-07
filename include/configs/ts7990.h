@@ -235,9 +235,18 @@
 	"nfsroot=192.168.0.36:/mnt/storage/imx6\0" \
 	"autoload=no\0" \
 	"disable_giga=1\0" \
+	"silochargpct=100\0" \
 	"initrd_addr=0x10800000\0 " \
 	"cmdline_append=console=ttymxc0,115200 ro init=/sbin/init\0" \
 	"splash=sf probe; sf read ${loadaddr} 200000 1de7; bmp display ${loadaddr}\0" \
+	"chargesilo=if test $silopresent = '1'; " \
+		"then echo 'TS-DC799-Silo is present'; " \
+		"if test $nochrgjp = '1' ; " \
+			"then echo 'No Charge jumper on'; " \
+		"else " \
+			"tsmicroctl b ${silochargpct}; " \
+		"fi;" \
+	"fi;\0" \
 	"clearenv=if sf probe; then " \
 		"sf erase 0x100000 0x2000;" \
 		"sf erase 0x180000 0x2000;" \
@@ -256,7 +265,8 @@
 			"load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
 		"fi;" \
 		"load mmc 0:1 ${loadaddr} /boot/uImage; " \
-		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append}; " \
+		"run chargesilo; " \
+		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append} ts-silo=${silopresent};  " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"emmcboot=echo Booting from eMMC ...; " \
 		"if load mmc 1:1 ${loadaddr} /boot/boot.ub; " \
@@ -272,7 +282,8 @@
 			"load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
 		"fi;" \
 		"load mmc 1:1 ${loadaddr} /boot/uImage; " \
-		"setenv bootargs root=/dev/mmcblk2p1 rootwait rw ${cmdline_append}; " \
+		"run chargesilo; " \
+		"setenv bootargs root=/dev/mmcblk2p1 rootwait rw ${cmdline_append} ts-silo=${silopresent};  " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"sataboot=echo Booting from SATA ...; " \
 		"gpio set 200;" \
@@ -290,7 +301,8 @@
 			"load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
 		"fi;" \
 		"load sata 0:1 ${loadaddr} /boot/uImage; " \
-		"setenv bootargs root=/dev/sda1 rootwait rw ${cmdline_append}; " \
+		"run chargesilo; " \
+		"setenv bootargs root=/dev/sda1 rootwait rw ${cmdline_append} ts-silo=${silopresent};  " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 	"usbprod=usb start; " \
 		"if usb storage; " \
@@ -310,18 +322,11 @@
 			"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
 		"fi;" \
 		"nfs ${loadaddr} ${nfsroot}/boot/uImage; " \
-		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} ${cmdline_append}; " \
+		"run chargesilo; " \
+		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} ${cmdline_append} ts-silo=${silopresent}; " \
 		"bootm ${loadaddr} - ${fdtaddr}; \0" \
 
 #define CONFIG_BOOTCOMMAND \
-	"if test $silopresent = '1' ; " \
-		"then echo 'TS-DC799-Silo is present'; " \
-		"if test $nochrgjp = '1' ; " \
-			"then echo 'No Charge jumper on'; " \
-		"else " \
-			"tsmicroctl b 100; " \
-		"fi;" \
-	"fi;" \
 	"if test ${jpsdboot} = 'on' ; " \
 		"then run sdboot; " \
 		"else run emmcboot; " \
