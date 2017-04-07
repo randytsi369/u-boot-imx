@@ -118,13 +118,14 @@ void block_charge(int blkpct)
 				puts("Cannot boot with POWER_FAIL asserted\n");
 		} else if(fpga_gpio_input(FPGA_DIO_6) == 1) {
 			if(i % 250)
-				printf("Need 18V to charge, at %dmV\r",
+				printf("Need 24VDC(18VDC min) to charge, at %dmV\r",
 					rscale(data[0], 2870, 147));
 		} else {
 			chgmv = rscale(data[5], 100, 22);
 			chgpct = chgmv*100/12000;
 			if(i % 250)
-				printf("Charging... %03d/100%% (%dmV)\r",
+				printf("Charging to %d%%... %03d/100%% (%dmV)\r",
+					blkpct,
 					chgpct, 
 					chgmv);
 		}
@@ -178,6 +179,9 @@ static int do_microctl(cmd_tbl_t *cmdtp, int flag,
 				pct = simple_strtoul(argv[++i], NULL, 10);
 				block_charge(pct);
 				break;
+			case 'e':
+				enable_supercaps();
+				break;
 			default:
 				printf("Unknown option '%s'\n", argv[i]);
 				return 1;
@@ -193,6 +197,7 @@ U_BOOT_CMD(tsmicroctl, 3, 0, do_microctl,
 	"    -s <seconds> sleep for x seconds\n"
 	"    -i print ADC values in millivolts\n"
 	"    -b <percent> Turn on supercaps and block until charged\n"
+	"    -e Turn on supercaps\n"
 	"    -d Turn off supercaps\n"
 	"  If the seconds argument is supplied the board will sleep.\n"
 	"  if not specified, it will print out the ADC values\n"
