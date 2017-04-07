@@ -239,97 +239,92 @@
 	"initrd_addr=0x10800000\0 " \
 	"cmdline_append=console=ttymxc0,115200 ro init=/sbin/init\0" \
 	"splash=sf probe; sf read ${loadaddr} 200000 1de7; bmp display ${loadaddr}\0" \
-	"chargesilo=if test $silopresent = '1'; " \
-		"then echo 'TS-DC799-Silo is present'; " \
-		"if test $nochrgjp = '1' ; " \
-			"then echo 'No Charge jumper on'; " \
-		"else " \
-			"tsmicroctl b ${silochargpct}; " \
+	"chargesilo=if test $silopresent = '1';" \
+		"then echo 'TS-DC799-Silo is present';" \
+		"if test $nochrgjp = '1';" \
+			"then echo 'No Charge jumper on';" \
+			"else tsmicroctl b ${silochargpct};"\
 		"fi;" \
 	"fi;\0" \
-	"clearenv=if sf probe; then " \
-		"sf erase 0x100000 0x2000;" \
+	"clearenv=if sf probe;" \
+		"then sf erase 0x100000 0x2000;" \
 		"sf erase 0x180000 0x2000;" \
 		"echo restored environment to factory default; fi\0" \
-	"sdboot=echo Booting from SD ...; " \
-		"if load mmc 0:1 ${loadaddr} /boot/boot.ub; " \
-			"then echo Booting from custom /boot/boot.ub; " \
+	"sdboot=echo Booting from SD ...;" \
+		"if load mmc 0:1 ${loadaddr} /boot/boot.ub;" \
+			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr}; " \
-		"fi; " \
-		"if load mmc 0:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
-			"then fpga load 0 ${loadaddr} ${filesize}; " \
-		"fi; " \
+		"fi;" \
+		"if load mmc 0:1 ${loadaddr} /boot/ts7990-fpga.vme;" \
+			"then fpga load 0 ${loadaddr} ${filesize};" \
+		"fi;" \
 		"if test ${pcbrev} != 'a';" \
 			"then load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
-		"else " \
-			"load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
+			"else load mmc 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
 		"fi;" \
-		"load mmc 0:1 ${loadaddr} /boot/uImage; " \
-		"run chargesilo; " \
-		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append} ts-silo=${silopresent};  " \
-		"bootm ${loadaddr} - ${fdtaddr}; \0" \
-	"emmcboot=echo Booting from eMMC ...; " \
-		"if load mmc 1:1 ${loadaddr} /boot/boot.ub; " \
-			"then echo Booting from custom /boot/boot.ub; " \
-			"source ${loadaddr}; " \
-		"fi; " \
-		"if load mmc 1:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
-			"then fpga load 0 ${loadaddr} ${filesize}; " \
-		"fi; " \
+		"load mmc 0:1 ${loadaddr} /boot/uImage;" \
+		"run chargesilo;" \
+		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append} ts-silo=${silopresent};" \
+		"bootm ${loadaddr} - ${fdtaddr};\0" \
+	"emmcboot=echo Booting from eMMC ...;" \
+		"if load mmc 1:1 ${loadaddr} /boot/boot.ub;" \
+			"then echo Booting from custom /boot/boot.ub;" \
+			"source ${loadaddr};" \
+		"fi;" \
+		"if load mmc 1:1 ${loadaddr} /boot/ts7990-fpga.vme;" \
+			"then fpga load 0 ${loadaddr} ${filesize};" \
+		"fi;" \
 		"if test ${pcbrev} != 'a';" \
 			"then load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
-		"else " \
-			"load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
+			"else load mmc 1:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
 		"fi;" \
-		"load mmc 1:1 ${loadaddr} /boot/uImage; " \
-		"run chargesilo; " \
-		"setenv bootargs root=/dev/mmcblk2p1 rootwait rw ${cmdline_append} ts-silo=${silopresent};  " \
-		"bootm ${loadaddr} - ${fdtaddr}; \0" \
-	"sataboot=echo Booting from SATA ...; " \
+		"load mmc 1:1 ${loadaddr} /boot/uImage;" \
+		"run chargesilo;" \
+		"setenv bootargs root=/dev/mmcblk2p1 rootwait rw ${cmdline_append} ts-silo=${silopresent};" \
+		"bootm ${loadaddr} - ${fdtaddr};\0" \
+	"sataboot=echo Booting from SATA ...;" \
 		"gpio set 200;" \
-		"sata init; " \
-		"if load sata 0:1 ${loadaddr} /boot/boot.ub; " \
-			"then echo Booting from custom /boot/boot.ub; " \
-			"source ${loadaddr}; " \
-		"fi; " \
-		"if load sata 0:1 ${loadaddr} /boot/ts7990-fpga.vme; " \
-			"then fpga load 0 ${loadaddr} ${filesize}; " \
-		"fi; " \
+		"sata init;" \
+		"if load sata 0:1 ${loadaddr} /boot/boot.ub;" \
+			"then echo Booting from custom /boot/boot.ub;" \
+			"source ${loadaddr};" \
+		"fi;" \
+		"if load sata 0:1 ${loadaddr} /boot/ts7990-fpga.vme;" \
+			"then fpga load 0 ${loadaddr} ${filesize};" \
+		"fi;" \
 		"if test ${pcbrev} != 'a';" \
 			"then load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
-		"else " \
-			"load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
+			"else load sata 0:1 ${fdtaddr} /boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
 		"fi;" \
-		"load sata 0:1 ${loadaddr} /boot/uImage; " \
-		"run chargesilo; " \
-		"setenv bootargs root=/dev/sda1 rootwait rw ${cmdline_append} ts-silo=${silopresent};  " \
-		"bootm ${loadaddr} - ${fdtaddr}; \0" \
-	"usbprod=usb start; " \
-		"if usb storage; " \
-			"then echo Checking USB storage for updates; " \
-			"if load usb 0:1 ${loadaddr} /tsinit.ub; " \
+		"load sata 0:1 ${loadaddr} /boot/uImage;" \
+		"run chargesilo;" \
+		"setenv bootargs root=/dev/sda1 rootwait rw ${cmdline_append} ts-silo=${silopresent};" \
+		"bootm ${loadaddr} - ${fdtaddr};\0" \
+	"usbprod=usb start;" \
+		"if usb storage;" \
+			"then echo Checking USB storage for updates;" \
+			"if load usb 0:1 ${loadaddr} /tsinit.ub;" \
 				"then led green on;" \
-				"source ${loadaddr}; " \
+				"source ${loadaddr};" \
 				"led red off; " \
 				"exit; " \
-			"fi; " \
-		"fi; \0" \
-	"nfsboot=echo Booting from NFS ...; " \
-		"dhcp; " \
+			"fi;" \
+		"fi;\0" \
+	"nfsboot=echo Booting from NFS ...;" \
+		"dhcp;" \
 		"if test ${pcbrev} != 'a';" \
 			"then nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}-revb.dtb;" \
-		"else " \
-			"nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}.dtb; " \
+			"else nfs ${fdtaddr} ${nfsroot}/boot/imx6${cpu}-ts7990-${lcd}.dtb;" \
 		"fi;" \
-		"nfs ${loadaddr} ${nfsroot}/boot/uImage; " \
-		"run chargesilo; " \
-		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} ${cmdline_append} ts-silo=${silopresent}; " \
-		"bootm ${loadaddr} - ${fdtaddr}; \0" \
+		"nfs ${loadaddr} ${nfsroot}/boot/uImage;" \
+		"run chargesilo;" \
+		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} ${cmdline_append} ts-silo=${silopresent};" \
+		"bootm ${loadaddr} - ${fdtaddr}; \0"
 
 #define CONFIG_BOOTCOMMAND \
-	"if test ${jpsdboot} = 'on' ; " \
-		"then run sdboot; " \
-		"else run emmcboot; " \
+	"if test ${jpsdboot} = 'on';" \
+		"then run sdboot;" \
+		"else run emmcboot;" \
 	"fi;"
 
 /* Miscellaneous configurable options */
