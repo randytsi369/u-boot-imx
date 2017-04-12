@@ -10,11 +10,22 @@
 #include <asm/io.h>
 #include <asm/arch/gpio.h>
 #include <asm/gpio.h>
+#include <asm/arch/mx6-pins.h>
 #include <asm/imx-common/iomux-v3.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/iomux.h>
 #include <status_led.h>
 #include <i2c.h>
+
+#define GPIO_PAD_CTRL    (PAD_CTL_HYS | PAD_CTL_PUS_100K_UP | PAD_CTL_PUE | \
+        PAD_CTL_PKE | PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm)
+
+#define DAT             IMX_GPIO_NR(3, 10)
+#define CLK             IMX_GPIO_NR(3, 9)
+#define F5V             IMX_GPIO_NR(3, 8)
+#define RST             IMX_GPIO_NR(2, 12)
+
+
 
 void board_sleep(int seconds)
 {
@@ -120,4 +131,96 @@ U_BOOT_CMD(tsmicroctl, 4, 0, do_microctl,
 	"    -s <seconds> Sleep for <seconds>\n"
 	"    -w <pct>     Wait until Supercaps are charged to <pct>%\n"
 	"    -1           Verbose output when -w is supplied\n"
+);
+
+static iomux_v3_cfg_t const c2_pads[] = {
+	MX6_PAD_LCD_DATA05__GPIO3_IO10 | MUX_PAD_CTRL(GPIO_PAD_CTRL),
+	MX6_PAD_LCD_DATA04__GPIO3_IO09 | MUX_PAD_CTRL(GPIO_PAD_CTRL),
+	MX6_PAD_LCD_DATA03__GPIO3_IO08 | MUX_PAD_CTRL(GPIO_PAD_CTRL),
+	MX6_PAD_ENET2_TX_DATA1__GPIO2_IO12 | MUX_PAD_CTRL(GPIO_PAD_CTRL),
+};
+
+void c2d_set(unsigned char state) /* 1, 0, or ‘z’ */
+{
+	if (state == 'z') {
+		gpio_direction_input(DAT);
+	} else if (state == 1) {
+		gpio_direction_output(DAT, 1);
+	} else {
+		gpio_direction_output(DAT, 0);
+	}
+}
+
+int c2d_get(void) { return gpio_get_value(DAT); }
+
+void c2ck_set(unsigned char state)
+{
+	//7553-V2 c2ck is inverted
+	/* INFO: c2.c likes to set z state, seems to cause issues
+	 * Its not really necessary, not sure why its doing it that often
+	 */
+	if (state == 'z') {
+		//gpio_direction_input(CLK);
+	} else if (state == 1) {
+		gpio_direction_output(CLK, 0);
+	} else {
+		gpio_direction_output(CLK, 1);
+	}
+}
+void c2ck_strobe(void) {
+	//7553-V2 c2ck is inverted
+	gpio_direction_output(CLK, 1);
+	gpio_direction_output(CLK, 0);
+}
+
+unsigned int len;
+unsigned char *data;
+
+unsigned int c2_fopen(void) {
+	return len;
+}
+
+unsigned char c2_getc(void) {
+	unsigned char ret;
+	ret = (*data++);
+	return ret;
+}
+
+void c2_reset(void) {
+	gpio_direction_output(RST, 1);
+	udelay(25);
+	gpio_direction_output(RST, 0);
+	udelay(1);
+}
+
+int blast_silabs(void);
+
+static int do_silabs(cmd_tbl_t *cmdtp, int flag, 
+	int argc, char * const argv[])
+{
+	//Initialize IO pins
+	gpio_direction_output(F5V, 1);
+	gpio_direction_output(RST, 0);
+	gpio_direction_output(DAT, 1);
+	gpio_direction_output(CLK, 0);
+	imx_iomux_v3_setup_multiple_pads(c2_pads,
+	  ARRAY_SIZE(c2_pads));
+
+	data = (unsigned char *)simple_strtoul(argv[1], NULL, 16);
+	len = simple_strtoul(argv[2], NULL, 16);
+
+	blast_silabs();
+
+	gpio_direction_input(F5V);
+	gpio_direction_input(RST);
+	gpio_direction_input(CLK);
+	gpio_direction_input(DAT);
+
+	return 0;
+	
+}
+
+U_BOOT_CMD(silabs, 3, 0, do_silabs,
+	"TS supervisory microcontroller programming",
+	"  Usage: silabs <image address> <length>\n"
 );
