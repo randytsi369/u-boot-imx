@@ -236,7 +236,7 @@
 	"nfsroot=192.168.0.36:/mnt/storage/imx6\0" \
 	"autoload=no\0" \
 	"disable_giga=1\0" \
-	"silochargpct=100\0" \
+	"silochargpct=85\0" \
 	"initrd_addr=0x10800000\0 " \
 	"cmdline_append=console=ttymxc0,115200 ro init=/sbin/init\0" \
 	"splash=sf probe; sf read ${loadaddr} 200000 1de7; bmp display ${loadaddr}\0" \
