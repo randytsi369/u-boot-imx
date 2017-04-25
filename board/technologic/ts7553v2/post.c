@@ -67,7 +67,7 @@ int micrel_phy_test(void)
 	return ret;
 }
 
-int emmc_test(void)
+int emmc_test(int destructive)
 {
 	int ret = 0, i;
 	uint32_t *loadaddr = (uint32_t *)0x80800000;
@@ -82,7 +82,7 @@ int emmc_test(void)
 	/* This tests simple enumeration */
 	ret |= cmd->cmd(cmd, 0, 3, query_argv);
 
-	if(!getenv("post_nowrite")) {
+	if(destructive) {
 		memset(loadaddr, 0xAAAAAAAA, 1024*1024*4);
 		ret |= cmd->cmd(cmd, 0, 5, write_argv);
 		memset(loadaddr, 0x00000000, 1024*1024*4);
@@ -108,10 +108,13 @@ int emmc_test(void)
 				ret = 1;
 			}
 		}
+
+		if (ret == 0) printf("eMMC test passed\n");
+		else printf("eMMC test failed\n");
+	} else {
+		printf("Not running eMMC test!\n");
 	}
 
-	if (ret == 0) printf("eMMC test passed\n");
-	else printf("eMMC test failed\n");
 	return ret;
 }
 
@@ -159,7 +162,6 @@ int rtc_test(void)
 int mem_test(void)
 {
 	int ret = 0;
-	int argc = 5;
 	cmd_tbl_t *cmd;
 
 	/* Arguments to mtest are start, end, pattern, and iterations */
@@ -277,9 +279,14 @@ static int silab_rev(void)
 static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret = 0;
-	uint8_t val;
+	char *p;
+	int destructive = 0;
 	//XXX: Build variant will be available in env
 
+	if (argv[1][0] == '-') p = &argv[1][1];
+	else p = &argv[1][0];
+
+	if (*p == 'd') destructive = 1;
 
 	leds_test();
 
@@ -297,7 +304,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 
 	//ret |= wifi_test();
 
-	ret |= emmc_test();
+	ret |= emmc_test(destructive);
 	ret |= mem_test();
 	ret |= silabs_test();
 
@@ -306,7 +313,8 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	return ret;
 }
 
-U_BOOT_CMD(post, 1, 1,	do_post_test,
+U_BOOT_CMD(post, 2, 1,	do_post_test,
 	"Runs a POST test",
-	""
+	"[-d]\n"
+	"If -d is supplied, the test is destructive to data on eMMC\n"
 );
