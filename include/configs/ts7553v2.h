@@ -83,8 +83,7 @@
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
 	"autoload=no\0" \
-	"nfsip=192.168.0.36\0" \
-	"nfsroot=/mnt/storage/imx6ul/\0" \
+	"nfsroot=192.168.0.1:/usr/local/ts7553v2-nfsroot/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 2000; mmc erase 4000 2000;\0" \
 	"cmdline_append=rw rootwait console=ttymxc0,115200 loglevel=3\0" \
 	"usbprod=usb start;" \
@@ -117,12 +116,11 @@
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"dhcp;" \
-		"mw.l ${fdtaddr} 0 1000;" \
-		"mw.l ${loadaddr} 0 1000;" \
-		"nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/imx6ul-ts7553v2.dtb;" \
-		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
-		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} ${cmdline_append};" \
-		"bootz ${loadaddr} - ${fdtaddr};\0" \
+		"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2.dtb;" \
+		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \
+		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
+			"${cmdline_append};" \
+		"bootz ${loadaddr} - ${fdtaddr}; \0" \
 	"bootcmd_mfg=echo MFG boot;" \
 		"if mmc dev 0;" \
 			"then load mmc 0:1 ${loadaddr} /prime-ts7553v2.ub;" \
