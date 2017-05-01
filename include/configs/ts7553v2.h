@@ -137,7 +137,8 @@
 		"setexpr filesize ${filesize} / 200;" \
 		"setexpr filesize ${filesize} + 1;" \
 		"mmc dev 1 1;" \
-		"mmc write ${loadaddr} 2 ${filesize};\0"
+		"mmc write ${loadaddr} 2 ${filesize};\0" \
+	"emmc-ums=gpio set 71; ums 0 mmc 1;\0" \
 
 #define CONFIG_BOOTCOMMAND \
 	"if test \"${jpuboot}\" = \"on\"; then " \
