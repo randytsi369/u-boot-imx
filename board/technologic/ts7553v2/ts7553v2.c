@@ -66,6 +66,11 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 
+#define SPI_PAD_CTRL (PAD_CTL_HYS | PAD_CTL_SPEED_MED |         \
+	PAD_CTL_DSE_40ohm     | PAD_CTL_SRE_FAST | PAD_CTL_PUE |\
+	PAD_CTL_PUS_100K_UP)
+
+
 #define U_BOOT_JMPN		IMX_GPIO_NR(3, 19)
 #define SD_BOOT_JMPN		IMX_GPIO_NR(3, 17)
 #define PUSH_SW_CPUN		IMX_GPIO_NR(3, 18)
@@ -93,6 +98,15 @@ struct i2c_pads_info i2c_pad_info1 = {
 		.gp = IMX_GPIO_NR(1, 3),
 	},
 };
+
+/* SPI */
+iomux_v3_cfg_t const ecspi4_pads[] = {
+	MX6_PAD_NAND_DATA07__GPIO4_IO09  | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_NAND_DATA04__ECSPI4_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_NAND_DATA05__ECSPI4_MOSI | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_NAND_DATA06__ECSPI4_MISO | MUX_PAD_CTRL(SPI_PAD_CTRL),
+};
+
 
 int dram_init(void)
 {
@@ -282,6 +296,13 @@ int board_phy_config(struct phy_device *phydev)
 }
 #endif
 
+void setup_spi(void)
+{
+	imx_iomux_v3_setup_multiple_pads(ecspi4_pads,
+	  ARRAY_SIZE(ecspi4_pads));
+}
+
+
 int board_early_init_f(void)
 {
 	setup_iomux_uart();
@@ -318,6 +339,7 @@ int misc_init_r(void)
 			jpr = gpio_get_value(PUSH_SW_CPUN);
 			if(!jpr) setenv("jpuboot", "on");
 		}
+
 	}
 
 	if(gpio_get_value(NO_CHRG_JMPN)) {
@@ -336,6 +358,8 @@ int board_init(void)
 {
 	/* Address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
+
+	setup_spi();
 
 	#ifdef CONFIG_FEC_MXC
 	setup_fec(CONFIG_FEC_ENET_DEV);

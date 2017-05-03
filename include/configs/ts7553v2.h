@@ -64,6 +64,11 @@
 #undef CONFIG_BOOTM_PLAN9
 #undef CONFIG_BOOTM_RTEMS
 
+#define CONFIG_CMD_SPI
+#define CONFIG_MXC_SPI
+#define CONFIG_ATMEL_WIFI_BUS		3 /* ECSPI4 */
+#define CONFIG_ATMEL_WIFI_CS		0 /* ECSPI4 */
+
 /* I2C configs */
 #define CONFIG_CMD_I2C
 #define CONFIG_SYS_I2C

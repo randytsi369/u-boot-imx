@@ -16,6 +16,7 @@
 #include <cli.h>
 #include <command.h>
 #include <i2c.h>
+#include <spi.h>
 #include <status_led.h>
 #include <usb.h>
 
@@ -23,23 +24,6 @@
 
 #include "post.h"
 
-#if 0
-#define LOOP_PAD_CTRL (PAD_CTL_HYS | PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST)
-
-iomux_v3_cfg_t const custom1_led_pads[] = {
-	MX6_PAD_GPIO_2__GPIO1_IO02 | MUX_PAD_CTRL(NO_PAD_CTRL), // YEL_LED#
-	MX6_PAD_GPIO_9__GPIO1_IO09 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED2#
-	MX6_PAD_EIM_D27__GPIO3_IO27 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED3#
-	MX6_PAD_DISP0_DAT7__GPIO4_IO28 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED4#
-	MX6_PAD_EIM_D23__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED5#
-	MX6_PAD_DISP0_DAT10__GPIO4_IO31 | MUX_PAD_CTRL(NO_PAD_CTRL), // EN_LED6#
-};
-
-iomux_v3_cfg_t const posttest_pads[] = {
-	MX6_PAD_SD4_DAT6__GPIO2_IO14 | MUX_PAD_CTRL(LOOP_PAD_CTRL), // UART2_CTS
-	MX6_PAD_SD4_DAT5__GPIO2_IO13 | MUX_PAD_CTRL(LOOP_PAD_CTRL), // UART2_RTS
-};
-#endif
 int micrel_phy_test(void)
 {
 	int ret = 0;
@@ -118,29 +102,44 @@ int emmc_test(int destructive)
 	return ret;
 }
 
-int wifi_test(void)
+int atmel_wifi_test(void)
 {
+	/* Magic number SPI string.
+	 * This is sent by the kernel driver first thing after out of reset.
+	 * It is doing an internal read of some address, contents don't really
+	 *   matter.  We only care about first response byte, which should
+	 *   match the first byte sent (which is the command that is sent).
+	 */
+	static const char dout[17] = {0xc4, 0x0, 0x24, 0x0, 0x20, 0x0, 0x0, 0x0,
+	  0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+	char din[17] = {0};
 	static int ret = 0;
-	static bool initialized = 0;
+	struct spi_slave *slave;
 
-	/* This test only works once per POR, so cache the result */
-	if(!initialized) {
-		uint8_t val;
-		initialized = 1;
 
-		/* Wifi is very complex and implementing a real test in u-boot is probably 
-		 * not wise but the bluetooth on the same chip shows sign of life by going low
-		 * after the chip is enabled. */
-		gpio_direction_input(IMX_GPIO_NR(2, 13)); // RTS
-		if(gpio_get_value(IMX_GPIO_NR(2, 13)) != 1)
-			ret = 1;
+	/* Unreset and enable device */
+	gpio_direction_output(IMX_GPIO_NR(4, 26), 1); // chip enable
+	mdelay(5);
+	gpio_direction_output(IMX_GPIO_NR(4, 10), 1); // Reset
 
-		val = 3;
-		ret |= i2c_write(0x28, 13, 2, &val, 1);
-		mdelay(500);
-		if(gpio_get_value(IMX_GPIO_NR(2, 13)) != 0)
-			ret = 1;
+
+	slave = spi_setup_slave(CONFIG_ATMEL_WIFI_BUS, CONFIG_ATMEL_WIFI_CS,
+	  24000000, SPI_MODE_0);
+	if(spi_claim_bus(slave)){
+		printf("Failed to claim the SPI bus\n");
+		ret = 1;
 	}
+
+	gpio_direction_output(IMX_GPIO_NR(4, 9), 0); // CS#
+	if(!ret) ret = spi_xfer(slave, 136, (void *)dout, (void *)din, 0);
+	gpio_direction_output(IMX_GPIO_NR(4, 9), 1); // CS#
+
+	/* Verify first response byte is the command byte we sent */
+	ret |= !(din[5] == 0xc4);
+
+	/* Reset and disable device device */
+	gpio_direction_output(IMX_GPIO_NR(4, 10), 0); // Reset
+	gpio_direction_output(IMX_GPIO_NR(4, 26), 0); // chip enable
 
 	if (ret == 0) printf("WIFI test passed\n");
 	else printf("WIFI test failed\n");
@@ -302,7 +301,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	ret |= rtc_test();
 	ret |= micrel_phy_test();
 
-	//ret |= wifi_test();
+	ret |= atmel_wifi_test();
 
 	ret |= emmc_test(destructive);
 	ret |= mem_test();
