@@ -126,7 +126,7 @@
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
-	"bootcmd_mfg=exit;echo MFG boot;" \
+	"bootcmd_mfg=echo MFG boot;" \
 		"if mmc dev 0;" \
 			"then load mmc 0:1 ${loadaddr} /prime-ts7180.ub;" \
 			"source ${loadaddr};" \

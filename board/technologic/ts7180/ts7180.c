@@ -253,7 +253,7 @@ static iomux_v3_cfg_t const usdhc1_sd_pads[] = {
 	MX6_PAD_SD1_DATA1__USDHC1_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_DATA2__USDHC1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_DATA3__USDHC1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_GPIO1_IO05__USDHC1_VSELECT | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_CSI_DATA07__USDHC1_VSELECT | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static iomux_v3_cfg_t const usdhc2_emmc_pads[] = {
@@ -275,7 +275,6 @@ static struct fsl_esdhc_cfg usdhc_cfg[2] = {
 	{USDHC2_BASE_ADDR, 0, 4},
 };
 
-#define USDHC1_VSELECT IMX_GPIO_NR(1, 5)
 
 int board_mmc_getcd(struct mmc *mmc)
 {
@@ -291,10 +290,7 @@ int board_mmc_init(bd_t *bis)
 	 * mmc1                    USDHC2 (eMMC)
 	 */
 	fpga_mmc_init();
-
-	/* For the SD Select 3.3V instead of 1.8V */
-	gpio_direction_output(USDHC1_VSELECT, 1);
-
+	
 	imx_iomux_v3_setup_multiple_pads(
 		usdhc1_sd_pads, ARRAY_SIZE(usdhc1_sd_pads));
 	usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);

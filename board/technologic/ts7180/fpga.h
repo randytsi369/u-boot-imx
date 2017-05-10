@@ -8,10 +8,6 @@
 #define __FPGA_H__
 
 /* FPGA IO */
-#define EN_YEL_LEDN		2
-#define EN_GREEN_LEDN		3
-#define EN_RED_LEDN		4
-#define EN_BLUE_LED		5
 #define EN_SD_POWER 		14
 #define EN_USB_HOST_5V		15
 #define EN_OFF_BD_5V		16
