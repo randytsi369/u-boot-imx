@@ -84,7 +84,6 @@ void green_led_off(void)
 
 void __led_init(led_id_t mask, int state)
 {
-printf("%s %d\n", __func__, __LINE__);
    imx_iomux_v3_setup_multiple_pads(led_pads,
 					 ARRAY_SIZE(led_pads));
 
