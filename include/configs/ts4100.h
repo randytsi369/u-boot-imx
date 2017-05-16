@@ -8,6 +8,8 @@
 #ifndef __TS4100_CONFIG_H
 #define __TS4100_CONFIG_H
 
+#error "U-Boot 2015.04 for the TS-4100 is deprecated. Remove the #error from the TS-4100 config file to continue"
+
 
 #include <asm/arch/imx-regs.h>
 #include <linux/sizes.h>
