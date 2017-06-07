@@ -830,8 +830,12 @@ int misc_init_r(void)
 	setenv("model", "7990");
 	setenv_hex("reset_cause", get_imx_reset_cause());
 
-	if(tssilo_is_detected()) {
-		setenv("silopresent", "1");
+	if(board_rev() != 'A') {
+		if(tssilo_is_detected()) {
+			setenv("silopresent", "1");
+		} else {
+			setenv("silopresent", "0");
+		}
 	} else {
 		setenv("silopresent", "0");
 	}
