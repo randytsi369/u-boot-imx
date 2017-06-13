@@ -143,7 +143,7 @@ int emmc_test(void)
 	return ret;
 }
 
-/* Check for ISL12020 */
+/* Check for m41t000 rtc */
 int rtc_test(void)
 {
 	int ret;
