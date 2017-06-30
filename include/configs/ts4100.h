@@ -67,12 +67,17 @@
 #undef CONFIG_BOOTM_PLAN9
 #undef CONFIG_BOOTM_RTEMS
 
+#define CONFIG_CMD_SPI
+#define CONFIG_MXC_SPI
+#define CONFIG_ATMEL_WIFI_BUS		3 /* ECSPI4 */
+#define CONFIG_ATMEL_WIFI_CS		0 /* ECSPI4 */
+
 /* I2C configs */
 #define CONFIG_CMD_I2C
 #define CONFIG_SYS_I2C
 #define CONFIG_SYS_I2C_MXC
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
-#define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
+#define CONFIG_SYS_I2C_MXC_I2C2 	/* enable I2C bus 2 */
 #define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
 #define CONFIG_SYS_I2C_SPEED		100000
 
@@ -89,8 +94,7 @@
 	"fdtaddr=0x83000000\0" \
 	"model=4100\0" \
 	"autoload=no\0" \
-	"nfsip=192.168.0.36\0" \
-	"nfsroot=/mnt/storage/imx6ul/\0" \
+	"nfsroot=192.168.0.36:/mnt/storage/imx6ul/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 2000; mmc erase 4000 2000;\0" \
 	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
 	"usbprod=usb start;" \
@@ -135,18 +139,18 @@
 		"dhcp;" \
 		"mw.l ${fdtaddr} 0 1000;" \
 		"mw.l ${loadaddr} 0 1000;" \
-		"nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
+		"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
 		"if fdt addr ${fdtaddr};" \
 			"then echo Baseboard $baseboardid detected;" \
 		"else " \
 			"echo Booting default device tree;" \
-			"nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/imx6ul-ts4100.dtb;" \
+			"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
-		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
-		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
+		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \
+		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
-	"bootcmd_mfg=echo MFG boot;" \
+	"bootcmd_mfg=exit;echo MFG boot;" \
 		"if mmc dev 0;" \
 			"then load mmc 0:1 ${loadaddr} /prime-ts4100.ub;" \
 			"source ${loadaddr};" \
