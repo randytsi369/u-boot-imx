@@ -29,6 +29,7 @@
 #include <usb.h>
 #include <usb/ehci-fsl.h>
 #include "fpga.h"
+#include "silabs.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -546,14 +547,15 @@ int checkboard(void)
 	mdelay(10);
 	gpio_direction_output(FPGA_RESETN, 1);
 
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x4a, &i2c_pad_info1);
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x28, &i2c_pad_info3);
 	fpgarev = fpga_get_rev();
 	puts("Board: Technologic Systems TS-4100\n");
 	if(fpgarev < 0)
 		printf("FPGA I2C communication failed: %d\n", fpgarev);
 	else
 		printf("FPGA:  Rev %d\n", fpgarev);
+	printf("Silab: Rev %d\n", silab_rev());
 
 	return 0;
 }
