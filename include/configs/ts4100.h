@@ -8,7 +8,6 @@
 #ifndef __TS4100_CONFIG_H
 #define __TS4100_CONFIG_H
 
-
 #include <asm/arch/imx-regs.h>
 #include <linux/sizes.h>
 #include <asm/imx-common/gpio.h>
@@ -150,7 +149,7 @@
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
-	"bootcmd_mfg=exit;echo MFG boot;" \
+	"bootcmd_mfg=echo MFG boot;" \
 		"if mmc dev 0;" \
 			"then load mmc 0:1 ${loadaddr} /prime-ts4100.ub;" \
 			"source ${loadaddr};" \
