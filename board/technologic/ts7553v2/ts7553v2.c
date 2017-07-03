@@ -125,6 +125,11 @@ static iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_LCD_DATA12__GPIO3_IO17 | MUX_PAD_CTRL(NO_PAD_CTRL), /* SD_BOOT_JMP# */
 	MX6_PAD_LCD_DATA13__GPIO3_IO18 | MUX_PAD_CTRL(NO_PAD_CTRL), /* PUSH_SW_CPU# */
 	MX6_PAD_LCD_DATA06__GPIO3_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL), /* NO_CHRG_JMP# */
+
+	MX6_PAD_LCD_DATA18__GPIO3_IO23 | MUX_PAD_CTRL(LCD_PAD_CTRL), /* STRAP_0 */
+	MX6_PAD_LCD_DATA19__GPIO3_IO24 | MUX_PAD_CTRL(LCD_PAD_CTRL), /* STRAP_1 */
+	MX6_PAD_LCD_DATA22__GPIO3_IO27 | MUX_PAD_CTRL(LCD_PAD_CTRL), /* STRAP_2 */
+	MX6_PAD_LCD_DATA23__GPIO3_IO28 | MUX_PAD_CTRL(LCD_PAD_CTRL), /* STRAP_3 */
 };
 
 static iomux_v3_cfg_t const usdhc1_sd_pads[] = {
@@ -317,13 +322,20 @@ int board_early_init_f(void)
 int misc_init_r(void)
 {
 	int jpr;
-	uint8_t dat = 0x1;
+	uint8_t dat;
+	uint8_t opts = 0;
+
+	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 
 	/* Onboard jumpers to boot to SD or break in u-boot */
 	gpio_direction_input(SD_BOOT_JMPN);
 	gpio_direction_input(PUSH_SW_CPUN);
 	gpio_direction_input(U_BOOT_JMPN);
 	gpio_direction_input(NO_CHRG_JMPN);
+	gpio_direction_input(IMX_GPIO_NR(3, 23));
+	gpio_direction_input(IMX_GPIO_NR(3, 24));
+	gpio_direction_input(IMX_GPIO_NR(3, 27));
+	gpio_direction_input(IMX_GPIO_NR(3, 28));
 
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x2a, &i2c_pad_info1);
 
@@ -342,12 +354,19 @@ int misc_init_r(void)
 
 	}
 
-	if(gpio_get_value(NO_CHRG_JMPN)) {
-		i2c_write(0x2a, 0x0, 0, &dat, 1);
+	opts |= (gpio_get_value(IMX_GPIO_NR(3, 23)) << 0);
+	opts |= (gpio_get_value(IMX_GPIO_NR(3, 24)) << 1);
+	opts |= (gpio_get_value(IMX_GPIO_NR(3, 27)) << 2);
+	opts |= (gpio_get_value(IMX_GPIO_NR(3, 28)) << 3);
+
+	setenv_hex("opts", (opts & 0xF));
+
+	if(opts == 0x7 && gpio_get_value(NO_CHRG_JMPN)) {
+		dat = 0x1;
 	} else {
-		dat = 0;
-		i2c_write(0x2a, 0x0, 0, &dat, 1);
+		dat = 0x0;
 	}
+	i2c_write(0x2a, 0x0, 0, &dat, 1);
 
 	setenv("model", "7553");
 
