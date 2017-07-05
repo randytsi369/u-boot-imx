@@ -280,6 +280,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	int ret = 0;
 	char *p;
 	int destructive = 0;
+	char opts;
 	//XXX: Build variant will be available in env
 
 	if (argv[1][0] == '-') p = &argv[1][1];
@@ -287,21 +288,34 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 
 	if (*p == 'd') destructive = 1;
 
+	opts = getenv_hex("opts", 0x0);
+
 	leds_test();
 
-	//imx_iomux_v3_setup_multiple_pads(posttest_pads, ARRAY_SIZE(posttest_pads));
-
-	if(silab_rev() <= 1) {
+	if(silab_rev() < 8) {
 		ret = 1;
 		printf("Silab rev is old or invalid\n");
 	}
 	printf("Silab rev is 0x%x\n", silab_rev());
 
+	switch(opts) {
+	  case 0x2: // Option 1
+		break;
+	  case 0x3: // Option 2
+	  case 0x7: // Option 3
+		ret |= atmel_wifi_test();
+		/* Add FRAM test */
+		break;
+	  default:
+		printf("Error! Unknown options, failing POST test!\n");
+		ret = 1;
+		break;
+	}
+
+
 	ret |= usbhub_test();
 	ret |= rtc_test();
 	ret |= micrel_phy_test();
-
-	ret |= atmel_wifi_test();
 
 	ret |= emmc_test(destructive);
 	ret |= mem_test();
