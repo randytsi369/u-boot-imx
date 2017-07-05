@@ -139,7 +139,7 @@ static iomux_v3_cfg_t const usdhc1_sd_pads[] = {
 	MX6_PAD_SD1_DATA1__USDHC1_DATA1 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_DATA2__USDHC1_DATA2 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
 	MX6_PAD_SD1_DATA3__USDHC1_DATA3 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
-	MX6_PAD_GPIO1_IO05__USDHC1_VSELECT | MUX_PAD_CTRL(NO_PAD_CTRL), /* VSELECT */
+	MX6_PAD_GPIO1_IO05__USDHC1_VSELECT | MUX_PAD_CTRL(USDHC_PAD_CTRL), /* VSELECT */
 };
 
 static iomux_v3_cfg_t const usdhc2_emmc_pads[] = {
@@ -177,7 +177,7 @@ int board_mmc_init(bd_t *bis)
 	gpio_direction_output(EN_SD_PWR, 1);
 
 	/* For the SD Select 3.3V instead of 1.8V */
-	gpio_direction_output(USDHC1_VSELECT, 1);
+	gpio_direction_output(USDHC1_VSELECT, 0);
 
 	imx_iomux_v3_setup_multiple_pads(
 		usdhc1_sd_pads, ARRAY_SIZE(usdhc1_sd_pads));
