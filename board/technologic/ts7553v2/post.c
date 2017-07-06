@@ -146,6 +146,85 @@ int atmel_wifi_test(void)
 	return ret;
 }
 
+int fram_test(int destructive)
+{
+	static const char wren_cmd = 0x6;
+	static const char rdsr_cmd[2] = {0x5, 0x0};
+	char wr_pattern[19] = {0x2, 0x0, 0x0, 0xAA, 0x55, 0xAA,
+	  0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55,
+	  0xAA, 0x55};
+	char rd_cmd[19] = {0};
+	char din[19] = {0};
+	struct spi_slave *slave;
+	int ret = 0, i;
+
+	rd_cmd[0] = 0x3;
+
+	slave = spi_setup_slave(CONFIG_FRAM_BUS, CONFIG_FRAM_CS,
+	  1000000, SPI_MODE_0);
+	if(spi_claim_bus(slave)){
+		printf("Failed to claim the SPI bus\n");
+		ret = 1;
+	}
+
+	/* Read status reg */
+	gpio_direction_output(IMX_GPIO_NR(5, 6), 0); // CS#
+	if(!ret) ret = spi_xfer(slave, 16, &rdsr_cmd, (void *)din, 0);
+	gpio_direction_output(IMX_GPIO_NR(5, 6), 1); // CS#
+	if(din[1] != 0x0) ret = 1;
+
+	if (destructive) {
+		/* Enable writes */
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 0); // CS#
+		if(!ret) ret = spi_xfer(slave, 8, &wren_cmd, (void *)din, 0);
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 1); // CS#
+		/* Write bit pattern */
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 0); // CS#
+		if(!ret) ret = spi_xfer(slave, 152, (void *)wr_pattern, (void *)din, 0);
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 1); // CS#
+		/* Read back */
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 0); // CS#
+		if(!ret) ret = spi_xfer(slave, 152, (void *)rd_cmd, (void *)din, 0);
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 1); // CS#
+
+		for (i = 3; i < 19; i++) {
+			if (din[i] != wr_pattern[i]) {
+				ret = 1;
+				printf("Pattern mismatch at byte %d\n", i-3);
+				break;
+			}
+		}
+		memset(&din, 0, sizeof(din));
+		memset(&wr_pattern, 0, sizeof(wr_pattern));
+		wr_pattern[0] = 0x2;
+
+		/* Enable writes */
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 0); // CS#
+		if(!ret) ret = spi_xfer(slave, 8, &wren_cmd, (void *)din, 0);
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 1); // CS#
+		/* Write zeros */
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 0); // CS#
+		if(!ret) ret = spi_xfer(slave, 152, (void *)wr_pattern, (void *)din, 0);
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 1); // CS#
+		/* Read back */
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 0); // CS#
+		if(!ret) ret = spi_xfer(slave, 152, (void *)rd_cmd, (void *)din, 0);
+		gpio_direction_output(IMX_GPIO_NR(5, 6), 1); // CS#
+
+		for (i = 3; i < 19; i++) {
+			if (din[i] != 0x0) {
+				ret = 1;
+				printf("Zero mismatch at byte %d\n", i-3);
+				break;
+			}
+		}
+	}
+
+	if (ret == 0) printf("FRAM test passed\n");
+	else printf("FRAM test failed\n");
+	return ret;
+}
+
 /* Check for M41T00S */
 int rtc_test(void)
 {
@@ -304,7 +383,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	  case 0x3: // Option 2
 	  case 0x7: // Option 3
 		ret |= atmel_wifi_test();
-		/* Add FRAM test */
+		ret |= fram_test(destructive);
 		break;
 	  default:
 		printf("Error! Unknown options, failing POST test!\n");

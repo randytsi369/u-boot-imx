@@ -99,12 +99,20 @@ struct i2c_pads_info i2c_pad_info1 = {
 	},
 };
 
-/* SPI */
+/* SPI - WiFi */
 iomux_v3_cfg_t const ecspi4_pads[] = {
 	MX6_PAD_NAND_DATA07__GPIO4_IO09  | MUX_PAD_CTRL(SPI_PAD_CTRL),
 	MX6_PAD_NAND_DATA04__ECSPI4_SCLK | MUX_PAD_CTRL(SPI_PAD_CTRL),
 	MX6_PAD_NAND_DATA05__ECSPI4_MOSI | MUX_PAD_CTRL(SPI_PAD_CTRL),
 	MX6_PAD_NAND_DATA06__ECSPI4_MISO | MUX_PAD_CTRL(SPI_PAD_CTRL),
+};
+
+/* SPI - FRAM */
+iomux_v3_cfg_t const ecspi3_pads[] = {
+	MX6_PAD_NAND_CE0_B__ECSPI3_SCLK  | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_NAND_CE1_B__ECSPI3_MOSI  | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_NAND_CLE__ECSPI3_MISO    | MUX_PAD_CTRL(SPI_PAD_CTRL),
+	MX6_PAD_SNVS_TAMPER6__GPIO5_IO06 | MUX_PAD_CTRL(SPI_PAD_CTRL),
 };
 
 
@@ -119,6 +127,7 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 	MX6_PAD_UART1_TX_DATA__UART1_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
 	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 };
+
 
 static iomux_v3_cfg_t const misc_pads[] = {
 	MX6_PAD_LCD_DATA14__GPIO3_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL), /* U_BOOT_JMP# */
@@ -305,6 +314,8 @@ void setup_spi(void)
 {
 	imx_iomux_v3_setup_multiple_pads(ecspi4_pads,
 	  ARRAY_SIZE(ecspi4_pads));
+	imx_iomux_v3_setup_multiple_pads(ecspi3_pads,
+	  ARRAY_SIZE(ecspi3_pads));
 }
 
 

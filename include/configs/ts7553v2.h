@@ -68,6 +68,8 @@
 #define CONFIG_MXC_SPI
 #define CONFIG_ATMEL_WIFI_BUS		3 /* ECSPI4 */
 #define CONFIG_ATMEL_WIFI_CS		0 /* ECSPI4 */
+#define CONFIG_FRAM_BUS			2 /* ECSPI3 */
+#define CONFIG_FRAM_CS			0 /* ECSPI3 */
 
 /* I2C configs */
 #define CONFIG_CMD_I2C
