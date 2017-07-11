@@ -137,8 +137,12 @@
 		"dhcp;" \
 		"nfs ${loadaddr} 192.168.0.11:/u/x/jessie-armel/boot-imx6ul/prime-ts7553v2.ub;" \
 		"source ${loadaddr};\0" \
-	"update-uboot=echo Updating U-Boot image;" \
-		"load mmc 0:1 ${loadaddr} /boot/u-boot.imx;"\
+	"update-uboot=if test ${jpsdboot} = 'on';" \
+			"then echo Updating U-Boot image from SD;" \
+			"load mmc 0:1 ${loadaddr} /boot/u-boot.imx;"\
+			"else echo Updating U-Boot image from eMMC;" \
+			"load mmc 1:1 ${loadaddr} /boot/u-boot.imx;"\
+		"fi;" \
 		"setexpr filesize ${filesize} / 200;" \
 		"setexpr filesize ${filesize} + 1;" \
 		"mmc dev 1 1;" \
