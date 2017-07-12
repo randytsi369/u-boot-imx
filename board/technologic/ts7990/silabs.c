@@ -199,6 +199,4 @@ U_BOOT_CMD(tsmicroctl, 3, 0, do_microctl,
 	"    -b <percent> Turn on supercaps and block until charged\n"
 	"    -e Turn on supercaps\n"
 	"    -o Turn off supercaps\n"
-	"  If the seconds argument is supplied the board will sleep.\n"
-	"  if not specified, it will print out the ADC values\n"
 );
