@@ -242,13 +242,13 @@
 	"splash=sf probe; sf read ${loadaddr} 200000 1de7; bmp display ${loadaddr}\0" \
 	"prechargesilo=if test $silopresent = '1';" \
 		"then echo 'TS-DC799-Silo is present';" \
-		"if test $nochrgjp = '1';" \
+		"if test $jpnochrg = '1';" \
 			"then echo 'No Charge jumper on, skipping charging';" \
 			"else tsmicroctl e;"\
 		"fi;" \
 	"fi;\0" \
 	"chargesilo=if test $silopresent = '1';" \
-		"then if test $nochrgjp != '1';" \
+		"then if test $jpnochrg != '1';" \
 			"then tsmicroctl b ${silochargpct};"\
 		"fi;" \
 	"fi;\0" \
