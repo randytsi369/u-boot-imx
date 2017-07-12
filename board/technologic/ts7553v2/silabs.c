@@ -39,17 +39,24 @@ void board_sleep(int seconds)
 	i2c_write(0x2a, 0, 0, dat, 4);
 }
 
+void enable_tssilo(void)
+{
+	uint8_t dat = 0x1;
+	i2c_write(0x2a, 0x0, 0, &dat, 1);
+}
+
+void disable_tssilo(void)
+{
+	uint8_t dat = 0x0;
+	i2c_write(0x2a, 0x0, 0, &dat, 1);
+}
+
 int wait_for_supercaps(int pct, int verbose)
 {
 	unsigned char buf[4] = {0};
 	unsigned int check;
 
-	gpio_direction_input(IMX_GPIO_NR(3, 11));
-	if(!gpio_get_value(IMX_GPIO_NR(3, 11))) {
-		printf("NO CHRG jumper is set, not waiting for SuperCaps to"
-		  " charge\n");
-		return 0;
-	}
+	enable_tssilo();
 
 	if(pct == 0) {
 		printf("Not waiting for SuperCaps to charge\n");
@@ -114,6 +121,12 @@ static int do_microctl(cmd_tbl_t *cmdtp, int flag,
 				}
 				pct = simple_strtoul(argv[++i], NULL, 10);
 				break;
+			case 'e':
+				enable_tssilo();
+				break;
+			case 'd':
+				disable_tssilo();
+				break;
 			default:
 				printf("Unknown option '%s'\n", argv[i]);
 				return 1;
@@ -131,6 +144,8 @@ U_BOOT_CMD(tsmicroctl, 4, 0, do_microctl,
 	"    -s <seconds> Sleep for <seconds>\n"
 	"    -w <pct>     Wait until Supercaps are charged to <pct>%\n"
 	"    -1           Verbose output when -w is supplied\n"
+	"    -e           Enable charging of TS-SILO supercaps\n"
+	"    -d           Disable charging of TS-SILO supercaps\n"
 );
 
 static iomux_v3_cfg_t const c2_pads[] = {

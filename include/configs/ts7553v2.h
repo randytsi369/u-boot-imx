@@ -82,8 +82,11 @@
 #define CONFIG_BOOTDELAY               0
 #define CONFIG_AUTOBOOT_KEYED          1
 
+#define CONFIG_PREBOOT \
+	"run silochargeon;"
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
-        "chrg_pct=0\0" \
+        "chrg_pct=60\0" \
         "chrg_verb=0\0" \
 	"rstuboot=1\0" \
 	"fdt_high=0xffffffff\0" \
@@ -93,6 +96,18 @@
 	"nfsroot=192.168.0.1:/usr/local/ts7553v2-nfsroot/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 2000; mmc erase 4000 2000;\0" \
 	"cmdline_append=rw rootwait console=ttymxc0,115200 loglevel=3\0" \
+	"silochargeon=tsmicroctl d;" \
+		"if test $silopresent = '1';" \
+			"then if test $jpnochrg = 'off';" \
+				"then tsmicroctl e;"\
+			"fi;"\
+		"fi;\0" \
+	"silowaitcharge=if test $silopresent = '1';" \
+		"then if test $jpnochrg = 'on';" \
+			"then echo 'NO CHRG jumper is set, not waiting';" \
+			"else tsmicroctl w ${chrg_pct} ${chrg_verb};" \
+		"fi;" \
+	"fi;\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \
 			"then echo Checking USB storage for updates;" \
@@ -110,6 +125,7 @@
 		"fi;" \
 		"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;" \
 		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
+		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/mmcblk0p1 ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
@@ -119,12 +135,14 @@
 		"fi;" \
 		"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;" \
 		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
+		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/mmcblk1p1 ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"dhcp;" \
 		"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2.dtb;" \
 		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \
+		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
 			"${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr}; \0" \
@@ -153,7 +171,6 @@
 	"if test \"${jpuboot}\" = \"on\"; then " \
 		"run usbprod;" \
 	"else;"\
-		"tsmicroctl w ${chrg_pct} ${chrg_verb};"\
 		"if test ${jpsdboot} = 'on';" \
 			"then run sdboot;" \
 			"else run emmcboot;" \

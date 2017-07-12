@@ -333,7 +333,6 @@ int board_early_init_f(void)
 int misc_init_r(void)
 {
 	int jpr;
-	uint8_t dat;
 	uint8_t opts = 0;
 
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
@@ -372,12 +371,12 @@ int misc_init_r(void)
 
 	setenv_hex("opts", (opts & 0xF));
 
-	if(opts == 0x7 && gpio_get_value(NO_CHRG_JMPN)) {
-		dat = 0x1;
-	} else {
-		dat = 0x0;
-	}
-	i2c_write(0x2a, 0x0, 0, &dat, 1);
+	jpr = gpio_get_value(NO_CHRG_JMPN);
+	if(jpr) setenv("jpnochrg", "off");
+	else setenv("jpnochrg", "on");
+
+	if(opts == 0x7) setenv("silopresent", "1");
+	else setenv("silopresent", "0");
 
 	setenv("model", "7553");
 
