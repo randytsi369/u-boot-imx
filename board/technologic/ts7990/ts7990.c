@@ -218,17 +218,35 @@ struct i2c_pads_info i2c_pad_info0 = {
 	}
 };
 
+/* We need to know if it is rev A before we set up i2c.  This is done 
+* differently on rev a/b, but is the same on >= 'B' */
+bool board_is_reva()
+{
+	gpio_direction_input(TS7990_REVB);
+	/* Low means it is REV B */
+	if(gpio_get_value(TS7990_REVB))
+		return 1;
+	return 0;
+}
+
 char board_rev(void)
 {
 	static int rev = -1;
 
 	if(rev == -1) {
-		gpio_direction_input(TS7990_REVB);
-
-		if(!gpio_get_value(TS7990_REVB)){
-			rev = 'B';
-		} else {
+		if(board_is_reva()){
 			rev = 'A';
+		} else {
+			uint8_t val;
+			uint8_t fpgarev;
+			i2c_read(0x28, FPGA_REV_OPS, 2, &val, 1);
+			fpgarev = val >> 4;
+			if((val & FPGA_OPS_G12) &&
+				fpgarev >= 10) {
+				rev = 'C';
+			} else {
+				rev = 'B';
+			}
 		}
 	}
 
@@ -366,7 +384,7 @@ static int detect_lcd(void)
 			uint8_t val = 0;
 
 			i2c_read(0x28, FPGA_REV_OPS, 2, &val, 1);
-			if(val & FPGA_OPS_R152) {
+			if(val & FPGA_OPS_P13) {
 				i2c_read(0x28, FPGA_OPS2, 2, &val, 1);
 				if(val & FPGA_OPS_OKAYA) {
 					lcd = LCD_OKAYA; // Okaya
@@ -856,11 +874,11 @@ int misc_init_r(void)
 	setbits_le32(&iomuxc_regs->gpr[1], IOMUXC_GPR1_TEST_POWERDOWN);
 	clrbits_le32(&iomuxc_regs->gpr[1], IOMUXC_GPR1_REF_SSP_EN);
 
+	printf("PCB:   %c\n", board_rev());
 	i2c_read(0x28, FPGA_REV_OPS, 2, val, 1);
-	printf("FPGA Rev: %d\n", val[0] >> 4);
-
+	printf("FPGA:  %d\n", val[0] >> 4);
 	i2c_read(0x4a, 0, 0, val, 32);
-	printf("SilabRev: %d\n", val[31]);
+	printf("Silab: %d\n", val[31]);
 
 	if(is_lxd(NULL)) setenv("lcd", "lxd");
 	else if (is_okaya(NULL)) setenv("lcd", "okaya");
@@ -891,7 +909,7 @@ int board_init(void)
 {
 	int i;
 
-	if(board_rev() == 'A') {
+	if(board_is_reva()) {
 		imx_iomux_v3_setup_pad(i2c_pad_info0.sda.gpio_mode);
 		imx_iomux_v3_setup_pad(i2c_pad_info0.scl.gpio_mode);
 		/* The Intersil RTC does not behave correctly on every boot.  When it
@@ -968,6 +986,6 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	printf("Board: TS-TPC-7990 REV %c\n", board_rev());
+	printf("Board: TS-TPC-7990\n");
 	return 0;
 }
