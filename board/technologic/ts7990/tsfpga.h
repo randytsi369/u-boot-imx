@@ -12,7 +12,10 @@
 #define FPGA_DIO_5 24
 #define FPGA_DIO_6 25
 #define FPGA_REV_OPS 51
-#define FPGA_OPS_R152 (1 << 3)
+#define FPGA_OPS_P13 (1 << 3)
+#define FPGA_OPS_L14 (1 << 2)
+#define FPGA_OPS_G12 (1 << 1)
+#define FPGA_OPS_H12 (1 << 0)
 #define FPGA_OPS2 57
 #define FPGA_OPS_OKAYA (1 << 3)
 #define FPGA_OPS_LXD (1 << 4)
