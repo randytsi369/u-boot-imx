@@ -864,9 +864,9 @@ int misc_init_r(void)
 
 	gpio_direction_input(TS7990_NOCHRG);
 	if (gpio_get_value(TS7990_NOCHRG) == 0) {
-		setenv("nochrgjp", "1");
+		setenv("jpnochrg", "1");
 	} else {
-		setenv("nochrgjp", "0");
+		setenv("jpnochrg", "0");
 	}
 
 	/* PCIE does not get properly disabled from a watchdog reset.  This prevents 
