@@ -137,7 +137,7 @@ iomux_v3_cfg_t const fpga_jtag_pads[] = {
 
 void fpga_mmc_init(void)
 {
-	fpga_gpio_output(EN_SD_POWER_PAD, 1);
+	/* Rev B has SD power connected to TAMPER9, already biased high */
 }
 
 void fpga_late_init(void)
@@ -146,7 +146,6 @@ void fpga_late_init(void)
 	int uboot;
 
 	/* Onboard jumpers to boot to SD or break in u-boot */
-	fpga_gpio_output(EN_SW_3V3_PAD, 1);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 0);
 	sdboot = fpga_gpio_input(DIO_20);
@@ -372,6 +371,7 @@ int board_eth_init(bd_t *bis)
 
 	/* Reset */
 	gpio_direction_output(EN_ETH_PHY_PWR, 0);
+	fpga_gpio_output(ETH_PHY_RESET, 1);
 	mdelay(5); // falls in ~2ms
 	gpio_direction_output(EN_ETH_PHY_PWR, 1);
 
@@ -384,9 +384,12 @@ int board_eth_init(bd_t *bis)
 	gpio_direction_output(PHY1_ISOLATE, 0);
 	gpio_direction_output(PHY2_ISOLATE, 0);
 
-	/* PHY_RESET automatically deasserts 140-280ms after we turn on power.
-	 * where it will strap in the startup values from GPIO. */
-	mdelay(320);
+	/* PHYs require minimum 10 ms from power valid, to unreset
+	 * Strap values are read ~at unreset time.
+	 * We wait 15 ms just to provide some additional margin
+	 */
+	mdelay(15);
+	fpga_gpio_output(ETH_PHY_RESET, 0);
 
 	/* Set pins to enet modes */
 	imx_iomux_v3_setup_multiple_pads(fec_enet_pads,
