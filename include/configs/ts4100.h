@@ -111,6 +111,9 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
+                "if load mmc 0:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
+                        "then fpga load 0 ${loadaddr} ${filesize}; " \
+                "fi; " \
 		"if load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts4100-${baseboardid}.dtb;" \
 			"then echo $baseboardid detected;" \
 		"else " \
@@ -125,6 +128,9 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
+                "if load mmc 1:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
+                        "then fpga load 0 ${loadaddr} ${filesize}; " \
+                "fi; " \
 		"if load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts4100-${baseboardid}.dtb;" \
 			"then echo $baseboardid detected;" \
 		"else " \
