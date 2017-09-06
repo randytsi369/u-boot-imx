@@ -22,6 +22,7 @@
 #include <net.h>
 #include <image.h>
 #include <fsl_esdhc.h>
+#include <fuse.h>
 #include <command.h>
 #include <miiphy.h>
 #include <netdev.h>
@@ -63,7 +64,6 @@
 #define TS7990_FPGA_SPI_CS	IMX_GPIO_NR(5, 31)
 
 DECLARE_GLOBAL_DATA_PTR;
-int random_mac = 0;
 
 #define UART_PAD_CTRL (PAD_CTL_PUS_100K_UP |			\
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm |			\
@@ -745,9 +745,20 @@ int board_eth_init(bd_t *bis)
 
 #ifdef CONFIG_RANDOM_MACADDR
 	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
+		uint32_t uniq1, uniq2;
+		int i;
 		printf("No MAC address set in fuses.  Using random mac address.\n");
-		eth_random_addr(enetaddr);
-		random_mac = 1;
+
+		/* Similar to eth_random_addr, but use seed unique to cpu */
+		fuse_read(0, 1, &uniq1);
+		fuse_read(0, 2, &uniq2);
+
+		srand(uniq1 ^ uniq2);
+		for (i = 0; i < 6; i++)
+			enetaddr[i] = rand();
+		enetaddr[0] &= 0xfe;	/* clear multicast bit */
+		enetaddr[0] |= 0x02;	/* set local assignment bit (IEEE802) */
+
 		if (eth_setenv_enetaddr("ethaddr", enetaddr)) {
 			printf("Failed to set ethernet address\n");
 		}
