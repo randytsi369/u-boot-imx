@@ -472,6 +472,26 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 			ret |= rtc_test();
 			ret |= marvell_phy_test();
 			break;
+		case 14:
+			printf("Build variant %d, CUSTOM2\n", build_variant);
+			if(!is_quad()) {
+				ret = 1;
+				printf("Build variant should not be a solo.\n");
+			}
+
+			if(fpga_rev() <= 6) {
+				ret = 1;
+				printf("FPGA REV is old or invalid\n");
+			}
+			if(silab_rev() <= 1) {
+				ret = 1;
+				printf("Silab rev is old or invalid\n");
+			}
+
+			ret |= wifi_test();
+			ret |= rtc_test();
+			ret |= marvell_phy_test();
+			break;
 		case 15: /* Custom board or failure */
 			/* Some custom board was made before straps worked.  This checks
 			 * for that FPGA + silabs rev combination which will not happen in the field */
