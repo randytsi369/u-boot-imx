@@ -17,6 +17,7 @@
 #include <asm/io.h>
 #include <common.h>
 #include <fsl_esdhc.h>
+#include <fuse.h>
 #include <i2c.h>
 #include <lattice.h>
 #include <linux/sizes.h>
@@ -239,6 +240,10 @@ static iomux_v3_cfg_t const fec_enet_pads1[] = {
 
 int board_eth_init(bd_t *bis)
 {
+	int ret, i;
+	uint32_t uniq1, uniq2;
+	uchar enetaddr[6];
+
 	/* Set pins to strapping GPIO modes */
 	imx_iomux_v3_setup_multiple_pads(fec_enet_pads1,
 					 ARRAY_SIZE(fec_enet_pads1));
@@ -267,8 +272,37 @@ int board_eth_init(bd_t *bis)
 	imx_iomux_v3_setup_multiple_pads(fec_enet_pads,
 					 ARRAY_SIZE(fec_enet_pads));
 
-	return fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
+	ret = fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
 				       CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
+
+	/* If env var ethaddr is not set, then the fuse'ed MAC is not a
+	 * proper MAC (generally just not set).  In this case, a random one
+	 * needs to be generated.  Stock generation uses time as the srand()
+	 * seed, and this is a bad idea when multiple units are done on the
+	 * rack at the same time.  This pulls two unique IDs from fuses;
+	 * correspond to lot number and part in lot number, and sets srand()
+	 * from the XOR of those two values.
+	 */
+	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
+		printf("Mo MAC address set in fuses. Using random MAC\n");
+
+		/* Read two unique IDs stored in OTP fuses */
+		fuse_read(0, 1, &uniq1);
+		fuse_read(0, 2, &uniq2);
+
+		srand(uniq1 ^ uniq2);
+		for (i = 0; i < 6; i++) {
+			enetaddr[i] = rand();
+		}
+		enetaddr[0] &= 0xfe;	/* Clear multicast bit */
+		enetaddr[0] |= 0x02;	/* Set local assignment bit (IEEE802) */
+
+		if (eth_setenv_enetaddr("ethaddr", enetaddr)) {
+			printf("Failed to set a random MAC address\n");
+		}
+	}
+
+	return ret;
 }
 
 static int setup_fec(int fec_id)
