@@ -86,7 +86,7 @@
 	"run silochargeon;"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-        "chrg_pct=60\0" \
+        "chrg_pct=0\0" \
         "chrg_verb=0\0" \
 	"rstuboot=1\0" \
 	"fdt_high=0xffffffff\0" \
