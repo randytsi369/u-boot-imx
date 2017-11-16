@@ -17,11 +17,10 @@
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_SYS_MMC_ENV_DEV  	1 /* mmcblk0 */
 #define CONFIG_SYS_MMC_ENV_PART 	1 /* boot0 */
-/* Erase block on our Micron emmc is 4MiB.  Separate redund by this */
 
-#define CONFIG_ENV_OFFSET		0x400000 /* 8MiB */
+#define CONFIG_ENV_OFFSET		0x400000 /* 4MiB */
 #define CONFIG_ENV_SIZE			SZ_128K
-#define CONFIG_ENV_OFFSET_REDUND 	0x800000 /* 12MiB */
+#define CONFIG_ENV_OFFSET_REDUND 	0x600000 /* 6MiB */
 
 #define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 #define CONFIG_MODULE_FUSE
