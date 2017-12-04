@@ -381,7 +381,8 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	  case 0x2: // Option 1
 		break;
 	  case 0x3: // Option 2
-	  case 0x7: // Option 3
+	  case 0x5: // Option 3
+	  case 0x7: // Option 4
 		ret |= atmel_wifi_test();
 		ret |= fram_test(destructive);
 		break;
