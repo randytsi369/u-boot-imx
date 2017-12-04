@@ -284,7 +284,7 @@ int board_eth_init(bd_t *bis)
 	 * from the XOR of those two values.
 	 */
 	if (!eth_getenv_enetaddr("ethaddr", enetaddr)) {
-		printf("Mo MAC address set in fuses. Using random MAC\n");
+		printf("No MAC address set in fuses. Using random MAC\n");
 
 		/* Read two unique IDs stored in OTP fuses */
 		fuse_read(0, 1, &uniq1);
