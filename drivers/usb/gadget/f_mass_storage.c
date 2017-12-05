@@ -996,6 +996,11 @@ static int do_write(struct fsg_common *common)
 			return rc;
 	}
 
+	/* If we're writing the last sector, close the ums device */
+	if(lba+1 == curlun->num_sectors){
+		return -ENOSPC;
+	}
+
 	return -EIO;		/* No default reply */
 }
 
@@ -2043,6 +2048,10 @@ unknown_cmnd:
 	if (reply == -EINTR)
 		return -EINTR;
 
+	if(reply == -ENOSPC){
+		return -ENOSPC;
+	}
+
 	/* Set up the single reply buffer for finish_reply() */
 	if (reply == -EINVAL)
 		reply = 0;		/* Error reply length */
@@ -2404,7 +2413,7 @@ static void handle_exception(struct fsg_common *common)
 
 int fsg_main_thread(void *common_)
 {
-	int ret;
+	int ret, tmp1, tmp2;
 	struct fsg_common	*common = the_fsg_common;
 	/* The main loop */
 	do {
@@ -2428,7 +2437,13 @@ int fsg_main_thread(void *common_)
 		if (!exception_in_progress(common))
 			common->state = FSG_STATE_DATA_PHASE;
 
-		if (do_scsi_command(common) || finish_reply(common))
+		tmp1 = do_scsi_command(common);
+		tmp2 = finish_reply(common);
+		/* If we have written to the end of disk, stop what we're doing */
+		if(tmp1 == -ENOSPC)
+			return -ENOSPC;
+
+		if(tmp1 || tmp2)
 			continue;
 
 		if (!exception_in_progress(common))

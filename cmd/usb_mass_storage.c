@@ -213,6 +213,10 @@ int do_usb_mass_storage(cmd_tbl_t *cmdtp, int flag,
 			if (rc == -EPIPE)
 				printf("\rCTRL+C - Operation aborted\n");
 
+			/* Last sector written */
+			if (rc == -ENOSPC)
+				printf("\rLast sector Written, closing ums\n");
+
 			rc = CMD_RET_SUCCESS;
 			goto cleanup_register;
 		}

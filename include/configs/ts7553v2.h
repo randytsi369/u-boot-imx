@@ -145,15 +145,31 @@
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
 			"${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr}; \0" \
-	"bootcmd_mfg=echo MFG boot;" \
-		"if mmc dev 0;" \
-			"then load mmc 0:1 ${loadaddr} /prime-ts7553v2.ub;" \
-			"source ${loadaddr};" \
-			"exit;" \
-		"fi;" \
-		"dhcp;" \
-		"nfs ${loadaddr} 192.168.0.11:/u/x/jessie-armel/boot-imx6ul/prime-ts7553v2.ub;" \
-		"source ${loadaddr};\0" \
+	"bootcmd_mfg=echo Booted over USB, running test/prime;" \
+		"if post;" \
+			"then ums mmc 1.1;" \
+			"i2c mw 38 0.0 83;" \
+			"i2c mw 38 0.0 3;" \
+			"while true;" \
+				"do led green on;" \
+				"i2c mw 38 0.0 23;" \
+				"sleep 1;" \
+				"led green off;" \
+				"i2c mw 38 0.0 3;" \
+				"sleep 1;" \
+			"done;" \
+		"else echo Test Failed;" \
+			"i2c mw 38 0.0 83;" \
+			"i2c mw 38 0.0 3;" \
+			"while true;" \
+				"do led red on;" \
+				"i2c mw 38 0.0 13;" \
+				"sleep 1;" \
+				"led red off;" \
+				"i2c mw 38 0.0 3;" \
+				"sleep 1;" \
+			"done;" \
+		"fi;\0" \
 	"update-uboot=env set filesize 0;"\
 		"if test ${jpsdboot} = 'on';" \
 			"then echo Updating U-Boot image from SD;" \
@@ -184,6 +200,7 @@
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x10000)
 #define CONFIG_SYS_ALT_MEMTEST
 #define CONFIG_CMD_TIME
+#define CONFIG_AUTOBOOT_KEYED_CTRLC
 
 #define CONFIG_SYS_HZ			1000
 
