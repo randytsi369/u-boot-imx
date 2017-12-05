@@ -28,6 +28,7 @@
 #include <netdev.h>
 #include <usb.h>
 #include <usb/ehci-fsl.h>
+#include "parse_strap.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -376,10 +377,6 @@ int misc_init_r(void)
 	gpio_direction_input(PUSH_SW_CPUN);
 	gpio_direction_input(U_BOOT_JMPN);
 	gpio_direction_input(NO_CHRG_JMPN);
-	gpio_direction_input(IMX_GPIO_NR(3, 23));
-	gpio_direction_input(IMX_GPIO_NR(3, 24));
-	gpio_direction_input(IMX_GPIO_NR(3, 27));
-	gpio_direction_input(IMX_GPIO_NR(3, 28));
 
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x2a, &i2c_pad_info1);
 
@@ -398,12 +395,7 @@ int misc_init_r(void)
 
 	}
 
-	opts |= (gpio_get_value(IMX_GPIO_NR(3, 23)) << 0);
-	opts |= (gpio_get_value(IMX_GPIO_NR(3, 24)) << 1);
-	opts |= (gpio_get_value(IMX_GPIO_NR(3, 27)) << 2);
-	opts |= (gpio_get_value(IMX_GPIO_NR(3, 28)) << 3);
-
-	setenv_hex("opts", (opts & 0xF));
+	opts = parse_strap();
 
 	jpr = gpio_get_value(NO_CHRG_JMPN);
 	if(jpr) setenv("jpnochrg", "off");

@@ -22,7 +22,7 @@
 
 #include <miiphy.h>
 
-#include "post.h"
+#include "parse_strap.h"
 
 int micrel_phy_test(void)
 {
@@ -359,15 +359,14 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	int ret = 0;
 	char *p;
 	int destructive = 0;
-	char opts;
-	//XXX: Build variant will be available in env
+	uint8_t opts;
 
 	if (argv[1][0] == '-') p = &argv[1][1];
 	else p = &argv[1][0];
 
 	if (*p == 'd') destructive = 1;
 
-	opts = getenv_hex("opts", 0x0);
+	opts = parse_strap();
 
 	leds_test();
 
