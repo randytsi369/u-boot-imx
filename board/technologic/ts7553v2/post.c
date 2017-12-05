@@ -121,7 +121,7 @@ int atmel_wifi_test(void)
 	gpio_direction_output(IMX_GPIO_NR(4, 26), 1); // chip enable
 	mdelay(5);
 	gpio_direction_output(IMX_GPIO_NR(4, 10), 1); // Reset
-
+	mdelay(10);/* not documented in wifi datasheet, but needs at least 1ms */
 
 	slave = spi_setup_slave(CONFIG_ATMEL_WIFI_BUS, CONFIG_ATMEL_WIFI_CS,
 	  24000000, SPI_MODE_0);
