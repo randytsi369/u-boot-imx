@@ -86,7 +86,7 @@
 	"autoload=no\0" \
 	"nfsip=192.168.0.36\0" \
 	"nfsroot=/mnt/storage/imx6ul/\0" \
-	"clearenv=mmc dev 1 1; mmc erase 2000 2000; mmc erase 4000 2000;\0" \
+	"clearenv=mmc dev 1 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
 	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \

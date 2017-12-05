@@ -93,7 +93,7 @@
 	"fdtaddr=0x83000000\0" \
 	"autoload=no\0" \
 	"nfsroot=192.168.0.1:/usr/local/ts7553v2-nfsroot/\0" \
-	"clearenv=mmc dev 1 1; mmc erase 2000 2000; mmc erase 4000 2000;\0" \
+	"clearenv=mmc dev 1 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
 	"cmdline_append=rw rootwait console=ttymxc0,115200 loglevel=3\0" \
 	"silochargeon=tsmicroctl d;" \
 		"if test $silopresent = '1';" \
