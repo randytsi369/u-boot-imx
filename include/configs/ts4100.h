@@ -154,15 +154,36 @@
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
-	"bootcmd_mfg=echo MFG boot;" \
-		"if mmc dev 0;" \
-			"then load mmc 0:1 ${loadaddr} /prime-ts4100.ub;" \
-			"source ${loadaddr};" \
-			"exit;" \
-		"fi;" \
-		"dhcp;" \
-		"nfs ${loadaddr} 192.168.0.11:/u/x/jessie-armel/boot-imx6ul/prime-ts4100.ub;" \
-		"source ${loadaddr};\0"\
+	"bootcmd_mfg=echo Booted over USB, running test/prime;" \
+		"if post;" \
+			"then ums mmc 1.1;" \
+			"mmc bootbus 1 1 0 2;" \
+			"mmc partconf 1 1 1 1;" \
+			"fuse prog -y 0 5 A870;" \
+			"fuse prog -y 0 6 10;" \
+			"fuse prog -y 0 3 300000;" \
+			"i2c mw 38 0.0 83;" \
+			"i2c mw 38 0.0 3;" \
+			"while true;" \
+				"do led green on;" \
+				"i2c mw 38 0.0 23;" \
+				"sleep 1;" \
+				"led green off;" \
+				"i2c mw 38 0.0 3;" \
+				"sleep 1;" \
+			"done;" \
+		"else echo Test Failed;" \
+			"i2c mw 38 0.0 83;" \
+			"i2c mw 38 0.0 3;" \
+			"while true;" \
+				"do led red on;" \
+				"i2c mw 38 0.0 13;" \
+				"sleep 1;" \
+				"led red off;" \
+				"i2c mw 38 0.0 3;" \
+				"sleep 1;" \
+			"done;" \
+		"fi;\0" \
 	"update-uboot=env set filesize 0;" \
 		"if test ${jpsdboot} = 'on';" \
 			"then echo Updating U-Boot image from SD;" \
