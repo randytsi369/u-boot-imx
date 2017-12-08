@@ -404,8 +404,6 @@ int misc_init_r(void)
 	if(opts == 0x7 || opts == 0x5) setenv("silopresent", "1");
 	else setenv("silopresent", "0");
 
-	setenv("model", "7553");
-
 	return 0;
 }
 

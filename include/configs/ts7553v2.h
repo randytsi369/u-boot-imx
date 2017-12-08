@@ -91,6 +91,7 @@
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
+	"model=7553\0" \
 	"autoload=no\0" \
 	"nfsroot=192.168.0.1:/usr/local/ts7553v2-nfsroot/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
