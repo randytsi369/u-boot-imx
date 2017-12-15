@@ -9,6 +9,8 @@
 #ifndef __TS7990_CONFIG_H
 #define __TS7990_CONFIG_H
 
+#undef CONFIG_ARM_ERRATA_845369
+
 #include "mx6_common.h"
 #define CONFIG_MX6
 #define CONFIG_DISPLAY_CPUINFO
@@ -211,7 +213,7 @@
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x18000000\0" \
 	"fdt_high=0xffffffff\0" \
-	"initrd_addr=0x10800000\0 " \
+	"initrd_addr=0x10800000\0" \
 	ENV_IMX_TYPE \
 	ENV_CPU_TYPE \
 	"model=7970\0" \

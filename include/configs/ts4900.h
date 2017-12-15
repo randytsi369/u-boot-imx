@@ -208,7 +208,7 @@
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x18000000\0" \
 	"fdt_high=0xffffffff\0" \
-	"initrd_addr=0x10800000\0 " \
+	"initrd_addr=0x10800000\0" \
 	ENV_IMX_TYPE \
 	ENV_CPU_TYPE \
 	"model=4900\0" \
