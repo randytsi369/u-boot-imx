@@ -123,7 +123,7 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
-		"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;" \
+		"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2${pcbrev}.dtb;" \
 		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
 		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/mmcblk0p1 ${cmdline_append};" \
@@ -133,14 +133,14 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
-		"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;" \
+		"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2${pcbrev}.dtb;" \
 		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
 		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/mmcblk1p1 ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"dhcp;" \
-		"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2.dtb;" \
+		"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2${pcbrev}.dtb;" \
 		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \
 		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \

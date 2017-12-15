@@ -84,6 +84,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PHY1_CONFIG_2 		IMX_GPIO_NR(2, 2)
 #define PHY1_ISOLATE		IMX_GPIO_NR(2, 7)
 #define EN_SD_PWR		IMX_GPIO_NR(3, 12)
+#define EN_EMMC_PWR		IMX_GPIO_NR(5, 2)
 #define USDHC1_VSELECT		IMX_GPIO_NR(1, 5)
 #define USB_RESETN		IMX_GPIO_NR(3, 0)
 
@@ -400,6 +401,9 @@ int misc_init_r(void)
 	jpr = gpio_get_value(NO_CHRG_JMPN);
 	if(jpr) setenv("jpnochrg", "off");
 	else setenv("jpnochrg", "on");
+
+	jpr = gpio_get_value(EN_EMMC_PWR);
+	if(!jpr) setenv("pcbrev", "C");
 
 	if(opts == 0x7 || opts == 0x5) setenv("silopresent", "1");
 	else setenv("silopresent", "0");
