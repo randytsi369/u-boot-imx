@@ -87,6 +87,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define EN_EMMC_PWR		IMX_GPIO_NR(5, 2)
 #define USDHC1_VSELECT		IMX_GPIO_NR(1, 5)
 #define USB_RESETN		IMX_GPIO_NR(3, 0)
+#define EN_USB_PWR		IMX_GPIO_NR(1, 1)
 
 /* I2C1 for Silabs */
 struct i2c_pads_info i2c_pad_info1 = {
@@ -452,6 +453,7 @@ int checkboard(void)
 iomux_v3_cfg_t const usb_otg1_pads[] = {
 	//MX6_PAD_GPIO1_IO04__USB_OTG1_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
 	MX6_PAD_GPIO1_IO00__ANATOP_OTG1_ID | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
+	MX6_PAD_GPIO1_IO01__GPIO1_IO01 | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
 	MX6_PAD_ENET2_TX_DATA0__REF_CLK_24M | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
 	MX6_PAD_LCD_CLK__GPIO3_IO00 | MUX_PAD_CTRL(OTG_ID_PAD_CTRL),
 };
@@ -472,6 +474,7 @@ int board_ehci_hcd_init(int port)
 					 ARRAY_SIZE(usb_otg1_pads));
 
 	gpio_direction_output(USB_RESETN, 0);
+	gpio_direction_output(EN_USB_PWR, 1);
 
 	usbnc_usb_ctrl = (u32 *)(USB_BASE_ADDR + USB_OTHERREGS_OFFSET +
 				 port * 4);
