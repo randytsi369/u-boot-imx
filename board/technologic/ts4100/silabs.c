@@ -22,7 +22,7 @@ int silab_rev(void)
 	uint8_t val[17];
 	i2c_set_bus_num(0);
 	i2c_read(0x4a, 0, 0, val, 17);
-	return val[16] >> 4;
+	return (val[16] & 0xF);
 }
 
 void board_sleep(int seconds)
