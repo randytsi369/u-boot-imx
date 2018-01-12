@@ -37,6 +37,18 @@ void board_sleep(int seconds)
 	i2c_write(0x4a, 0, 0, dat, 4);
 }
 
+void enable_tssilo(void)
+{
+        uint8_t dat = 0x1;
+        i2c_write(0x4a, 0x0, 0, &dat, 1);
+}
+
+void disable_tssilo(void)
+{
+        uint8_t dat = 0x0;
+        i2c_write(0x4a, 0x0, 0, &dat, 1);
+}
+
 // Scale voltage to silabs 0-2.5V
 static uint16_t inline sscale(uint16_t data){
 	return data * (2.5/1023) * 1000;
@@ -66,6 +78,7 @@ void read_adcs(void)
 	}
 
 	/* Byte order is P1.2-P1.4, P2.0-P2.7, temp sensor */
+	printf("REVISION=%d\n", ((data[8] >> 8) & 0xF));
 	printf("AN_SUP_CAP_1=%d\n", sscale(data[0]));
 	printf("AN_SUP_CAP_2=%d\n", rscale(data[1], 20, 20));
 	printf("AN_MAIN_4P7V=%d\n", rscale(data[2], 20, 20));
@@ -77,8 +90,7 @@ void read_adcs(void)
 	printf("AN_CHRG=%d\n", rscale(data[10], 422, 422));
 	printf("VDD_SOC_CAP=%d\n", sscale(data[11]));
 	printf("VDD_ARM_CAP=%d\n", sscale(data[12]));
-	printf("SILAB_REV=0x%X\n", data[8] >> 12);
-	}
+}
 
 static int do_microctl(cmd_tbl_t *cmdtp, int flag, 
 	int argc, char * const argv[])
@@ -108,6 +120,13 @@ static int do_microctl(cmd_tbl_t *cmdtp, int flag,
 				printf("Sleep for %d seconds\n", micros);
 				board_sleep(micros);
 				break;
+
+			case 'e':
+				enable_tssilo();
+				break;
+			case 'd':
+				disable_tssilo();
+				break;
 			default:
 				printf("Unknown option '%s'\n", argv[i]);
 				return 1;
@@ -120,6 +139,8 @@ static int do_microctl(cmd_tbl_t *cmdtp, int flag,
 U_BOOT_CMD(tsmicroctl, 3, 0, do_microctl,
 	"TS supervisory microcontroller access",
 	"  Usage: tsmicroctl <options>\n"
-	"    -s <seconds> sleep for x seconds\n"
-	"  If the seconds argument is supplied the board will sleep.\n"
+	"    -i           Print information\n"
+	"    -s <seconds> Sleep for <seconds>\n"
+        "    -e           Enable charging of TS-SILO supercaps\n"
+        "    -d           Disable charging of TS-SILO supercaps\n"
 );
