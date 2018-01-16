@@ -86,15 +86,25 @@
 #define CTRL(c) ((c)&0x1F)     
 #define CONFIG_AUTOBOOT_STOP_STR  (char []){CTRL('C'), 0}
 
+#define CONFIG_PREBOOT \
+	"run silochargeon;"
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
+	"rstuboot=1\0" \
 	"model=4100\0" \
 	"autoload=no\0" \
 	"nfsroot=192.168.0.36:/mnt/storage/imx6ul/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
 	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
+	"silochargeon=tsmicroctl d;" \
+		"if test $silopresent = '1';" \
+			"then if test $jpnochrg = 'off';" \
+				"then tsmicroctl e;"\
+			"fi;"\
+		"fi;\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \
 			"then echo Checking USB storage for updates;" \

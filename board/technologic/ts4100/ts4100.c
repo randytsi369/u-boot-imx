@@ -145,25 +145,44 @@ void fpga_late_init(void)
 {
 	int sdboot;
 	int uboot;
+	int no_chrg;
 
 	/* Onboard jumpers to boot to SD or break in u-boot */
-	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 0);
 	sdboot = fpga_gpio_input(DIO_20);
 	uboot = fpga_gpio_input(DIO_43);
+	no_chrg = fpga_gpio_input(DIO_01);
 
 	/* While OFF_BD_RESET_PADN is low read CN1_98 which 
 	 * will have a pulldown to OFF_BD_RESET_PADN if the sd
 	 * boot jumper is on */
-	if(sdboot)
+	if(sdboot) {
 		setenv("jpsdboot", "off");
-	else
+	} else {
 		setenv("jpsdboot", "on");
+	}
 
-	if(uboot)
+        setenv("jpuboot", "off");
+        if(!uboot) setenv("jpuboot", "on");
+        else {
+                if(getenv_ulong("rstuboot", 10, 1)) {
+                        uboot = fpga_gpio_input(DIO_09);
+                        if(!uboot) setenv("jpuboot", "on");
+                }
+
+        }
+
+	if(uboot) {
 		setenv("jpuboot", "off");
-	else
+	} else {
 		setenv("jpuboot", "on");
+	}
+
+	if (no_chrg) {
+		setenv("jpnochrg", "off");
+	} else {
+		setenv("jpnochrg", "on");
+	}
 
 	mdelay(10);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 1);

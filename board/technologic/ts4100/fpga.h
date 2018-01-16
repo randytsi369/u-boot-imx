@@ -16,6 +16,8 @@
 #define DIO_20			57
 #define DIO_05			42
 #define DIO_43			80
+#define DIO_01			01
+#define DIO_09			46
 
 void fpga_gpio_output(int io, int value);
 int fpga_gpio_input(int io);
