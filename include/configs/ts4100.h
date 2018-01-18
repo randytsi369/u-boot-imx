@@ -80,7 +80,7 @@
 #define CONFIG_SYS_I2C_SPEED		100000
 
 #undef CONFIG_BOOTDELAY
-#define CONFIG_BOOTDELAY		1
+#define CONFIG_BOOTDELAY		0
 #define CONFIG_AUTOBOOT_KEYED 		1
 #define CONFIG_AUTOBOOT_PROMPT "Press Ctrl+C to abort autoboot in %d second(s)\n"
 #define CTRL(c) ((c)&0x1F)     
@@ -94,6 +94,7 @@
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
 	"rstuboot=1\0" \
+	"usbboot=1\0" \
 	"model=4100\0" \
 	"autoload=no\0" \
 	"nfsroot=192.168.0.36:/mnt/storage/imx6ul/\0" \
@@ -212,11 +213,15 @@
 #define CONFIG_BOOTCOMMAND \
 	"if test ${jpuboot} = 'on'; then " \
 		"run usbprod;" \
-	"fi;" \
-	"if test ${jpsdboot} = 'on';" \
-		"then run sdboot;" \
-		"else run emmcboot;" \
-	"fi;"
+	"else ;" \
+		"if test ${usbboot} = '1'; then " \
+			"run usbprod;" \
+		"fi;" \
+		"if test ${jpsdboot} = 'on';" \
+			"then run sdboot;" \
+			"else run emmcboot;" \
+		"fi;" \
+	"fi; "
 
 #define CONFIG_CMD_BMODE
 
