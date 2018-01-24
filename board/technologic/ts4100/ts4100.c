@@ -146,6 +146,7 @@ void fpga_late_init(void)
 	int sdboot;
 	int uboot;
 	int no_chrg;
+	uint8_t opts;
 
 	/* Onboard jumpers to boot to SD or break in u-boot */
 	fpga_gpio_output(OFF_BD_RESET_PADN, 0);
@@ -183,6 +184,8 @@ void fpga_late_init(void)
 	} else {
 		setenv("jpnochrg", "on");
 	}
+
+	opts = parse_strap();
 
 	mdelay(10);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
