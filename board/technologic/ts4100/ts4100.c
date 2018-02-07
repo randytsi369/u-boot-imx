@@ -31,6 +31,7 @@
 #include <usb/ehci-fsl.h>
 #include "fpga.h"
 #include "silabs.h"
+#include "parse_strap.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -186,6 +187,7 @@ void fpga_late_init(void)
 	}
 
 	opts = parse_strap();
+	/* XXX: Set silopresent env var based on opts here */
 
 	mdelay(10);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
