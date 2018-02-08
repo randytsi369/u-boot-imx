@@ -90,6 +90,8 @@
 	"run silochargeon;"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	"chrg_pct=0\0" \
+	"chrg_verb=0\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
@@ -106,7 +108,14 @@
 				"then tsmicroctl e;"\
 			"fi;"\
 		"fi;\0" \
-	"usbprod=usb start;" \
+	"silowaitcharge=if test $silopresent = '1';" \
+			"then if test $jpnochrg = 'on';" \
+			  "then echo 'NO CHRG jumper is set, not waiting';" \
+			  "else tsmicroctl w ${chrg_pct} ${chrg_verb};" \
+			"fi;" \
+		"fi;\0" \
+	"usbprod=powercheck;" \
+		"usb start;" \
 		"if usb storage;" \
 			"then echo Checking USB storage for updates;" \
 			"if load usb 0:1 ${loadaddr} /tsinit.ub;" \
@@ -117,6 +126,7 @@
 			"fi;" \
 		"fi;\0" \
 	"sdboot=echo Booting from the SD card ...;" \
+		"powercheck;" \
 		"if load mmc 0:1 ${loadaddr} /boot/boot.ub;" \
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
@@ -134,8 +144,10 @@
 		"fi;" \
 		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
 		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append};" \
+		"run silowaitcharge;" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
+		"powercheck;" \
 		"if load mmc 1:1 ${loadaddr} /boot/boot.ub;" \
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
@@ -153,8 +165,10 @@
 		"fi;" \
 		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
 		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append};" \
+		"run silowaitcharge;" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
+		"powercheck;" \
 		"dhcp;" \
 		"mw.l ${fdtaddr} 0 1000;" \
 		"mw.l ${loadaddr} 0 1000;" \
@@ -168,6 +182,7 @@
 		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
+		"run silowaitcharge;" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"bootcmd_mfg=echo Booted over USB, running test/prime;" \
 		"if post;" \
