@@ -101,7 +101,7 @@
 	"autoload=no\0" \
 	"nfsroot=192.168.0.36:/mnt/storage/imx6ul/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
-	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
+	"cmdline_append=rootwait rw console=ttymxc0,115200 init=/sbin/init\0" \
 	"silochargeon=tsmicroctl d;" \
 		"if test $silopresent = '1';" \
 			"then if test $jpnochrg = 'off';" \
@@ -143,7 +143,7 @@
 			"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
 		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
-		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append};" \
+		"setenv bootargs root=/dev/mmcblk0p1 ${cmdline_append};" \
 		"run silowaitcharge;" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
@@ -164,7 +164,7 @@
 			"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
 		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
-		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append};" \
+		"setenv bootargs root=/dev/mmcblk1p1 ${cmdline_append};" \
 		"run silowaitcharge;" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
@@ -181,7 +181,7 @@
 		"fi;" \
 		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
-			"rootwait rw ${cmdline_append};" \
+			"${cmdline_append};" \
 		"run silowaitcharge;" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"bootcmd_mfg=echo Booted over USB, running test/prime;" \
