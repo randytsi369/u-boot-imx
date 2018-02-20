@@ -142,18 +142,44 @@ void fpga_mmc_init(void)
 	/* Rev B has SD power connected to TAMPER9, already biased high */
 }
 
-void fpga_late_init(void)
+/* This function is responsible for setting jumper options.
+ * Not all baseboards that the TS-4100 can be on support the proper jumpers
+ * and the TS-4100 can be run without a baseboard.
+ * We create a blacklist of baseboards we know of that don't support
+ * the correct jumper configuration and just assume all other BBs have the
+ * proper support.
+ */
+void get_jmp_status(int id)
 {
-	int sdboot;
-	int uboot;
-	int no_chrg;
+	unsigned int sdboot, uboot, nochrg, pswitch;
 	uint8_t opts;
 
-	/* Onboard jumpers to boot to SD or break in u-boot */
+	/* SD Boot jumper on some BBs use OFF_BD_RESET as the ground conn. */
 	fpga_gpio_output(OFF_BD_RESET_PADN, 0);
-	sdboot = fpga_gpio_input(DIO_20);
-	uboot = fpga_gpio_input(DIO_43);
-	no_chrg = fpga_gpio_input(DIO_01);
+
+	/* We have access to the full ID of the BB which includes PCB rev.
+	 * This can be used here if needed for changes from rev to rev.
+	 *
+	 * Notation used assumes that "0" means jumper is set, and a "1" means
+	 * jumper is removed.
+	 */
+	switch (id & ~0xC0) {
+	  case 0x3F: /* No BB/no ID means no valid jumpers present */
+		sdboot = !(getenv_ulong("force_jpsdboot", 10, 0) & 0x1);
+		uboot = 1;
+		setenv_ulong("bootdelay",
+		  getenv_ulong("force_bootdelay", 10, 1));
+		pswitch = 1;
+		nochrg = 1;
+		break;
+	  default: /* All other boards assumed to have proper phy. jumpers */
+		sdboot = fpga_gpio_input(DIO_20);
+		uboot = fpga_gpio_input(DIO_43);
+		pswitch = fpga_gpio_input(DIO_09);
+		nochrg = fpga_gpio_input(DIO_01);
+		break;
+	}
+
 
 	/* While OFF_BD_RESET_PADN is low read CN1_98 which 
 	 * will have a pulldown to OFF_BD_RESET_PADN if the sd
@@ -168,19 +194,12 @@ void fpga_late_init(void)
         if(!uboot) setenv("jpuboot", "on");
         else {
                 if(getenv_ulong("rstuboot", 10, 1)) {
-                        uboot = fpga_gpio_input(DIO_09);
-                        if(!uboot) setenv("jpuboot", "on");
+                        if(!pswitch) setenv("jpuboot", "on");
                 }
 
         }
 
-	if(uboot) {
-		setenv("jpuboot", "off");
-	} else {
-		setenv("jpuboot", "on");
-	}
-
-	if (no_chrg) {
+	if (nochrg) {
 		setenv("jpnochrg", "off");
 	} else {
 		setenv("jpnochrg", "on");
@@ -214,7 +233,6 @@ static void ts4100_fpga_done(void)
 	/* During FPGA programming several important pins will
 	 * have been tristated.  Put it back to normal */
 	fpga_mmc_init();
-	fpga_late_init();
 	red_led_on();
 	green_led_off();
 }
@@ -547,7 +565,7 @@ static const struct boot_mode board_boot_modes[] = {
 };
 #endif
 
-static void do_bbdetect(void)
+static int do_bbdetect(void)
 {
 	int id = 0;
 	int i;
@@ -569,6 +587,8 @@ static void do_bbdetect(void)
 	printf("Baseboard Rev: %d\n", ((id & 0xc0) >> 6));
 	setenv_hex("baseboardid", id & ~0xc0);
 	setenv_hex("baseboardrev", ((id & 0xc0) >> 6));
+
+	return id;
 }
 
 int board_late_init(void)
@@ -578,11 +598,9 @@ int board_late_init(void)
 #endif
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
-	fpga_late_init();
-
 	/* Detect the carrier board id to pick the right 
 	 * device tree */
-	do_bbdetect();
+	get_jmp_status(do_bbdetect());
 
 	red_led_on();
 	green_led_off();
