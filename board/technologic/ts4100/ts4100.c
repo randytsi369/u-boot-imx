@@ -151,7 +151,7 @@ void fpga_mmc_init(void)
  */
 void get_jmp_status(int id)
 {
-	unsigned int sdboot, uboot, nochrg, pswitch;
+	unsigned int sdboot, uboot, nochrg, pswitch, bbsilo;
 	uint8_t opts;
 
 	/* SD Boot jumper on some BBs use OFF_BD_RESET as the ground conn. */
@@ -171,12 +171,14 @@ void get_jmp_status(int id)
 		  getenv_ulong("force_bootdelay", 10, 1));
 		pswitch = 1;
 		nochrg = 1;
+		bbsilo = 0;
 		break;
 	  default: /* All other boards assumed to have proper phy. jumpers */
 		sdboot = fpga_gpio_input(DIO_20);
 		uboot = fpga_gpio_input(DIO_43);
 		pswitch = fpga_gpio_input(DIO_09);
 		nochrg = fpga_gpio_input(DIO_01);
+		bbsilo = 1;
 		break;
 	}
 
@@ -206,7 +208,15 @@ void get_jmp_status(int id)
 	}
 
 	opts = parse_strap();
-	/* XXX: Set silopresent env var based on opts here */
+
+	setenv("silopresent", "0");
+	switch (opts & 0xF) {
+	  case 0x5:
+	  case 0x8:
+	  case 0x9:
+		if (bbsilo) setenv("silopresent", "1");
+		break;
+	}
 
 	mdelay(10);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
