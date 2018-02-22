@@ -24,6 +24,8 @@
 
 #include "post.h"
 #include "silabs.h"
+#include "parse_strap.h"
+#include "fpga.h"
 
 int micrel_phy_test(void)
 {
@@ -119,10 +121,10 @@ int atmel_wifi_test(void)
 
 
 	/* Unreset and enable device */
-	gpio_direction_output(IMX_GPIO_NR(4, 26), 1); // chip enable
+	fpga_gpio_output(20, 1); // chip enable
 	mdelay(5);
-	gpio_direction_output(IMX_GPIO_NR(4, 10), 1); // Reset
-
+	fpga_gpio_output(21, 1); // Reset
+	mdelay(10); /* Undocumented in wifi datasheet, but needs at least 1ms */
 
 	slave = spi_setup_slave(CONFIG_ATMEL_WIFI_BUS, CONFIG_ATMEL_WIFI_CS,
 	  24000000, SPI_MODE_0);
@@ -139,8 +141,8 @@ int atmel_wifi_test(void)
 	ret |= !(din[5] == 0xc4);
 
 	/* Reset and disable device device */
-	gpio_direction_output(IMX_GPIO_NR(4, 10), 0); // Reset
-	gpio_direction_output(IMX_GPIO_NR(4, 26), 0); // chip enable
+	fpga_gpio_output(21, 0); // Reset
+	fpga_gpio_output(20, 0); // chip enable
 
 	if (ret == 0) printf("WIFI test passed\n");
 	else printf("WIFI test failed\n");
@@ -239,18 +241,27 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	int ret = 0;
 	char *p;
 	int destructive = 0;
+	uint8_t opts;
 
 	if (argv[1][0] == '-') p = &argv[1][1];
 	else p = &argv[1][0];
 
 	if (*p == 'd') destructive = 1;
 
+	opts = parse_strap();
+
 	leds_test();
+	/* XXX: uC rev test */
+
+	switch (opts & 0xF) {
+	  case 0x5:
+	  case 0x8:
+	  case 0x9:
+		ret |= atmel_wifi_test();
+		break;
+	}
+
 	ret |= micrel_phy_test();
-
-	/* Add back in REV B.  Currently we cannot safely detect this */
-	/*ret |= atmel_wifi_test(); */
-
 	ret |= emmc_test(destructive);
 	ret |= mem_test();
 	ret |= silabs_test();
