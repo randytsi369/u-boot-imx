@@ -49,6 +49,21 @@ int micrel_phy_test(void)
 		ret |= 1;
 	}
 
+	if (miiphy_info ("FEC0", 0x1, &oui, &model, &rev) != 0) {
+		printf("Failed to find PHY\n");
+		return 1;
+	}
+
+	if(oui != 0x0885) {
+		printf("Wrong PHY? Bad OUI 0x%X 0x0885\n", oui);
+		ret |= 1;
+	}
+
+	if(model != 0x16) {
+		printf("Wrong PHY? Bad model 0x%X not 0x16\n", model);
+		ret |= 1;
+	}
+
 	if (ret == 0) printf("PHY test passed\n");
 	else printf("PHY test failed\n");
 	return ret;
@@ -192,6 +207,7 @@ int silabs_test(void)
 		data[i] = (tmp[i*2] << 8) | tmp[(i*2)+1];
 	}
 
+	/* XXX: This will fail if unit is standalone */
 	/* 5V_A is between 4.5 and 5.5 VDC */
 	if(rscale(data[3], 536, 422) > 5500 ||
 		rscale(data[3], 536, 422) < 4500) {
@@ -236,6 +252,18 @@ void leds_test(void)
 	green_led_on();
 }
 
+/* Check for M41T00S */
+int m41t00s_rtc_test(void)
+{
+        int ret;
+
+        ret = i2c_probe(0x68);
+
+        if (ret == 0) printf("RTC test passed\n");
+        else printf("RTC test failed\n");
+        return ret;
+}
+
 static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret = 0;
@@ -251,13 +279,30 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	opts = parse_strap();
 
 	leds_test();
-	/* XXX: uC rev test */
+
+	/* XXX: uC rev test, need finalized rev first */
+	printf("Silab rev is 0x%x\n", silab_rev());
 
 	switch (opts & 0xF) {
+	  case 0x1:
+	  case 0x2:
+		break;
 	  case 0x5:
 	  case 0x8:
 	  case 0x9:
 		ret |= atmel_wifi_test();
+		break;
+	  default:
+		printf("Error! Unknown board options, failing POST test!\n");
+		ret = 1;
+		break;
+	}
+
+	switch (bbdetect() & ~0xC0) {
+	  case 0x3F: /* No BB/no ID means no RTC */
+		break;
+	  default: /* Most compatible BBs should have M41T00S RTC */
+		ret |= m41t00s_rtc_test();
 		break;
 	}
 
