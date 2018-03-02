@@ -22,7 +22,7 @@
 
 #include <miiphy.h>
 
-#include "post.h"
+#include "bb.h"
 #include "silabs.h"
 #include "parse_strap.h"
 #include "fpga.h"
