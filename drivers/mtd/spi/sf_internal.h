@@ -44,6 +44,7 @@ enum {
 	SST_WP		= 1 << 4,
 	WR_QPP		= 1 << 5,
 	SECT_2K		= 1 << 6,
+	USE_ULBPR	= 1 << 7
 };
 
 #define SPI_FLASH_PAGE_256		(1 << 0)
