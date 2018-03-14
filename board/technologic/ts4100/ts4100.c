@@ -186,6 +186,13 @@ void get_jmp_status(int id)
 		nochrg = 1;
 		bbsilo = 0;
 		break;
+	  case 0x2e:
+		sdboot = fpga_gpio_input(DIO_20);
+		uboot = fpga_gpio_input(DIO_43);
+		pswitch = 1;
+		nochrg = 1;
+		bbsilo = 0;
+		break;
 	  default: /* All other boards assumed to have proper phy. jumpers */
 		sdboot = fpga_gpio_input(DIO_20);
 		uboot = fpga_gpio_input(DIO_43);
@@ -205,14 +212,13 @@ void get_jmp_status(int id)
 		setenv("jpsdboot", "on");
 	}
 
-        setenv("jpuboot", "off");
-        if(!uboot) setenv("jpuboot", "on");
-        else {
-                if(getenv_ulong("rstuboot", 10, 1)) {
-                        if(!pswitch) setenv("jpuboot", "on");
-                }
-
-        }
+	setenv("jpuboot", "off");
+	if(!uboot) setenv("jpuboot", "on");
+	else {
+		if(getenv_ulong("rstuboot", 10, 1)) {
+			if(!pswitch) setenv("jpuboot", "on");
+		}
+	}
 
 	if (nochrg) {
 		setenv("jpnochrg", "off");
