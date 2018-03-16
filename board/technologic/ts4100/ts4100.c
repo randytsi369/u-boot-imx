@@ -264,6 +264,8 @@ static void ts4100_fpga_done(void)
 	fpga_mmc_init();
 	red_led_on();
 	green_led_off();
+	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
+	fpga_gpio_output(EN_USB_HOST_5V_PAD, 1);
 }
 
 static void ts4100_fpga_tdi(int value)
