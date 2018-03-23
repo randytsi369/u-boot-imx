@@ -38,7 +38,7 @@ const struct spi_flash_params spi_flash_params_table[] = {
 #ifdef CONFIG_SPI_FLASH_ISSI		/* ISSI */
 	{"IS25LQ016",	   0x9d4015, 0x9d40,	64 * 1024,    32, RD_FULL,			  SECT_4K},
 	{"IS25LP032",	   0x9d6016, 0x0,	64 * 1024,    64, RD_NORM,			  0},
-	{"IS25LP064",	   0x9d6017, 0x0,	64 * 1024,   128, RD_NORM,			  0},
+	{"IS25LP064",	   0x9d6017, 0x0,	64 * 1024,   128, RD_NORM,			  SECT_4K},
 	{"IS25LP128",	   0x9d6018, 0x0,	64 * 1024,   256, RD_NORM,			  0},
 #endif
 #ifdef CONFIG_SPI_FLASH_MACRONIX	/* MACRONIX */
