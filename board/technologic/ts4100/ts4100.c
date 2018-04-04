@@ -130,7 +130,7 @@ iomux_v3_cfg_t const ecspi4_pads[] = {
 
 int dram_init(void)
 {
-	gd->ram_size = PHYS_SDRAM_SIZE;
+	gd->ram_size = (phys_size_t)CONFIG_DDR_MB * 1024 * 1024;
 
 	return 0;
 }
@@ -155,14 +155,15 @@ void fpga_mmc_init(void)
 	/* Rev B has SD power connected to TAMPER9, already biased high */
 }
 
-/* This function is responsible for setting jumper options.
+/* This function is responsible for setting up strapping resistor options
+ * as well as jumpers/env var set up for baseboard, if any.
  * Not all baseboards that the TS-4100 can be on support the proper jumpers
  * and the TS-4100 can be run without a baseboard.
  * We create a blacklist of baseboards we know of that don't support
  * the correct jumper configuration and just assume all other BBs have the
  * proper support.
  */
-void get_jmp_status(int id)
+void config_opts(int bbid)
 {
 	unsigned int sdboot, uboot, nochrg, pswitch, bbsilo;
 	uint8_t opts;
@@ -176,7 +177,7 @@ void get_jmp_status(int id)
 	 * Notation used assumes that "0" means jumper is set, and a "1" means
 	 * jumper is removed.
 	 */
-	switch (id & ~0xC0) {
+	switch (bbid & ~0xC0) {
 	  case 0x3F: /* No BB/no ID means no valid jumpers present */
 		sdboot = !(getenv_ulong("force_jpsdboot", 10, 0) & 0x1);
 		uboot = 1;
@@ -603,9 +604,8 @@ int board_late_init(void)
 #endif
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
-	/* Detect the carrier board id to pick the right 
-	 * device tree */
-	get_jmp_status(bbdetect());
+	/* Detect the carrier board ID and 4100 opts */
+	config_opts(bbdetect());
 
 	red_led_on();
 	green_led_off();

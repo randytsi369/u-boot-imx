@@ -86,10 +86,13 @@
 #define CTRL(c) ((c)&0x1F)     
 #define CONFIG_AUTOBOOT_STOP_STR  (char []){CTRL('C'), 0}
 
+#define ENV_IMX_TYPE "imx_type="CONFIG_IMX_TYPE"\0"
+
 #define CONFIG_PREBOOT \
 	"run silochargeon;"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	ENV_IMX_TYPE \
 	"chrg_pct=0\0" \
 	"chrg_verb=0\0" \
 	"fdt_high=0xffffffff\0" \
@@ -217,9 +220,9 @@
 	"update-uboot=env set filesize 0;" \
 		"if test ${jpsdboot} = 'on';" \
 			"then echo Updating U-Boot image from SD;" \
-			"load mmc 0:1 ${loadaddr} /boot/u-boot.imx;"\
+			"load mmc 0:1 ${loadaddr} /boot/u-boot-${imx_type}.imx;"\
 			"else echo Updating U-Boot image from eMMC;" \
-			"load mmc 1:1 ${loadaddr} /boot/u-boot.imx;"\
+			"load mmc 1:1 ${loadaddr} /boot/u-boot-${imx_type}.imx;"\
 		"fi;" \
 		"if test ${filesize} != 0;" \
 			"then setexpr filesize ${filesize} / 200;" \
@@ -257,7 +260,6 @@
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		1
 #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
-#define PHYS_SDRAM_SIZE			SZ_512M
 
 #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
 #define CONFIG_SYS_INIT_RAM_ADDR	IRAM_BASE_ADDR
