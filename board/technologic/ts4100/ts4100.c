@@ -187,6 +187,13 @@ void config_opts(int bbid)
 		nochrg = 1;
 		bbsilo = 0;
 		break;
+	  case 0x2e:
+		sdboot = fpga_gpio_input(DIO_20);
+		uboot = fpga_gpio_input(DIO_43);
+		pswitch = 1;
+		nochrg = 1;
+		bbsilo = 0;
+		break;
 	  default: /* All other boards assumed to have proper phy. jumpers */
 		sdboot = fpga_gpio_input(DIO_20);
 		uboot = fpga_gpio_input(DIO_43);
@@ -206,14 +213,13 @@ void config_opts(int bbid)
 		setenv("jpsdboot", "on");
 	}
 
-        setenv("jpuboot", "off");
-        if(!uboot) setenv("jpuboot", "on");
-        else {
-                if(getenv_ulong("rstuboot", 10, 1)) {
-                        if(!pswitch) setenv("jpuboot", "on");
-                }
-
-        }
+	setenv("jpuboot", "off");
+	if(!uboot) setenv("jpuboot", "on");
+	else {
+		if(getenv_ulong("rstuboot", 10, 1)) {
+			if(!pswitch) setenv("jpuboot", "on");
+		}
+	}
 
 	if (nochrg) {
 		setenv("jpnochrg", "off");
@@ -259,6 +265,8 @@ static void ts4100_fpga_done(void)
 	fpga_mmc_init();
 	red_led_on();
 	green_led_off();
+	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
+	fpga_gpio_output(EN_USB_HOST_5V_PAD, 1);
 }
 
 static void ts4100_fpga_tdi(int value)
