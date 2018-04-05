@@ -277,10 +277,13 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 
 	if (*p == 'd') destructive = 1;
 
-	/* Wait up to 50 seconds for FPGA programming to finish */
-	printf("Waiting for FPGA programming to be finished\n");
-	/* Delay for FPGA to be erased */
-	udelay(1000000 * 10);
+	if(!i2c_probe(0x38)) {
+		/* Wait up to 50 seconds for FPGA programming to finish */
+		printf("Waiting for FPGA programming to be finished\n");
+		/* Delay for FPGA to be erased */
+		udelay(1000000 * 10);
+	}
+
 	/* Poll for FPGA to answer us.  It wont be released from
 	 * reset until programming is done */
 	for (i = 0; i < 5000; i++)
