@@ -269,30 +269,42 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	int ret = 0;
 	char *p;
 	int destructive = 0;
-	/*uint8_t opts;*/
-	int i, rev;
+	uint8_t opts;
+	signed int i, rev;
 
 	if (argv[1][0] == '-') p = &argv[1][1];
 	else p = &argv[1][0];
 
 	if (*p == 'd') destructive = 1;
 
-	if(!i2c_probe(0x38)) {
-		/* Wait up to 50 seconds for FPGA programming to finish */
-		printf("Waiting for FPGA programming to be finished\n");
-		/* Delay for FPGA to be erased */
-		udelay(1000000 * 10);
+	/* Detect PCB Rev, fail if not >= rev B. */
+	gpio_direction_input(IMX_GPIO_NR(4, 14)); // SPI3 MOSI
+	if (gpio_get_value(IMX_GPIO_NR(4, 14))) {
+		printf("Rev A PCB detected! Failing POST test due to this!\n");
+		ret |= 1;
 	}
 
-	/* Poll for FPGA to answer us.  It wont be released from
-	 * reset until programming is done */
-	for (i = 0; i < 5000; i++)
-	{
+	/* If TS production board is found, then it is expected to JTAG the
+	 * FPGA.  There needs to be a 10 second delay to let the programming
+	 * process start.  After that we can poll the rev register.  The
+	 * programming process can take up to 50 seconds once started.
+	 *
+	 * If the production board is not attached, then rev check is pass/fail
+	 * imediately no matter what.
+	 */
+	if(!i2c_probe(0x38)) {
+		/* Wait 10 seconds for FPGA programming to start */
+		printf("Waiting for FPGA programming to start\n");
+		udelay(10000000); //10 s
+
+		for (i = 0; i < 5000; i++)
+		{
+			rev = fpga_get_rev();
+			if(rev < 0) udelay(10000); //10 ms
+			else break;
+		}
+	} else {
 		rev = fpga_get_rev();
-		if(rev < 0)
-			udelay(10000);
-		else
-			break;
 	}
 
 	if(rev < 0) {
@@ -302,16 +314,17 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 		printf("FPGA rev is %d\n", rev);
 	}
 
-	/*opts = parse_strap();*/
+	opts = parse_strap();
 
 	leds_test();
 
-	/* XXX: uC rev test, need finalized rev first */
+	/* TODO: implement uC rev test, need finalized rev first */
 	printf("Silab rev is 0x%x\n", silab_rev());
 
-	/*switch (opts & 0xF) {
+	switch (opts & 0xF) {
 	  case 0x1:
 	  case 0x2:
+	  case 0xF: /* Original BOM had all strap resistors populated */
 		break;
 	  case 0x5:
 	  case 0x8:
@@ -319,12 +332,12 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 		ret |= atmel_wifi_test();
 		break;
 	  default:
-		printf("Error! Unknown board options 0x%X, failing POST test!\n", opts);
+		printf("Unknown board opt. 0x%X, failing POST test!\n", opts);
 		ret = 1;
 		break;
-	}*/
+	}
 
-	switch (bbdetect() & ~0xC0) {
+	switch (bbdetect() & 0x3F) {
 	  case 0x3F: /* No BB/no ID means no RTC */
 		break;
 	  default: /* Most compatible BBs should have M41T00S RTC */

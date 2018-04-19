@@ -228,15 +228,8 @@ void config_opts(int bbid)
 	}
 
 	opts = parse_strap();
-
-	setenv("silopresent", "0");
-	switch (opts & 0xF) {
-	  case 0x5:
-	  case 0x8:
-	  case 0x9:
-		if (bbsilo) setenv("silopresent", "1");
-		break;
-	}
+	if ((opts & 0x10) && bbsilo) setenv("silopresent", "1");
+	else setenv("silopresent", "0");
 
 	mdelay(10);
 	fpga_gpio_output(OFF_BD_RESET_PADN, 1);
