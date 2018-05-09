@@ -322,7 +322,6 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	printf("Silab rev is 0x%x\n", silab_rev());
 
 	switch (opts & 0xF) {
-	  case 0x1:
 	  case 0xF: /* Original BOM had all strap resistors populated */
 		break;
 	  case 0x5:
