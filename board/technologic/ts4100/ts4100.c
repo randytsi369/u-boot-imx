@@ -187,6 +187,7 @@ void config_opts(int bbid)
 		nochrg = 1;
 		bbsilo = 0;
 		break;
+	  case 0x2f:
 	  case 0x2e:
 		sdboot = fpga_gpio_input(DIO_20);
 		uboot = fpga_gpio_input(DIO_43);
