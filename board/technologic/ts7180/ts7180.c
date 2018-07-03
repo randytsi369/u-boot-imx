@@ -48,6 +48,9 @@ DECLARE_GLOBAL_DATA_PTR;
 	PAD_CTL_SPEED_HIGH   |                                   \
 	PAD_CTL_DSE_48ohm   | PAD_CTL_SRE_FAST)
 
+#define MDIO_PAD_CTRL  (PAD_CTL_PUS_100K_UP | PAD_CTL_PUE |     \
+	PAD_CTL_DSE_48ohm   | PAD_CTL_SRE_FAST | PAD_CTL_ODE)
+
 #define ENET_CLK_PAD_CTRL  (PAD_CTL_SPEED_MED | \
 	PAD_CTL_DSE_120ohm   | PAD_CTL_SRE_FAST)
 
@@ -66,12 +69,17 @@ DECLARE_GLOBAL_DATA_PTR;
 	PAD_CTL_PUS_47K_UP  | PAD_CTL_SPEED_LOW |		\
 	PAD_CTL_DSE_80ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
 
+#define MISC_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
+	PAD_CTL_PUS_47K_UP | PAD_CTL_SPEED_MED | PAD_CTL_HYS)
+
 #define PC MUX_PAD_CTRL(I2C_PAD_CTRL)
 
 #define FPGA_RESETN			IMX_GPIO_NR(4, 11)
 #define U_BOOT_JMPN			IMX_GPIO_NR(3, 16)
 #define PUSH_SW_CPUN		IMX_GPIO_NR(3, 18)
-#define NO_CHRG_JMPN		IMX_GPIO_NR(3, 19)
+#define NO_CHRG_JMPN		IMX_GPIO_NR(3, 11)
+#define OPT_ID_1        IMX_GPIO_NR(3, 27)
+#define OPT_ID_4        IMX_GPIO_NR(3, 23)
 #define JTAG_FPGA_TDO		IMX_GPIO_NR(3, 24)
 #define JTAG_FPGA_TDI		IMX_GPIO_NR(3, 3)
 #define JTAG_FPGA_TMS		IMX_GPIO_NR(3, 2)
@@ -123,7 +131,7 @@ int dram_init(void)
 
 iomux_v3_cfg_t const fpga_jtag_pads[] = {
 	/* JTAG_FPGA_TDO */
-	MX6_PAD_LCD_DATA19__GPIO3_IO24 | MUX_PAD_CTRL(NO_PAD_CTRL), 
+	MX6_PAD_LCD_DATA19__GPIO3_IO24 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	/* JTAG_FPGA_TDI */
 	MX6_PAD_LCD_VSYNC__GPIO3_IO03 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	/* JTAG_FPGA_TMS */
@@ -131,7 +139,7 @@ iomux_v3_cfg_t const fpga_jtag_pads[] = {
 	/* JTAG_FPGA_TCK */
 	MX6_PAD_LCD_ENABLE__GPIO3_IO01 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	/* FPGA_RESET# */
-	MX6_PAD_NAND_WP_B__GPIO4_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL), 
+	MX6_PAD_NAND_WP_B__GPIO4_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 void fpga_mmc_init(void)
@@ -241,9 +249,13 @@ static iomux_v3_cfg_t const uart1_pads[] = {
 };
 
 static iomux_v3_cfg_t const misc_pads[] = {
-	MX6_PAD_LCD_DATA11__GPIO3_IO16 | MUX_PAD_CTRL(NO_PAD_CTRL), /* U_BOOT_JMP# */
-	MX6_PAD_LCD_DATA13__GPIO3_IO18 | MUX_PAD_CTRL(NO_PAD_CTRL), /* PUSH_SW_CPU# */
-	MX6_PAD_LCD_DATA14__GPIO3_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL), /* NO_CHRG_JMP# */
+	MX6_PAD_LCD_DATA11__GPIO3_IO16 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* U_BOOT_JMP# */
+	MX6_PAD_LCD_DATA13__GPIO3_IO18 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* PUSH_SW_CPU# */
+	MX6_PAD_LCD_DATA06__GPIO3_IO11 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* NO_CHRG_JMP# */
+
+	/* note: options 2 and 3 are connected to the fpga */
+	MX6_PAD_LCD_DATA18__GPIO3_IO23 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* Option ID4 */
+	MX6_PAD_LCD_DATA22__GPIO3_IO27 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* Option ID1 */
 };
 
 static iomux_v3_cfg_t const usdhc1_sd_pads[] = {
@@ -290,7 +302,7 @@ int board_mmc_init(bd_t *bis)
 	 * mmc1                    USDHC2 (eMMC)
 	 */
 	fpga_mmc_init();
-	
+
 	imx_iomux_v3_setup_multiple_pads(
 		usdhc1_sd_pads, ARRAY_SIZE(usdhc1_sd_pads));
 	usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC_CLK);
@@ -311,26 +323,35 @@ int board_mmc_init(bd_t *bis)
 #ifdef CONFIG_FEC_MXC
 
 static iomux_v3_cfg_t const fec_enet_pads[] = {
-	MX6_PAD_GPIO1_IO06__ENET1_MDIO | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_GPIO1_IO07__ENET1_MDC | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET1_RX_DATA0__ENET1_RDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET1_RX_DATA1__ENET1_RDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+
+	MX6_PAD_ENET1_RX_EN__ENET1_RX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_ENET1_RX_ER__ENET1_RX_ER | MUX_PAD_CTRL(ENET_PAD_CTRL),
+
 	MX6_PAD_ENET1_TX_DATA0__ENET1_TDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET1_TX_DATA1__ENET1_TDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET1_TX_EN__ENET1_TX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET1_TX_CLK__ENET1_REF_CLK1 | MUX_PAD_CTRL(ENET_CLK_PAD_CTRL),
-	MX6_PAD_ENET1_RX_DATA0__ENET1_RDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET1_RX_DATA1__ENET1_RDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET1_RX_ER__ENET1_RX_ER | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET1_RX_EN__ENET1_RX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_TX_DATA0__ENET2_TDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
-	MX6_PAD_ENET2_TX_DATA1__ENET2_TDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+
 	MX6_PAD_ENET2_RX_DATA0__ENET2_RDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_RX_DATA1__ENET2_RDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_RX_EN__ENET2_RX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_RX_ER__ENET2_RX_ER | MUX_PAD_CTRL(ENET_PAD_CTRL),
+
 	MX6_PAD_ENET2_TX_DATA0__ENET2_TDATA00 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_TX_DATA1__ENET2_TDATA01 | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_TX_EN__ENET2_TX_EN | MUX_PAD_CTRL(ENET_PAD_CTRL),
 	MX6_PAD_ENET2_TX_CLK__ENET2_REF_CLK2 | MUX_PAD_CTRL(ENET_PAD_CTRL),
+
+#if (CONFIG_FEC_ENET_DEV == 0)
+	MX6_PAD_GPIO1_IO06__ENET1_MDIO | MUX_PAD_CTRL(ENET_PAD_CTRL),
+	MX6_PAD_GPIO1_IO07__ENET1_MDC | MUX_PAD_CTRL(ENET_PAD_CTRL),
+#else
+	MX6_PAD_GPIO1_IO06__ENET2_MDIO | MUX_PAD_CTRL(MDIO_PAD_CTRL),
+	MX6_PAD_GPIO1_IO07__ENET2_MDC | MUX_PAD_CTRL(ENET_PAD_CTRL),
+#endif
+
 };
 
 static iomux_v3_cfg_t const fec_enet_pads1[] = {
@@ -358,6 +379,7 @@ static iomux_v3_cfg_t const fec_enet_pads1[] = {
 
 int board_eth_init(bd_t *bis)
 {
+
 	/* Set pins to strapping GPIO modes */
 	imx_iomux_v3_setup_multiple_pads(fec_enet_pads1,
 					 ARRAY_SIZE(fec_enet_pads1));
@@ -385,17 +407,15 @@ int board_eth_init(bd_t *bis)
 					 ARRAY_SIZE(fec_enet_pads));
 
 	return fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
-				       CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
+						 CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
 }
 
 static int setup_fec(int fec_id)
 {
 	struct iomuxc *const iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
 	int ret;
-
 	if (check_module_fused(MX6_MODULE_ENET1))
 		return -1;
-
 	if (check_module_fused(MX6_MODULE_ENET2))
 		return -1;
 
@@ -441,6 +461,9 @@ int board_early_init_f(void)
 	imx_iomux_v3_setup_multiple_pads(fpga_jtag_pads,
 					 ARRAY_SIZE(fpga_jtag_pads));
 
+	imx_iomux_v3_setup_multiple_pads(
+		misc_pads, ARRAY_SIZE(misc_pads));
+
 	/* Keep as inputs to allow offboard programming */
 	gpio_direction_input(JTAG_FPGA_TDI);
 	gpio_direction_input(JTAG_FPGA_TCK);
@@ -463,7 +486,6 @@ int board_init(void)
 {
 	/* Address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
-
 	#ifdef CONFIG_FEC_MXC
 	setup_fec(CONFIG_FEC_ENET_DEV);
 	#endif
@@ -477,8 +499,45 @@ int board_init(void)
 
 int board_late_init(void)
 {
+	int jpr;
+	uint8_t opts = 0;
+
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
+	/* Onboard jumpers to boot to SD or break in u-boot */
+	gpio_direction_input(SD_BOOT_JMPN);
+	gpio_direction_input(PUSH_SW_CPUN);
+	gpio_direction_input(U_BOOT_JMPN);
+	gpio_direction_input(NO_CHRG_JMPN);
+
+	jpr = gpio_get_value(NO_CHRG_JMPN);
+	if(jpr) setenv("jpnochrg", "off");
+	else setenv("jpnochrg", "on");
+
+	jpr = gpio_get_value(SD_BOOT_JMPN);
+	if(jpr) setenv("jpsdboot", "off");
+	else setenv("jpsdboot", "on");
+
+	jpr = gpio_get_value(U_BOOT_JMPN);
+	setenv("jpuboot", "off");
+	if(!jpr) setenv("jpuboot", "on");
+	else {
+		if(getenv_ulong("rstuboot", 10, 1)) {
+			jpr = gpio_get_value(PUSH_SW_CPUN);
+			if(!jpr) setenv("jpuboot", "on");
+		}
+	}
+
+	opts |= (gpio_get_value(OPT_ID_1) << 0);
+	opts |= (gpio_get_value(OPT_ID_4) << 3);
+
+	if (fpga_gpio_input(47))   /* pad N7, R36 on TS-1800 schematic) */
+		opts |= (1 << 1);
+
+	if (fpga_gpio_input(48))   /* pad P7, R37 on TS-1800 schematic) */
+		opts |= (1 << 2);
+
+	setenv_hex("opts", (opts & 0xF));
 	fpga_late_init();
 	red_led_on();
 	green_led_off();
@@ -503,7 +562,6 @@ int checkboard(void)
 		printf("FPGA I2C communication failed: %d\n", fpgarev);
 	else
 		printf("FPGA:  Rev %d\n", fpgarev);
-
 	return 0;
 }
 

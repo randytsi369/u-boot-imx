@@ -41,7 +41,7 @@
 #define STATUS_LED_STATE                STATUS_LED_ON
 #define STATUS_LED_PERIOD               (CONFIG_SYS_HZ / 2)
 
-/* #define CONFIG_USE_PLUGIN */
+/*#define CONFIG_USE_PLUGIN*/
 
 /* No PMIC */
 #undef CONFIG_LDO_BYPASS_CHECK
@@ -75,10 +75,15 @@
 #define CONFIG_BOOTDELAY		1
 #define CONFIG_AUTOBOOT_KEYED 		1
 #define CONFIG_AUTOBOOT_PROMPT "Press Ctrl+C to abort autoboot in %d second(s)\n"
-#define CTRL(c) ((c)&0x1F)     
+#define CTRL(c) ((c)&0x1F)
 #define CONFIG_AUTOBOOT_STOP_STR  (char []){CTRL('C'), 0}
 
+#define CONFIG_PREBOOT \
+	"run silochargeon;"
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	"chrg_pct=60\0" \
+	"chrg_verb=0\0" \
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
@@ -88,6 +93,18 @@
 	"nfsroot=/mnt/storage/imx6ul/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
 	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
+	"silochargeon=tsmicroctl d;" \
+		"if test $silopresent = '1';" \
+			"then if test $jpnochrg = 'off';" \
+				"then tsmicroctl e;"\
+			"fi;"\
+		"fi;\0" \
+	"silowaitcharge=if test $silopresent = '1';" \
+		"then if test $jpnochrg = 'on';" \
+			"then echo 'NO CHRG jumper is set, not waiting';" \
+			"else tsmicroctl w ${chrg_pct} ${chrg_verb};" \
+		"fi;" \
+	"fi;\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \
 			"then echo Checking USB storage for updates;" \
@@ -105,6 +122,7 @@
 		"fi;" \
 		"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7180.dtb;" \
 		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
+		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
@@ -114,6 +132,7 @@
 		"fi;" \
 		"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7180.dtb;" \
 		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
+		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/mmcblk1p1 rootwait rw ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
@@ -122,6 +141,7 @@
 		"mw.l ${loadaddr} 0 1000;" \
 		"nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/imx6ul-ts7180.dtb;" \
 		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
+		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
 			"rootwait rw ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
@@ -178,7 +198,7 @@
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		1
 #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
-#define PHYS_SDRAM_SIZE			SZ_512M
+#define PHYS_SDRAM_SIZE			SZ_1G
 
 #define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
 #define CONFIG_SYS_INIT_RAM_ADDR	IRAM_BASE_ADDR
@@ -233,7 +253,7 @@
 #define CONFIG_FEC_XCV_TYPE             RMII
 #elif (CONFIG_FEC_ENET_DEV == 1)
 #define IMX_FEC_BASE			ENET2_BASE_ADDR
-#define CONFIG_FEC_MXC_PHYADDR          0x1 
+#define CONFIG_FEC_MXC_PHYADDR          0x1
 #define CONFIG_FEC_XCV_TYPE             RMII
 #endif
 #define CONFIG_ETHPRIME                 "FEC0"
