@@ -575,7 +575,10 @@ iomux_v3_cfg_t const usb_otg1_pads[] = {
 
 int board_usb_phy_mode(int port)
 {
-	return USB_INIT_HOST;
+	if (port == 1)
+		return USB_INIT_HOST;
+	else
+		return USB_INIT_DEVICE;
 }
 
 int board_ehci_hcd_init(int port)
