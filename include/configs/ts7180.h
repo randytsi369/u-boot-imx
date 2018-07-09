@@ -179,11 +179,15 @@
 #define CONFIG_BOOTCOMMAND \
 	"if test ${jpuboot} = 'on'; then " \
 		"run usbprod;" \
-	"fi;" \
-	"if test ${jpsdboot} = 'on';" \
-		"then run sdboot;" \
-		"else run emmcboot;" \
-	"fi;"
+	"else ;" \
+		"if test ${usbboot} = '1'; then " \
+			"run usbprod;" \
+		"fi;" \
+		"if test ${jpsdboot} = 'on';" \
+			"then run sdboot;" \
+			"else run emmcboot;" \
+		"fi;" \
+	"fi; "
 
 #define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START	0x80000000
