@@ -289,9 +289,12 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	 * process start.  After that we can poll the rev register.  The
 	 * programming process can take up to 50 seconds once started.
 	 *
+	 * The production board will be attached to I2C bus 2
+	 *
 	 * If the production board is not attached, then rev check is pass/fail
 	 * imediately no matter what.
 	 */
+	i2c_set_bus_num(2);
 	if(!i2c_probe(0x38)) {
 		/* Wait 10 seconds for FPGA programming to start */
 		printf("Waiting for FPGA programming to start\n");
