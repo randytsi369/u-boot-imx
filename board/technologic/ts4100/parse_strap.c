@@ -19,7 +19,8 @@ uint8_t parse_strap(void)
 		if (ret != 0) opts = 0;
 		else opts = (opts & 0x1F);
 		
-		read = 1;
+		if(opts != 0)
+			read = 1;
 	}
 	setenv_hex("opts", opts);
 	return opts;
