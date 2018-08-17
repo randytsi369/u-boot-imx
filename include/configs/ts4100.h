@@ -136,8 +136,6 @@
 		"fi;" \
                 "if load mmc 0:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
-			"gpio clear 107;"  \
-			"gpio set 107;"  \
                 "fi; " \
 		"if load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts4100-${baseboardid}.dtb;" \
 			"then echo $baseboardid detected;" \
@@ -157,8 +155,6 @@
 		"fi;" \
                 "if load mmc 1:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
-			"gpio clear 107;"  \
-			"gpio set 107;"  \
                 "fi; " \
 		"if load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts4100-${baseboardid}.dtb;" \
 			"then echo $baseboardid detected;" \

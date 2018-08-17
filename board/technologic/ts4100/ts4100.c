@@ -254,6 +254,10 @@ static void ts4100_fpga_done(void)
 	gpio_direction_input(JTAG_FPGA_TMS);
 	gpio_direction_input(JTAG_FPGA_TDO);
 
+	gpio_direction_output(FPGA_RESETN, 0);
+	mdelay(1);
+	gpio_set_value(FPGA_RESETN, 1);
+
 	/* During FPGA programming several important pins will
 	 * have been tristated.  Put it back to normal */
 	fpga_mmc_init();
