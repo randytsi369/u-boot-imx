@@ -92,6 +92,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PHY1_ISOLATE		IMX_GPIO_NR(2, 7)
 #define PHY2_ISOLATE		IMX_GPIO_NR(2, 15)
 
+#define PRESENT 1
+#define NOT_PRESENT 0
+
 /* I2C1 for Silabs */
 struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
@@ -175,32 +178,38 @@ void config_opts(int bbid)
 	 * This can be used here if needed for changes from rev to rev.
 	 *
 	 * Notation used assumes that "0" means jumper is set, and a "1" means
-	 * jumper is removed.
+	 * jumper is removed. Thus, overrides will force the jumper on or off.
+	 *
+	 * PSwitch is intended for use only on production/development baseboards.
+	 * Because of this, we assume no PSwitch is present unless we find a
+	 * whitelisted baseboard.
 	 */
+	pswitch = 1;
+	sdboot = fpga_gpio_input(DIO_20);
+	uboot = fpga_gpio_input(DIO_43);
+	nochrg = fpga_gpio_input(DIO_01);
+	bbsilo = PRESENT;
+
 	switch (bbid & ~0xC0) {
 	  case 0x3F: /* No BB/no ID means no valid jumpers present */
 		sdboot = !(getenv_ulong("force_jpsdboot", 10, 0) & 0x1);
 		uboot = 1;
 		setenv_ulong("bootdelay",
 		  getenv_ulong("force_bootdelay", 10, 1));
-		pswitch = 1;
 		nochrg = 1;
-		bbsilo = 0;
+		bbsilo = NOT_PRESENT;
 		break;
 	  case 0x2f:
 	  case 0x2e:
-		sdboot = fpga_gpio_input(DIO_20);
-		uboot = fpga_gpio_input(DIO_43);
-		pswitch = 1;
 		nochrg = 1;
-		bbsilo = 0;
+		bbsilo = NOT_PRESENT;
 		break;
-	  default: /* All other boards assumed to have proper phy. jumpers */
-		sdboot = fpga_gpio_input(DIO_20);
-		uboot = fpga_gpio_input(DIO_43);
+	  case 0x16: /* TS-8551 adds PSwitch */
 		pswitch = fpga_gpio_input(DIO_09);
-		nochrg = fpga_gpio_input(DIO_01);
-		bbsilo = 1;
+		break;
+	  default: /* All other boards presumed to have std. jumper locations w/
+		    * TS-SILO
+		    */
 		break;
 	}
 
