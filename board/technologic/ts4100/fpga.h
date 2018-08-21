@@ -18,6 +18,9 @@
 #define DIO_43			80
 #define DIO_01			01
 #define DIO_09			46
+#define SILAB_CLK		84
+#define SILAB_RST		85
+#define FORCE_5V		86
 
 void fpga_gpio_output(int io, int value);
 int fpga_gpio_input(int io);

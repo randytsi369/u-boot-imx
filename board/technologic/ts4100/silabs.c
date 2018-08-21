@@ -17,6 +17,7 @@
 #include <i2c.h>
 
 #include "silabs.h"
+#include "fpga.h"
 
 int silab_rev(void)
 {
@@ -192,4 +193,129 @@ U_BOOT_CMD(tsmicroctl, 4, 0, do_microctl,
 	"    -1           Verbose output when -w is supplied\n"
 	"    -e           Enable charging of TS-SILO supercaps\n"
 	"    -d           Disable charging of TS-SILO supercaps\n"
+);
+
+/* The following function is overly complex because I2C is very slow.
+ * In order to prevent a RMW every time we touch the data pin we need to
+ * maintain a copy of the current state.
+ * And, in order to reduce unecessary transactions, we check that we are
+ * actually changing a bit before issuing a command to the FPGA.
+ * In all, this greatly speeds up how fast we can program the uC.
+ */
+uint8_t data_state = 0;
+void c2d_set(unsigned char state) /* 1, 0, or ‘z’ */
+{
+	if (state == 'z') {
+		data_state &= ~(0x1);
+		i2c_write(0x28, RED_LED_PADN, 2, &data_state, 1);
+	} else if (state == 1) {
+		if(!(data_state & 0x2)) {
+			data_state |= 0x2;
+			i2c_write(0x28, RED_LED_PADN, 2, &data_state, 1);
+		}
+		if(!(data_state & 0x1)) {
+			data_state |= 0x1;
+			i2c_write(0x28, RED_LED_PADN, 2, &data_state, 1);
+		}
+	} else {
+		if(data_state & 0x2) {
+			data_state &= ~(0x2);
+			i2c_write(0x28, RED_LED_PADN, 2, &data_state, 1);
+		}
+		if(!(data_state & 0x1)) {
+			data_state |= 0x1;
+			i2c_write(0x28, RED_LED_PADN, 2, &data_state, 1);
+		}
+	}
+}
+
+int c2d_get(void)
+{
+	uint8_t val;
+
+	i2c_read(0x28, RED_LED_PADN, 2, &val, 1);
+	return (val & 0x4) ? 1 : 0;
+}
+
+void c2ck_set(unsigned char state)
+{
+	uint8_t val;
+
+	/* TS-4100 SILAB_CLK is inverted */
+	/* INFO: c2.c likes to set z state, seems to cause issues
+	 * Its not really necessary, not sure why its doing it that often
+	 *
+	 * Since tristate is never set, we can assume we never have to touch OE
+	 */
+	if (state == 'z') {
+		;
+	} else if (state == 1) {
+		val = 0x1;
+		i2c_write(0x28, SILAB_CLK, 2, &val, 1);
+	} else {
+		val = 0x3;
+		i2c_write(0x28, SILAB_CLK, 2, &val, 1);
+	}
+
+}
+void c2ck_strobe(void) {
+	uint8_t val;
+
+	val = 0x3;
+	i2c_write(0x28, SILAB_CLK, 2, &val, 1);
+	val = 0x1;
+	i2c_write(0x28, SILAB_CLK, 2, &val, 1);
+}
+
+unsigned int len;
+unsigned char *data;
+
+unsigned int c2_fopen(void) {
+	return len;
+}
+
+unsigned char c2_getc(void) {
+	unsigned char ret;
+	ret = (*data++);
+	return ret;
+}
+
+void c2_reset(void) {
+	/* SILAB_RST follows SILAB_CLK behavior */
+	fpga_gpio_output(SILAB_RST, 1);
+	udelay(25);
+	fpga_gpio_output(SILAB_RST, 0);
+	udelay(1);
+}
+
+int blast_silabs(void);
+
+static int do_silabs(cmd_tbl_t *cmdtp, int flag,
+	int argc, char * const argv[])
+{
+	//Initialize IO pins
+	i2c_set_bus_num(2);
+	fpga_gpio_output(FORCE_5V, 1);
+	fpga_gpio_output(SILAB_RST, 0);
+	fpga_gpio_output(RED_LED_PADN, 1);
+	data_state = 3;
+	fpga_gpio_output(SILAB_CLK, 0);
+
+	data = (unsigned char *)simple_strtoul(argv[1], NULL, 16);
+	len = simple_strtoul(argv[2], NULL, 16);
+
+	blast_silabs();
+
+	fpga_gpio_input(FORCE_5V);
+	fpga_gpio_input(SILAB_RST);
+	fpga_gpio_output(RED_LED_PADN, 0);
+	fpga_gpio_input(SILAB_CLK);
+
+	return 0;
+
+}
+
+U_BOOT_CMD(silabs, 3, 0, do_silabs,
+	"TS supervisory microcontroller programming",
+	"  Usage: silabs <image address> <length>\n"
 );
