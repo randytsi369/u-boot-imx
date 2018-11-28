@@ -180,6 +180,11 @@ void config_opts(int bbid)
 	 * Notation used assumes that "0" means jumper is set, and a "1" means
 	 * jumper is removed. Thus, overrides will force the jumper on or off.
 	 *
+	 * In applications without a U-Boot jumper, the following paradigm is
+	 * recommended. See case 0x3F below for an example.
+	 * Force the jumper to off
+	 * Set the bootdelay env var to force_bootdelay, fallback to "1"
+	 *
 	 * PSwitch is intended for use only on production/development baseboards.
 	 * Because of this, we assume no PSwitch is present unless we find a
 	 * whitelisted baseboard.
@@ -207,6 +212,12 @@ void config_opts(int bbid)
 	  case 0x16: /* TS-8551 adds PSwitch */
 		pswitch = fpga_gpio_input(DIO_09);
 		break;
+	  case 0x08: /* TS-8820 */
+		uboot = 1;
+		setenv_ulong("bootdelay",
+		  getenv_ulong("force_bootdelay", 10, 1));
+		nochrg = 1;
+		bbsilo = NOT_PRESENT;
 	  default: /* All other boards presumed to have std. jumper locations w/
 		    * TS-SILO
 		    */
