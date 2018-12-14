@@ -94,6 +94,8 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define PRESENT 1
 #define NOT_PRESENT 0
+#define FORCE_SET 0
+#define FORCE_UNSET 1
 
 /* I2C1 for Silabs */
 struct i2c_pads_info i2c_pad_info1 = {
@@ -177,8 +179,8 @@ void config_opts(int bbid)
 	/* We have access to the full ID of the BB which includes PCB rev.
 	 * This can be used here if needed for changes from rev to rev.
 	 *
-	 * Notation used assumes that "0" means jumper is set, and a "1" means
-	 * jumper is removed. Thus, overrides will force the jumper on or off.
+	 * FORCE_SET and FORCE_UNSET are used to force a jumper state. This is
+	 * used in situations where a specific jumper is not present.
 	 *
 	 * In applications without a U-Boot jumper, the following paradigm is
 	 * recommended. See case 0x3F below for an example.
@@ -189,7 +191,7 @@ void config_opts(int bbid)
 	 * Because of this, we assume no PSwitch is present unless we find a
 	 * whitelisted baseboard.
 	 */
-	pswitch = 1;
+	pswitch = FORCE_UNSET;
 	sdboot = fpga_gpio_input(DIO_20);
 	uboot = fpga_gpio_input(DIO_43);
 	nochrg = fpga_gpio_input(DIO_01);
@@ -198,26 +200,27 @@ void config_opts(int bbid)
 	switch (bbid & ~0xC0) {
 	  case 0x3F: /* No BB/no ID means no valid jumpers present */
 		sdboot = !(getenv_ulong("force_jpsdboot", 10, 0) & 0x1);
-		uboot = 1;
+		uboot = FORCE_UNSET;
 		setenv_ulong("bootdelay",
 		  getenv_ulong("force_bootdelay", 10, 1));
-		nochrg = 1;
+		nochrg = FORCE_UNSET;
 		bbsilo = NOT_PRESENT;
 		break;
 	  case 0x2f:
 	  case 0x2e:
-		nochrg = 1;
+		nochrg = FORCE_UNSET;
 		bbsilo = NOT_PRESENT;
 		break;
 	  case 0x16: /* TS-8551 adds PSwitch */
 		pswitch = fpga_gpio_input(DIO_09);
 		break;
 	  case 0x08: /* TS-8820 */
-		uboot = 1;
+		uboot = FORCE_UNSET;
 		setenv_ulong("bootdelay",
 		  getenv_ulong("force_bootdelay", 10, 1));
-		nochrg = 1;
+		nochrg = FORCE_UNSET;
 		bbsilo = NOT_PRESENT;
+		break;
 	  default: /* All other boards presumed to have std. jumper locations w/
 		    * TS-SILO
 		    */
