@@ -47,7 +47,7 @@ static unsigned int wget_timeout = WGET_TIMEOUT;
 
 static void  wget_timeout_handler(void);
 
-static enum net_loop_state wget_loop_state;
+static enum net_loop_state wget_loop_state = NETLOOP_SUCCESS;
 
 /* Timeout retry parameters */
 static u8 retry_action;
