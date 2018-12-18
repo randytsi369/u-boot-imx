@@ -32,4 +32,12 @@ config NET_TFTP_VARS
 	  If unset, timeout and maximum are hard-defined as 1 second
 	  and 10 timouts per TFTP transfer.
 
+	   
+config TCP
+	bool "TCP stack"
+	help
+	  TCP protocol support with SACK for wget. Selecting this will provide
+	  the fastest file transfer possible.
+
+
 endif   # if NET

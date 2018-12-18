@@ -25,3 +25,5 @@ obj-$(CONFIG_CMD_PING) += ping.o
 obj-$(CONFIG_CMD_RARP) += rarp.o
 obj-$(CONFIG_CMD_SNTP) += sntp.o
 obj-$(CONFIG_CMD_NET)  += tftp.o
+obj-$(CONFIG_TCP)      += tcp.o
+obj-$(CONFIG_CMD_WGET) += wget.o

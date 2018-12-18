@@ -110,6 +110,19 @@ U_BOOT_CMD(
 );
 #endif
 
+#if defined(CONFIG_CMD_WGET)
+static int do_wget(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	return netboot_common(WGET, cmdtp, argc, argv);
+}
+
+U_BOOT_CMD(
+	wget,   3,      1,      do_wget,
+	"boot image via network using HTTP protocol",
+	"[loadAddress] [[hostIPaddr:]path and image name]"
+);
+#endif
+
 static void netboot_update_env(void)
 {
 	char tmp[22];
@@ -207,6 +220,8 @@ static int netboot_common(enum proto_t proto, cmd_tbl_t *cmdtp, int argc,
 		load_addr = simple_strtoul(argv[1], NULL, 16);
 		copy_filename(net_boot_file_name, argv[2],
 			      sizeof(net_boot_file_name));
+
+		printf("filename: %s\n", net_boot_file_name);
 
 		break;
 
