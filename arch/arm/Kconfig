@@ -545,6 +545,10 @@ config TARGET_TS4800
 	bool "Support TS4800"
 	select CPU_V7
 
+config TARGET_TS7120
+	bool "Support TS7120"
+	select CPU_V7
+
 config TARGET_TS7180
 	bool "Support TS7180"
 	select CPU_V7
@@ -866,6 +870,7 @@ source "board/toradex/colibri_pxa270/Kconfig"
 source "board/toradex/colibri_vf/Kconfig"
 source "board/technologic/ts4100/Kconfig"
 source "board/technologic/ts4800/Kconfig"
+source "board/technologic/ts7120/Kconfig"
 source "board/technologic/ts7180/Kconfig"
 source "board/technologic/ts7553v2/Kconfig"
 source "board/vscom/baltos/Kconfig"
