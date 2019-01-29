@@ -851,8 +851,8 @@ int net_send_ip_packet(uchar *ether, struct in_addr dest, int dport, int sport,
 		tcp_set_tcp_header(pkt + eth_hdr_size, dport, sport,
 				   payload_len, action,
 				   tcp_seq_num, tcp_ack_num);
- 	}
 #endif
+	}
 
 	/* if MAC address was not discovered yet, do an ARP request */
 	if (memcmp(ether, net_null_ethaddr, 6) == 0) {
@@ -1031,7 +1031,7 @@ static struct ip_udp_hdr *__net_defragment(struct ip_udp_hdr *ip, int *lenp)
 	return localip;
 }
 
-static inline struct ip_udp_hdr *net_defragment(struct ip_udp_hdr *ip,
+inline struct ip_udp_hdr *net_defragment(struct ip_udp_hdr *ip,
 	int *lenp)
 {
 	u16 ip_off = ntohs(ip->ip_off);
@@ -1042,7 +1042,7 @@ static inline struct ip_udp_hdr *net_defragment(struct ip_udp_hdr *ip,
 
 #else /* !CONFIG_IP_DEFRAG */
 
-static inline struct ip_udp_hdr *net_defragment(struct ip_udp_hdr *ip,
+inline struct ip_udp_hdr *net_defragment(struct ip_udp_hdr *ip,
 	int *lenp)
 {
 	u16 ip_off = ntohs(ip->ip_off);
@@ -1058,7 +1058,7 @@ static inline struct ip_udp_hdr *net_defragment(struct ip_udp_hdr *ip,
  *
  * @parma ip	IP packet containing the ICMP
  */
-static void receive_icmp(struct ip_udp_hdr *ip, int len,
+void receive_icmp(struct ip_udp_hdr *ip, int len,
 			struct in_addr src_ip, struct ethernet_hdr *et)
 {
 	struct icmp_hdr *icmph = (struct icmp_hdr *)&ip->udp_src;
@@ -1344,7 +1344,7 @@ void net_process_received_packet(uchar *in_packet, int len)
 
 /**********************************************************************/
 
-static int net_check_prereq(enum proto_t protocol)
+int net_check_prereq(enum proto_t protocol)
 {
 	switch (protocol) {
 		/* Fall through */
@@ -1553,7 +1553,6 @@ void copy_filename(char *dst, const char *src, int size)
 	defined(CONFIG_CMD_SNTP)	|| \
 	defined(CONFIG_CMD_DNS)		|| \
 	defined(CONFIG_CMD_WGET)
- /*
 /*
  * make port a little random (1024-17407)
  * This keeps the math somewhat trivial to compute, and seems to work with
