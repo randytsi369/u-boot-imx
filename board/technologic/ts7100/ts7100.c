@@ -442,13 +442,6 @@ int board_late_init(void)
 	imx_iomux_v3_setup_multiple_pads(
 		misc_pads, ARRAY_SIZE(misc_pads));
 
-
-
-	/* Enable LVDS clock output.
-	 * Writing CCM_ANALOG_MISC1 to use output from 24M OSC
-	 * Enabling this clock takes the FPGA out of reset */
-	setbits_le32(0x020C8160, 0x412);
-
 	fram_init();
 
 	return 0;
