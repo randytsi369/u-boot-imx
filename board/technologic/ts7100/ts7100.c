@@ -421,10 +421,12 @@ int board_late_init(void)
 
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
-	/* 198MHz AXI div by 4 = 49.5MHz EIM clk */
+	/* 396mhz PLL2_PDF2 div by 8 = 49.5MHz EIM clk */
 	clrsetbits_le32(&imx_ccm->cscmr1,
-			MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_MASK,
-			3 << MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_OFFSET);
+			MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_MASK |
+			MXC_CCM_CSCMR1_ACLK_EMI_SLOW_MASK,
+			7 << MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_OFFSET |
+			2 << MXC_CCM_CSCMR1_ACLK_EMI_SLOW_OFFSET);
 
 	/* Set up EIM bus for FPGA */
 	imx_iomux_v3_setup_multiple_pads(
