@@ -318,6 +318,9 @@ static iomux_v3_cfg_t const fec_enet_pads1[] = {
 
 int board_eth_init(bd_t *bis)
 {
+
+	mdelay(3000);
+
 	/* Set pins to strapping GPIO modes */
 	imx_iomux_v3_setup_multiple_pads(fec_enet_pads1,
 					 ARRAY_SIZE(fec_enet_pads1));
@@ -421,6 +424,11 @@ int board_late_init(void)
 	struct weim *weim_regs = (struct weim *)WEIM_BASE_ADDR;
 
 	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
+
+	/* select PLL2 PFD2 for EIM, and set divider to divide-by-4, to yield
+		a 99MHz clock */
+	clrbits_le32(0x020C401C, 0x60000000);
+	setbits_le32(0x020C401C, 0x41000000);
 
 	/* Set up EIM bus for FPGA */
 	imx_iomux_v3_setup_multiple_pads(
