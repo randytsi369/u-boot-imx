@@ -3,7 +3,7 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-y  := ts7100.o led.o post.o c2.o tsmicroctl.o
+obj-y  := ts7100.o led.o post.o c2.o tsmicroctl.o fram.o
 
 extra-$(CONFIG_USE_PLUGIN) :=  plugin.bin
 $(obj)/plugin.bin: $(obj)/plugin.o

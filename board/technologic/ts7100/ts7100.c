@@ -30,6 +30,7 @@
 #include <usb.h>
 #include <usb/ehci-fsl.h>
 #include "tsfpga.h"
+#include "fram.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -448,6 +449,8 @@ int board_late_init(void)
 	 * Enabling this clock takes the FPGA out of reset */
 	setbits_le32(0x020C8160, 0x412);
 
+	fram_init();
+
 	return 0;
 }
 
@@ -480,17 +483,17 @@ int board_usb_phy_mode(int port)
 #ifdef CONFIG_BOOTCOUNT_LIMIT
 void bootcount_store(ulong a)
 {
-	//writeb((uint8_t)a, FPGA_FRAM_BOOTCOUNT);
+	fram_write(2047, (uint8_t) a);
 	/* Takes 9us to write */
 	udelay(18);
-	/*if((uint8_t)a != readb(FPGA_FRAM_BOOTCOUNT)) {
+	if((uint8_t)a != fram_read(2047)) {
 		printf("New FRAM bootcount did not write!\n");
-	}*/
+	}
 }
 
 ulong bootcount_load(void)
 {
-	uint8_t val = 0xff; //readb(FPGA_FRAM_BOOTCOUNT);
+	uint8_t val = fram_read(2047);
 
 	/* Depopulated FRAM returns all ffs */
 	if(val == 0xff) {
