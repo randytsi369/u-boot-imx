@@ -15,7 +15,7 @@
  */
 static int do_tsfpga_reload(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	writel((1<<15), FPGA_RELOAD);
+	writew((1<<15), FPGA_RELOAD);
 	/* With the current revision we can only delay long enough until the FPGA
 	 * has likely been reloaded.  On new revs we will poll for completion and
 	 * a delayed FPGA_DONE will cause FPGA_RESET#. */
