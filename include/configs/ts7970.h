@@ -9,8 +9,6 @@
 #ifndef __TS7990_CONFIG_H
 #define __TS7990_CONFIG_H
 
-#undef CONFIG_ARM_ERRATA_845369
-
 #include "mx6_common.h"
 #define CONFIG_MX6
 #define CONFIG_DISPLAY_CPUINFO
