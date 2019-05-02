@@ -192,7 +192,15 @@
 				"i2c mw 38 0.0 3;" \
 				"sleep 1;" \
 			"done;" \
-		"fi;\0"
+		"fi;\0" \
+	"update-uboot=env set filesize 0;"\
+		"dhcp; nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/u-boot.imx; " \
+                "if test ${filesize} != 0;"\
+                        "then setexpr filesize ${filesize} / 200;" \
+                        "setexpr filesize ${filesize} + 1;" \
+                        "mmc dev 0 1;" \
+                        "mmc write ${loadaddr} 2 ${filesize};"\
+                "fi;\0"
 
 #define CONFIG_BOOTCOMMAND \
 	"echo normal boot"
