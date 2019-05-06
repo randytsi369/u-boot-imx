@@ -536,14 +536,12 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 				break;
 			}
 		default:
-			printf("unknown build variant %d.  Either failure or u-boot " \
-			       "must be updated to support this.\n", build_variant);
+			printf("unknown build variant %d.  Using basic test\n");
 			printf("R37: %d\n", opt_r37);
 			printf("R36: %d\n", opt_r36);
 			printf("R34: %d\n", opt_r34);
 			printf("R39: %d\n", opt_r39);
 			printf("Build variant: %d\n", build_variant);
-			ret = 1;
 	}
 
 	ret |= emmc_test();
