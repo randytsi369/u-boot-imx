@@ -62,6 +62,9 @@
 #undef CONFIG_BOOTM_PLAN9
 #undef CONFIG_BOOTM_RTEMS
 
+#define CONFIG_FPGA
+#define CONFIG_FPGA_LATTICE
+
 /* Video */
 /*#define CONFIG_VIDEO*/
 
@@ -200,7 +203,10 @@
                         "setexpr filesize ${filesize} + 1;" \
                         "mmc dev 0 1;" \
                         "mmc write ${loadaddr} 2 ${filesize};"\
-                "fi;\0"
+                "fi;\0" \
+	"update-fpga=dhcp; " \
+		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/ts7100.vme; " \
+		"fpga load 0 ${loadaddr} ${filesize};\0"
 
 #define CONFIG_BOOTCOMMAND \
 	"echo normal boot"

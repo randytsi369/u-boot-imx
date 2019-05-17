@@ -43,6 +43,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PHY2_CONFIG_2		IMX_GPIO_NR(2, 10)
 #define PHY1_ISOLATE		IMX_GPIO_NR(2, 7)
 #define PHY2_ISOLATE		IMX_GPIO_NR(2, 15)
+#define JTAG_FPGA_TDO		IMX_GPIO_NR(4, 0)
+#define JTAG_FPGA_TDI		IMX_GPIO_NR(4, 17)
+#define JTAG_FPGA_TMS		IMX_GPIO_NR(3, 6)
+#define JTAG_FPGA_TCK		IMX_GPIO_NR(3, 5)
+
 
 #define UART_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_100K_UP | \
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST | PAD_CTL_HYS)
@@ -407,6 +412,10 @@ int board_init(void)
 	setup_fec(CONFIG_FEC_ENET_DEV);
 	#endif
 
+	#ifdef CONFIG_FPGA
+	ts7100_fpga_init();
+	#endif
+
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
 	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
 
@@ -500,3 +509,78 @@ ulong bootcount_load(void)
 }
 
 #endif //CONFIG_BOOTCOUNT_LIMIT
+
+#if defined(CONFIG_FPGA)
+
+static void ts7100_fpga_jtag_init(void)
+{
+	gpio_direction_output(JTAG_FPGA_TDI, 1);
+	gpio_direction_output(JTAG_FPGA_TCK, 1);
+	gpio_direction_output(JTAG_FPGA_TMS, 1);
+	gpio_direction_input(JTAG_FPGA_TDO);
+}
+
+static void ts7100_fpga_done(void)
+{
+	gpio_direction_input(JTAG_FPGA_TDI);
+	gpio_direction_input(JTAG_FPGA_TCK);
+	gpio_direction_input(JTAG_FPGA_TMS);
+	gpio_direction_input(JTAG_FPGA_TDO);
+
+	/* During FPGA programming several important pins will
+	 * have been tristated.  Put it back to normal */
+	//fpga_mmc_init();
+	//red_led_on();
+	//green_led_off();
+	//fpga_gpio_output(OFF_BD_RESET_PADN, 1);
+	//fpga_gpio_output(EN_USB_HOST_5V_PAD, 1);
+}
+
+static void ts7100_fpga_tdi(int value)
+{
+	gpio_set_value(JTAG_FPGA_TDI, value);
+}
+
+static void ts7100_fpga_tms(int value)
+{
+	gpio_set_value(JTAG_FPGA_TMS, value);
+}
+
+static void ts7100_fpga_tck(int value)
+{
+	gpio_set_value(JTAG_FPGA_TCK, value);
+}
+
+static int ts7100_fpga_tdo(void)
+{
+	return gpio_get_value(JTAG_FPGA_TDO);
+}
+
+lattice_board_specific_func ts7100_fpga_fns = {
+	ts7100_fpga_jtag_init,
+	ts7100_fpga_tdi,
+	ts7100_fpga_tms,
+	ts7100_fpga_tck,
+	ts7100_fpga_tdo,
+	ts7100_fpga_done
+};
+
+Lattice_desc ts7100_fpga = {
+	Lattice_XP2,
+	lattice_jtag_mode,
+	589012,
+	(void *) &ts7100_fpga_fns,
+	NULL,
+	0,
+	"machxo_2_cb132"
+};
+
+int ts7100_fpga_init(void)
+{
+	fpga_init();
+	fpga_add(fpga_lattice, &ts7100_fpga);
+
+	return 0;
+}
+
+#endif
