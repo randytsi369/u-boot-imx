@@ -440,13 +440,13 @@ int misc_init_r(void)
 
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 
-	setenv("model", "ts7100");
+	setenv("model", "7100");
 	/* Need to read latched FPGA value */
 	setenv_hex("opts", 0);
 
 	/* Need to read and parse CPU pins */
 	opts = parse_strap(NULL);
-	setenv_hex("io_model", 0);
+	setenv_hex("io_model", (ulong)((opts & 0xf0) >> 4));
 	setenv_hex("io_opts", opts);
 }
 
