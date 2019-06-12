@@ -102,7 +102,8 @@
 	"usbboot=1\0" \
 	"model=4100\0" \
 	"autoload=no\0" \
-	"nfsroot=192.168.0.36:/mnt/storage/imx6ul/\0" \
+	"nfsip=192.168.0.36\0" \
+	"nfsroot=/nfsroot/imx6ul/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
 	"cmdline_append=rootwait rw console=ttymxc0,115200 init=/sbin/init\0" \
 	"silochargeon=tsmicroctl d;" \
@@ -169,20 +170,24 @@
 	"nfsboot=echo Booting from NFS ...;" \
 		"powercheck;" \
 		"dhcp;" \
-		"mw.l ${fdtaddr} 0 1000;" \
-		"mw.l ${loadaddr} 0 1000;" \
-		"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
-		"if fdt addr ${fdtaddr};" \
+		"if nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/boot.scr;" \
+			"then echo Booting from custom /boot/boot.scr;" \
+			"source ${loadaddr};" \
+		"fi;" \
+		"if nfs ${fdtaddr} " \
+		  "${nfsip}:${nfsroot}/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
 			"then echo Baseboard $baseboardid detected;" \
 		"else " \
 			"echo Booting default device tree;" \
 			"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
-		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \
-		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
-			"${cmdline_append};" \
-		"run silowaitcharge;" \
-		"bootz ${loadaddr} - ${fdtaddr};\0" \
+		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
+			"then setenv bootargs root=/dev/nfs ip=dhcp " \
+			  "nfsroot=${nfsroot} ${cmdline_append};" \
+			"run silowaitcharge;" \
+			"bootz ${loadaddr} - ${fdtaddr};" \
+		"else echo Failed to load kernel from NFS;" \
+		"fi;\0" \
 	"bootcmd_mfg=echo Booted over USB, running test/prime;" \
 		"if post;" \
 			"then ums mmc 1.1;" \
@@ -217,7 +222,7 @@
 		"if test ${jpsdboot} = 'on';" \
 			"then echo Updating U-Boot image from SD;" \
 			"load mmc 0:1 ${loadaddr} /boot/u-boot-${imx_type}.imx;"\
-			"else echo Updating U-Boot image from eMMC;" \
+		"else echo Updating U-Boot image from eMMC;" \
 			"load mmc 1:1 ${loadaddr} /boot/u-boot-${imx_type}.imx;"\
 		"fi;" \
 		"if test ${filesize} != 0;" \
@@ -226,6 +231,15 @@
 			"mmc dev 1 1;" \
 			"mmc write ${loadaddr} 2 ${filesize};" \
 		"fi;\0"\
+	"update-uboot-nfs=dhcp;"\
+		"if nfs ${loadaddr} " \
+		  "${nfsip}:${nfsroot}/boot/u-boot-${imx_type}.imx; " \
+			"then setexpr filesize ${filesize} / 200;" \
+			"setexpr filesize ${filesize} + 1;" \
+			"mmc dev 1 1;" \
+			"mmc write ${loadaddr} 2 ${filesize};"\
+		"fi;\0" \
+
 
 
 #define CONFIG_BOOTCOMMAND \
