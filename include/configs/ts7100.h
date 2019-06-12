@@ -150,7 +150,7 @@
 		"if load mmc 0:1 ${loadaddr} /boot/zImage;" \
 			"run silowaitcharge;" \
 			"setenv bootargs root=/dev/mmcblk0p1 rootwait rw " \
-			  "opts=0x${opts} io_opts=0x${io_opts} " \
+			  "cpu_opts=0x${opts} io_opts=0x${io_opts} " \
 			  "io_model=0x${io_model} ${cmdline_append};" \
 			"bootz ${loadaddr} - ${fdtaddr};" \
 		"else echo Failed to load kernel from eMMC;" \
@@ -167,7 +167,7 @@
 			"then run silowaitcharge;" \
 			"setenv bootargs root=/dev/nfs ip=dhcp " \
 			  "nfsroot=${nfsip}:${nfsroot} rootwait rw " \
-			  "opts=0x${opts} io_opts=0x${io_opts} " \
+			  "cpu_opts=0x${opts} io_opts=0x${io_opts} " \
 			  "io_model=0x${io_model} ${cmdline_append};" \
 			"bootz ${loadaddr} - ${fdtaddr};" \
 		"else echo Failed to load kernel from NFS;" \
@@ -211,7 +211,7 @@
                 "fi;\0" \
 	"update-fpga=dhcp; " \
 		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/ts7100.vme; " \
-			"then fpga load 0 ${loadaddr} ${filesize};"
+			"then fpga load 0 ${loadaddr} ${filesize};" \
 		"fi;\0"
 
 #define CONFIG_BOOTCOMMAND \
