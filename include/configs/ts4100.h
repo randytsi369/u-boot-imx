@@ -138,16 +138,20 @@
                 "if load mmc 0:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
                 "fi; " \
-		"if load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts4100-${baseboardid}.dtb;" \
+		"if load mmc 0:1 ${fdtaddr} "\
+		  "/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
 			"then echo $baseboardid detected;" \
 		"else " \
 			"echo Booting default device tree;" \
 			"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
-		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
-		"setenv bootargs root=/dev/mmcblk0p1 ${cmdline_append};" \
-		"run silowaitcharge;" \
-		"bootz ${loadaddr} - ${fdtaddr};\0" \
+		"if load mmc 0:1 ${loadaddr} /boot/zImage;" \
+			"then setenv bootargs root=/dev/mmcblk0p1 " \
+			  "${cmdline_append};" \
+			"run silowaitcharge;" \
+			"bootz ${loadaddr} - ${fdtaddr};" \
+		"else echo Failed to load kernel from SD;" \
+		"fi;\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
 		"powercheck;" \
 		"if load mmc 1:1 ${loadaddr} /boot/boot.ub;" \
@@ -157,16 +161,20 @@
                 "if load mmc 1:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
                 "fi; " \
-		"if load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts4100-${baseboardid}.dtb;" \
+		"if load mmc 1:1 ${fdtaddr} " \
+		  "/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
 			"then echo $baseboardid detected;" \
 		"else " \
 			"echo Booting default device tree;" \
 			"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
-		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
-		"setenv bootargs root=/dev/mmcblk1p1 ${cmdline_append};" \
-		"run silowaitcharge;" \
-		"bootz ${loadaddr} - ${fdtaddr};\0" \
+		"if load mmc 1:1 ${loadaddr} /boot/zImage;" \
+			"then setenv bootargs root=/dev/mmcblk1p1 "\
+			  "${cmdline_append};" \
+			"run silowaitcharge;" \
+			"bootz ${loadaddr} - ${fdtaddr};" \
+		"else echo Failed to load kernel from eMMC;" \
+		"fi;\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"powercheck;" \
 		"dhcp;" \
@@ -183,7 +191,7 @@
 		"fi;" \
 		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
 			"then setenv bootargs root=/dev/nfs ip=dhcp " \
-			  "nfsroot=${nfsroot} ${cmdline_append};" \
+			  "nfsroot=${nfsip}:${nfsroot} ${cmdline_append};" \
 			"run silowaitcharge;" \
 			"bootz ${loadaddr} - ${fdtaddr};" \
 		"else echo Failed to load kernel from NFS;" \
