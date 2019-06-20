@@ -386,8 +386,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 		ret |= fram_test(destructive);
 		break;
 	  default:
-		printf("Error! Unknown options, failing POST test!\n");
-		ret = 1;
+		printf("Warning, unknown strapping %d!\n", opts);
 		break;
 	}
 
