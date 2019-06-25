@@ -187,7 +187,8 @@
 			"then echo Baseboard $baseboardid detected;" \
 		"else " \
 			"echo Booting default device tree;" \
-			"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts4100.dtb;" \
+			"nfs ${fdtaddr} " \
+			  "${nfsip}:${nfsroot}/boot/imx6ul-ts4100.dtb;" \
 		"fi;" \
 		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
 			"then setenv bootargs root=/dev/nfs ip=dhcp " \
