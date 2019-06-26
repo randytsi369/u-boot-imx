@@ -147,7 +147,8 @@
 		"fi;" \
 		"if load mmc 0:1 ${loadaddr} /boot/zImage;" \
 			"then setenv bootargs root=/dev/mmcblk0p1 " \
-			  "${cmdline_append};" \
+			  "${cmdline_append} bbid=0x${baseboardid} " \
+			  "bbrev=0x${baseboardrev};" \
 			"run silowaitcharge;" \
 			"bootz ${loadaddr} - ${fdtaddr};" \
 		"else echo Failed to load kernel from SD;" \
@@ -170,7 +171,8 @@
 		"fi;" \
 		"if load mmc 1:1 ${loadaddr} /boot/zImage;" \
 			"then setenv bootargs root=/dev/mmcblk1p1 "\
-			  "${cmdline_append};" \
+			  "${cmdline_append} bbid=0x${baseboardid} " \
+			  "bbrev=0x${baseboardrev};" \
 			"run silowaitcharge;" \
 			"bootz ${loadaddr} - ${fdtaddr};" \
 		"else echo Failed to load kernel from eMMC;" \
@@ -192,7 +194,8 @@
 		"fi;" \
 		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
 			"then setenv bootargs root=/dev/nfs ip=dhcp " \
-			  "nfsroot=${nfsip}:${nfsroot} ${cmdline_append};" \
+			  "nfsroot=${nfsip}:${nfsroot} ${cmdline_append} " \
+			  "bbid=0x${baseboardid} bbrev=0x${baseboardrev};" \
 			"run silowaitcharge;" \
 			"bootz ${loadaddr} - ${fdtaddr};" \
 		"else echo Failed to load kernel from NFS;" \
