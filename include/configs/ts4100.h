@@ -122,7 +122,7 @@
 		"usb start;" \
 		"if usb storage;" \
 			"then echo Checking USB storage for updates;" \
-			"if load usb 0:1 ${loadaddr} /tsinit.ub;" \
+			"if load usb 0:1 ${loadaddr} /tsinit.scr;" \
 				"then led green on;" \
 				"source ${loadaddr};" \
 				"led red off;" \
@@ -131,8 +131,8 @@
 		"fi;\0" \
 	"sdboot=echo Booting from the SD card ...;" \
 		"powercheck;" \
-		"if load mmc 0:1 ${loadaddr} /boot/boot.ub;" \
-			"then echo Booting from custom /boot/boot.ub;" \
+		"if load mmc 0:1 ${loadaddr} /boot/boot.scr;" \
+			"then echo Booting from custom /boot/boot.scr;" \
 			"source ${loadaddr};" \
 		"fi;" \
                 "if load mmc 0:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
@@ -155,8 +155,8 @@
 		"fi;\0" \
 	"emmcboot=echo Booting from the eMMC ...;" \
 		"powercheck;" \
-		"if load mmc 1:1 ${loadaddr} /boot/boot.ub;" \
-			"then echo Booting from custom /boot/boot.ub;" \
+		"if load mmc 1:1 ${loadaddr} /boot/boot.scr;" \
+			"then echo Booting from custom /boot/boot.scr;" \
 			"source ${loadaddr};" \
 		"fi;" \
                 "if load mmc 1:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
