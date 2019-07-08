@@ -338,6 +338,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 
 	switch (bbdetect() & 0x3F) {
 	  case 0x3F: /* No BB/no ID means no RTC */
+	  case 0x08: /* TS-8820 does not have on-board RTC */
 		break;
 	  default: /* Most compatible BBs should have M41T00S RTC */
 		ret |= m41t00s_rtc_test();
