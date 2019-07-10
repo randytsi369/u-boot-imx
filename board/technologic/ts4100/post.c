@@ -332,8 +332,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 		ret |= atmel_wifi_test();
 		break;
 	  default:
-		printf("Unknown board opt. 0x%X, failing POST test!\n", opts);
-		ret = 1;
+		printf("Unknown board opt. 0x%X!\n", opts);
 		break;
 	}
 
