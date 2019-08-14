@@ -199,6 +199,7 @@ void config_opts(int bbid)
 
 	switch (bbid & ~0xC0) {
 	  case 0x3F: /* No BB/no ID means no valid jumpers present */
+		setenv("baseboard", "None/Unknown");
 		sdboot = !(getenv_ulong("force_jpsdboot", 10, 0) & 0x1);
 		uboot = FORCE_UNSET;
 		setenv_ulong("bootdelay",
@@ -206,15 +207,22 @@ void config_opts(int bbid)
 		nochrg = FORCE_UNSET;
 		bbsilo = NOT_PRESENT;
 		break;
-	  case 0x2f:
-	  case 0x2e:
+	  case 0x2f: /* Reserved */
+	  case 0x2e: /* Reserved */
+		setenv("baseboard", "Custom");
 		nochrg = FORCE_UNSET;
 		bbsilo = NOT_PRESENT;
 		break;
+	  case 0x2A: /* Custom baseboard, assumed std jumpers and TS-SILO */
+		setenv("baseboard", "Custom");
+		break;
 	  case 0x16: /* TS-8551 adds PSwitch */
+		setenv("baseboard", "TS-8551");
 		pswitch = fpga_gpio_input(DIO_09);
 		break;
 	  case 0x08: /* TS-8820 */
+		setenv("baseboard", "TS-8820");
+		pswitch = fpga_gpio_input(DIO_09);
 		uboot = FORCE_UNSET;
 		setenv_ulong("bootdelay",
 		  getenv_ulong("force_bootdelay", 10, 1));
@@ -224,6 +232,7 @@ void config_opts(int bbid)
 	  default: /* All other boards presumed to have std. jumper locations w/
 		    * TS-SILO
 		    */
+		setenv("baseboard", "Custom/Unknown");
 		break;
 	}
 
@@ -700,3 +709,17 @@ int board_ehci_hcd_init(int port)
 	return 0;
 }
 #endif
+
+
+static int do_bbdetect(cmd_tbl_t *cmdtp, int flag,
+	int argc, char * const argv[])
+{
+	return 0;
+}
+
+U_BOOT_CMD(bbdetect, 4, 0, do_bbdetect,
+	"TS Baseboard detect compat",
+	"  This command does nothing on this platform. It is provided for\n"
+	"  script compatibility. U-Boot already exports the environment\n"
+	"  names that this command would normally set.\n"
+);

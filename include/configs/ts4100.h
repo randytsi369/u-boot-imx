@@ -105,7 +105,8 @@
 	"nfsip=192.168.0.36\0" \
 	"nfsroot=/nfsroot/imx6ul/\0" \
 	"clearenv=mmc dev 1 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
-	"cmdline_append=rootwait rw console=ttymxc0,115200 init=/sbin/init\0" \
+	"cmdline_append=rootwait rw console=ttymxc0,115200 " \
+	  "init=/sbin/init loglevel=3\0" \
 	"silochargeon=tsmicroctl d;" \
 		"if test $silopresent = '1';" \
 			"then if test $jpnochrg = 'off';" \
@@ -135,15 +136,15 @@
 			"then echo Booting from custom /boot/boot.scr;" \
 			"source ${loadaddr};" \
 		"fi;" \
-                "if load mmc 0:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
+                "if load mmc 0:1 ${loadaddr} /boot/ts${model}-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
                 "fi; " \
 		"if load mmc 0:1 ${fdtaddr} "\
-		  "/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
+		  "/boot/imx6ul-ts${model}-${baseboardid}.dtb;" \
 			"then echo $baseboardid detected;" \
 		"else " \
 			"echo Booting default device tree;" \
-			"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts4100.dtb;" \
+			"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts${model}.dtb;" \
 		"fi;" \
 		"if load mmc 0:1 ${loadaddr} /boot/zImage;" \
 			"then setenv bootargs root=/dev/mmcblk0p1 " \
@@ -159,15 +160,15 @@
 			"then echo Booting from custom /boot/boot.scr;" \
 			"source ${loadaddr};" \
 		"fi;" \
-                "if load mmc 1:1 ${loadaddr} /boot/ts4100-fpga.vme; " \
+                "if load mmc 1:1 ${loadaddr} /boot/ts${model}-fpga.vme; " \
 			"then fpga load 0 ${loadaddr} ${filesize}; " \
                 "fi; " \
 		"if load mmc 1:1 ${fdtaddr} " \
-		  "/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
+		  "/boot/imx6ul-ts${model}-${baseboardid}.dtb;" \
 			"then echo $baseboardid detected;" \
 		"else " \
 			"echo Booting default device tree;" \
-			"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts4100.dtb;" \
+			"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts${model}.dtb;" \
 		"fi;" \
 		"if load mmc 1:1 ${loadaddr} /boot/zImage;" \
 			"then setenv bootargs root=/dev/mmcblk1p1 "\
@@ -185,12 +186,13 @@
 			"source ${loadaddr};" \
 		"fi;" \
 		"if nfs ${fdtaddr} " \
-		  "${nfsip}:${nfsroot}/boot/imx6ul-ts4100-${baseboardid}.dtb;" \
+		  "${nfsip}:" \
+		  "${nfsroot}/boot/imx6ul-ts${model}-${baseboardid}.dtb;" \
 			"then echo Baseboard $baseboardid detected;" \
 		"else " \
 			"echo Booting default device tree;" \
 			"nfs ${fdtaddr} " \
-			  "${nfsip}:${nfsroot}/boot/imx6ul-ts4100.dtb;" \
+			  "${nfsip}:${nfsroot}/boot/imx6ul-ts${model}.dtb;" \
 		"fi;" \
 		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
 			"then setenv bootargs root=/dev/nfs ip=dhcp " \
