@@ -35,6 +35,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+int ts7100_fpga_init(void);
+
 #define EN_ETH_PHY_PWR 		IMX_GPIO_NR(1, 10)
 #define PHY1_DUPLEX 		IMX_GPIO_NR(2, 0)
 #define PHY2_DUPLEX 		IMX_GPIO_NR(2, 8)
@@ -429,53 +431,11 @@ int board_phy_config(struct phy_device *phydev)
 
 int board_early_init_f(void)
 {
-	setup_iomux_uart();
-
-	return 0;
-}
-
-int misc_init_r(void)
-{
-	uint8_t opts;
-
-	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
-
-	setenv("model", "7100");
-	/* Need to read latched FPGA value */
-	setenv_hex("opts", 0);
-
-	/* Read and parse CPU pins used for IO board strapping */
-	opts = parse_strap(NULL);
-	setenv_hex("io_model", (ulong)((opts & 0xf0) >> 4));
-	setenv_hex("io_opts", opts);
-}
-
-int board_init(void)
-{
-	/* Address of boot parameters */
-	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
-	#ifdef CONFIG_FEC_MXC
-	setup_fec(CONFIG_FEC_ENET_DEV);
-	#endif
-
-	#ifdef CONFIG_FPGA
-	ts7100_fpga_init();
-	#endif
-
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
-
-	return 0;
-}
-
-int board_late_init(void)
-{
 	struct weim *weim_regs = (struct weim *)WEIM_BASE_ADDR;
 	struct mxc_ccm_reg *const imx_ccm =
 		(struct mxc_ccm_reg *)CCM_BASE_ADDR;
 
-	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
-
+	/* Set up FPGA for communication */
 	/* 396mhz PLL2_PDF2 div by 8 = 49.5MHz EIM clk */
 	clrsetbits_le32(&imx_ccm->cscmr1,
 			MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_MASK |
@@ -496,6 +456,53 @@ int board_late_init(void)
 
 	set_chipselect_size(CS0_128);
 
+	setup_iomux_uart();
+
+	return 0;
+}
+
+int misc_init_r(void)
+{
+	uint8_t opts;
+
+	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
+
+	setenv("model", "7100");
+	/* Need to read latched FPGA value */
+	setenv_hex("opts", 0);
+
+	/* Read and parse CPU pins used for IO board strapping */
+	opts = parse_strap(NULL);
+	setenv_hex("io_model", (ulong)((opts & 0xf0) >> 4));
+	setenv_hex("io_opts", opts);
+
+	return 0;
+}
+
+int board_init(void)
+{
+	/* Address of boot parameters */
+	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
+#ifdef CONFIG_FEC_MXC
+	setup_fec(CONFIG_FEC_ENET_DEV);
+#endif
+
+#ifdef CONFIG_FPGA
+	/* Set up FPGA subsystem for JTAGing, i.e., soft loading */
+	ts7100_fpga_init();
+#endif
+
+	/* Set up I2C bus for uC */
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
+
+	return 0;
+}
+
+int board_late_init(void)
+{
+	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
+
 	fram_init();
 
 	return 0;
@@ -509,6 +516,7 @@ u32 get_board_rev(void)
 int checkboard(void)
 {
 	puts("Board: Technologic Systems TS-7100\n");
+	printf("FPGA:  Rev 0x%X\n", readl(0x50004000));
 
 	return 0;
 }
