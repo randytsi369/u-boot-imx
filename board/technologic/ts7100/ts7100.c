@@ -463,16 +463,23 @@ int board_early_init_f(void)
 
 int misc_init_r(void)
 {
-	uint8_t opts;
+	uint32_t opts;
 
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 
 	setenv("model", "7100");
-	/* Need to read latched FPGA value */
-	setenv_hex("opts", 0);
+	/* Need to read latched FPGA value
+	 * bits 3:0 are FPGA GPIO bank 3, 5:2 and are purely straps
+	 * bits 5:4 are FPGA GPIO bank 3, 12:11 and are DIO_18:DIO_17
+	 * bank 3 12:11 are latched values of DIO_18:DIO_17 after unreset
+	 */
+	opts = readl(0x50004050); /* DIO bank 3 */
+	opts = (((opts & 0x1800) >> 7) | ((opts & 0x3C) >> 2));
+	opts ^= 0x3F;
+	setenv_hex("opts", opts);
 
 	/* Read and parse CPU pins used for IO board strapping */
-	opts = parse_strap(NULL);
+	opts = (uint32_t)(parse_strap(NULL) & 0xFF);
 	setenv_hex("io_model", (ulong)((opts & 0xf0) >> 4));
 	setenv_hex("io_opts", opts);
 
