@@ -983,9 +983,11 @@ int blast_silabs(void)
 	    c2family_find(info.device_id, &state.family) < 0 ||
 	    c2_get_pi_info(&state, &pi_info) < 0 ||
 	    c2family_setup(&state) < 0) {
+		printf("Failed\n");
 		return 1;
 	}
 	printf("ok, %s detected\n", state.family->name);
+
 
 	printf("Erasing Silabs ...");
 	if (c2_flash_erase_device(&state) < 0) {
@@ -999,7 +1001,9 @@ int blast_silabs(void)
 
 	printf("Setting security byte on Silabs...");
 	if (c2_flash_write(&state, (63 * 1024) - 1, 1, buf) < 0) {
+		printf("Failed setting 64k size security bit\n");
 		if (c2_flash_write(&state, (32 * 1024) - 1, 1, buf) < 0) {
+			printf("Failed setting 32k size security bit\n");
 			return 1;
 		}
 	} 
