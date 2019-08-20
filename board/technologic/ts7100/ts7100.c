@@ -36,6 +36,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 int ts7100_fpga_init(void);
+int silab_rev(void);
 
 #define EN_ETH_PHY_PWR 		IMX_GPIO_NR(1, 10)
 #define PHY1_DUPLEX 		IMX_GPIO_NR(2, 0)
@@ -456,6 +457,10 @@ int board_early_init_f(void)
 
 	set_chipselect_size(CS0_128);
 
+	/* Set up I2C bus for uC */
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
+
 	setup_iomux_uart();
 
 	return 0;
@@ -499,10 +504,6 @@ int board_init(void)
 	ts7100_fpga_init();
 #endif
 
-	/* Set up I2C bus for uC */
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
-
 	return 0;
 }
 
@@ -524,6 +525,7 @@ int checkboard(void)
 {
 	puts("Board: Technologic Systems TS-7100\n");
 	printf("FPGA:  Rev 0x%X\n", readl(0x50004000));
+	printf("Silab: Rev 0x%X\n", silab_rev());
 
 	return 0;
 }
