@@ -417,9 +417,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 {
 	int ret = 0;
 	
-	fpga_dio2_oe_clr(BANK2_I2C_DAT);
 	while(1){
-		printf("Value is %d\n", fpga_dio2_data_get(BANK2_I2C_DAT));
 		mdelay(500);
 	}
 
