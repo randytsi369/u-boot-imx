@@ -148,7 +148,7 @@
 		"load mmc 0:1 ${fdtaddr} " \
 		  "/boot/imx6ul-ts${model}-${io_model}.dtb;" \
 		"if load mmc 0:1 ${loadaddr} /boot/zImage;" \
-			"run silowaitcharge;" \
+			"then run silowaitcharge;" \
 			"setenv bootargs root=/dev/mmcblk0p1 rootwait rw " \
 			  "cpu_opts=0x${opts} io_opts=0x${io_opts} " \
 			  "io_model=0x${io_model} ${cmdline_append};" \
@@ -215,7 +215,8 @@
 		"fi;\0"
 
 #define CONFIG_BOOTCOMMAND \
-	"echo normal boot"
+	"run usbprod; " \
+	"run emmcboot;"
 
 #define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START	0x80000000
