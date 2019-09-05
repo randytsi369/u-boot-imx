@@ -270,7 +270,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	char *p;
 	int destructive = 0;
 	uint8_t opts;
-	signed int i, rev;
+	int rev;
 
 	if (argv[1][0] == '-') p = &argv[1][1];
 	else p = &argv[1][0];
@@ -284,32 +284,8 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 		ret |= 1;
 	}
 
-	/* If TS production board is found, then it is expected to JTAG the
-	 * FPGA.  There needs to be a 10 second delay to let the programming
-	 * process start.  After that we can poll the rev register.  The
-	 * programming process can take up to 50 seconds once started.
-	 *
-	 * The production board will be attached to I2C bus 2
-	 *
-	 * If the production board is not attached, then rev check is pass/fail
-	 * imediately no matter what.
-	 */
 	i2c_set_bus_num(2);
-	if(!i2c_probe(0x38)) {
-		/* Wait 10 seconds for FPGA programming to start */
-		printf("Waiting for FPGA programming to start\n");
-		udelay(10000000); //10 s
-
-		for (i = 0; i < 5000; i++)
-		{
-			rev = fpga_get_rev();
-			if(rev < 0) udelay(10000); //10 ms
-			else break;
-		}
-	} else {
-		rev = fpga_get_rev();
-	}
-
+	rev = fpga_get_rev();
 	if(rev < 0) {
 		printf("FPGA Programming failed.\n");
 		ret |= 1;

@@ -655,6 +655,29 @@ u32 get_board_rev(void)
 int checkboard(void)
 {
 	int fpgarev;
+
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x4a, &i2c_pad_info1);
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x28, &i2c_pad_info3);
+
+	if (is_boot_from_usb()) {
+		int tout = 600; /* Expect ~42 seconds.  Padding to 60 */
+		uint8_t val[2];
+		i2c_set_bus_num(2);
+		printf("Waiting for FPGA... ");
+		mdelay(1000);
+		val[0] = 8; /* Request internal state # */
+		while (tout-- > 0) {
+			i2c_read(0x38, 8, 1, val, 2);
+			if(val[1] == 5) /* State 5 == finished programming */
+				break;
+			udelay(100000);
+		}
+		if(tout <= 0)
+			printf("FPGA Timed out!\n");
+		else
+			printf("FPGA programmed!\n");
+	}
+
 	/* reset the FGPA */
 	gpio_direction_output(FPGA_RESETN, 0);
 	gpio_direction_output(EN_FPGA_PWR, 0);
@@ -665,8 +688,6 @@ int checkboard(void)
 	mdelay(10);
 	gpio_direction_output(FPGA_RESETN, 1);
 
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x4a, &i2c_pad_info1);
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x28, &i2c_pad_info3);
 	fpgarev = fpga_get_rev();
 	puts("Board: Technologic Systems TS-4100\n");
 	if(fpgarev < 0)
