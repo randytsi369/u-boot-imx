@@ -93,6 +93,8 @@ int do_silabs_info(void)
         printf("SILO_DEF_CHARGE_CUR=%d\n",
 	  ((uint16_t)(buf_8[24] << 8) | buf_8[25]));
         printf("WDT_STATUS=%s\n",(buf_8[22] & (1 << 6) ? "armed" : "disabled"));
+        printf("WDT_DEF_STATUS=%s\n",(buf_8[23] & (1 << 1) ?
+	  "disabled" : "armed"));
 
         ret = i2c_read(I2C_ADR, 1024, 2, buf_8, 5);
         if(ret){
@@ -125,25 +127,55 @@ int do_tssilo_charge(uint8_t val)
 	return 0;
 }
 
-int do_sleep(uint32_t sec)
+int set_timeout(uint32_t sec)
 {
-	uint8_t buf[5];
+	uint8_t buf[4];
 
-	/* uC sleep is in ms
-	 * Like WDT, the lowest address is the LSB for the timeout
+	/* uC sleep/WDT is in centiseconds
+	 * Lowest I2C address contains the LSB.
 	 */
 	sec *= 100;
 	buf[0] = sec & 0xFF;
 	buf[1] = (sec >> 8) & 0xFF;
 	buf[2] = (sec >> 16) & 0xFF;
 	buf[3] = (sec >> 24) & 0xFF;
-	buf[4] = 0x2; /* Sleep command */
 
 	i2c_set_bus_num(0);
-	i2c_write(I2C_ADR, 1024, 2, buf, 5);
+	i2c_write(I2C_ADR, 1024, 2, buf, 4);
+
+	return 0;
+}
+
+int do_sleep(uint32_t sec)
+{
+	uint8_t buf = 0x02; /* Sleep command */
+
+	set_timeout(sec);
+	i2c_set_bus_num(0);
+	i2c_write(I2C_ADR, 1028, 2, &buf, 1);
 
 	/* Spin forever until we go to sleep */
 	while(1);
+
+	return 0;
+}
+
+int set_wdt_default(int val)
+{
+	uint8_t buf;
+
+	i2c_set_bus_num(0);
+	/* Read from flag register */
+	i2c_read(I2C_ADR, 23, 2, &buf, 1);
+
+	/* The flag meaning is inverted */
+	if (val) {
+		buf &= ~(0x2);
+	} else {
+		buf |= 0x2;
+	}
+
+	i2c_write(I2C_ADR, 23, 2, &buf, 1);
 
 	return 0;
 }
@@ -180,6 +212,7 @@ static int do_tsmicroctl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 	int i;
 	uint32_t pct = 0;
 	uint32_t verbose = 0;
+	uint8_t buf;
 	char *p;
 
 	i2c_set_bus_num(0);
@@ -217,6 +250,21 @@ static int do_tsmicroctl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 		  case 's':
 			do_sleep(simple_strtoul(argv[(++i)], NULL, 0));
 			break;
+		  case 'a':
+			return set_wdt_default(1);
+			break;
+		  case 'A':
+			return set_wdt_default(0);
+			break;
+		  case 't':
+			return set_timeout(simple_strtoul(argv[(++i)], NULL,
+			  0));
+			break;
+		  case 'f':
+			buf = 1; /* WDT feed command */
+			i2c_set_bus_num(0);
+			return i2c_write(I2C_ADR, 1028, 2, &buf, 1);
+			break;
 		  default:
 			printf("Unknown option '%s'\n", argv[i]);
 			return 1;
@@ -230,12 +278,18 @@ static int do_tsmicroctl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 
 U_BOOT_CMD(tsmicroctl, 4, 0, do_tsmicroctl,
 	"Utility for managing onboard microcontroller",
-	"-i              Print information\n"
-	"tsmicroctl -s <sec>        Sleep whole system for <sec> seconds\n"
-	"tsmicroctl -e              Enable TS-SILO charging\n"
-	"tsmicroctl -d              Disable TS-SILO charging,\n"
-	"tsmicroctl -w <pct> [-v]   Delay until TS-SILO is charged to <pct>%.\n"
-	"                             Add -v to en. verbose output\n"
+	"-i		Information\n"
+	"tsmicroctl -s <sec>	Sleep system for <sec>\n"
+	"tsmicroctl -e		Enable TS-SILO charging\n"
+	"tsmicroctl -d		Disable TS-SILO charging\n"
+	"tsmicroctl -w <p> [-v]	Delay until TS-SILO is charged to <p>%.\n"
+	"				-v to en. verbose output\n"
+	"tsmicroctl -a		Arm WDT for 600 s at poweron\n"
+	"tsmicroctl -A		Disarm WDT at poweron\n"
+	"tsmicroctl -t <sec>	Set WDT timeout to <sec>. Set to 0 and\n"
+	"				feed to disable WDT.\n"
+	"tsmicroctl -f		Feed WDT for prev. set <sec> timeout\n"
+
 );
 
 /*************************************
