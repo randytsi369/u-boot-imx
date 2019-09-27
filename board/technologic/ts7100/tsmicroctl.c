@@ -28,7 +28,7 @@ int silab_rev(void)
 	return val;
 }
 
-uint16_t get_silo_pct(void)
+static uint16_t get_silo_pct(void)
 {
 	uint8_t val[2];
 	int16_t pct;
@@ -48,7 +48,7 @@ uint16_t get_silo_pct(void)
 /* This pulled almost directly from the userspace tsmicroctl.
  * More information about all of the steps is available there.
  */
-int do_silabs_info(void)
+static int do_silabs_info(void)
 {
 	int i, ret;
 	uint8_t buf_8[28];
@@ -112,7 +112,7 @@ int do_silabs_info(void)
 	return 0;
 }
 
-int do_tssilo_charge(uint8_t val)
+static int do_tssilo_charge(uint8_t val)
 {
 	uint8_t buf;
 
@@ -127,7 +127,7 @@ int do_tssilo_charge(uint8_t val)
 	return 0;
 }
 
-int set_timeout(uint32_t sec)
+static int set_timeout(uint32_t sec)
 {
 	uint8_t buf[4];
 
@@ -146,7 +146,7 @@ int set_timeout(uint32_t sec)
 	return 0;
 }
 
-int do_sleep(uint32_t sec)
+static int do_sleep(uint32_t sec)
 {
 	uint8_t buf = 0x02; /* Sleep command */
 
@@ -160,7 +160,7 @@ int do_sleep(uint32_t sec)
 	return 0;
 }
 
-int set_wdt_default(int val)
+static int set_wdt_default(int val)
 {
 	uint8_t buf;
 
@@ -180,7 +180,7 @@ int set_wdt_default(int val)
 	return 0;
 }
 
-int do_silabs_waitcharge(uint32_t pct, uint32_t verbose)
+static int do_silabs_waitcharge(uint32_t pct, uint32_t verbose)
 {
         uint16_t check;
 
@@ -371,7 +371,7 @@ void c2ck_strobe(void)
 	fpga_dio3_dat_set(BANK3_SILAB_CLK_STB);
 }
 
-int do_silabs_program(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_silabs_program(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	if (argc == 1) {
 		printf("%s - %s\n\nUsage:\n%s %s\n",
