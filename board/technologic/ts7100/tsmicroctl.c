@@ -127,6 +127,14 @@ static int do_tssilo_charge(uint8_t val)
 	return 0;
 }
 
+static int wdt_feed(void)
+{
+	uint8_t buf = 0x1; /* WDT feed command */
+
+	i2c_set_bus_num(0);
+	return i2c_write(I2C_ADR, 1028, 2, &buf, 1);
+}
+
 static int set_timeout(uint32_t sec)
 {
 	uint8_t buf[4];
@@ -202,6 +210,12 @@ static int do_silabs_waitcharge(uint32_t pct, uint32_t verbose)
 
 		if (ctrlc()) return 1;
 		udelay(1000000);
+		/* NOTE: Due to the inability of U-Boot to support I2C WDTs the
+		 * feeds need to manually happen. Waitcharge is pretty much
+		 * the longest thing in U-Boot that can occur in regular use.
+		 * Ensure we keep feeding during the wait.
+		 */
+		wdt_feed();
 	}
 
 	return 0;
@@ -261,9 +275,7 @@ static int do_tsmicroctl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv
 			  0));
 			break;
 		  case 'f':
-			buf = 1; /* WDT feed command */
-			i2c_set_bus_num(0);
-			return i2c_write(I2C_ADR, 1028, 2, &buf, 1);
+			return wdt_feed();
 			break;
 		  default:
 			printf("Unknown option '%s'\n", argv[i]);
