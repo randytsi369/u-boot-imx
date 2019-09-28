@@ -63,6 +63,11 @@
 #undef CONFIG_BOOTM_PLAN9
 #undef CONFIG_BOOTM_RTEMS
 
+#define CONFIG_CMD_SPI
+#define CONFIG_MXC_SPI
+#define CONFIG_ATMEL_WIFI_BUS	2 /* ECSPI3 */
+#define CONFIG_ATMEL_WIFI_CS	0 /* ECSPI3 */
+
 #define CONFIG_FPGA
 #define CONFIG_FPGA_LATTICE
 
@@ -172,7 +177,7 @@
 			"bootz ${loadaddr} - ${fdtaddr};" \
 		"else echo Failed to load kernel from NFS;" \
 		"fi;\0" \
-	"bootcmd_mfg=exit; echo Booted over USB, running test/prime;" \
+	"bootcmd_mfg=echo Booted over USB, running test/prime;" \
 		"if post;" \
 			"then ums mmc 0.1;" \
 			"mmc bootbus 0 1 0 2;" \
