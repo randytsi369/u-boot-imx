@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Technologic Systems
+ * Copyright (C) 2019 Technologic Systems
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -23,179 +23,58 @@
 #include <asm/arch/clock.h>
 
 #include "tsfpga.h"
+#include "fram.h"
 
 #include <miiphy.h>
 
-void leds_test(void)
+/* Some pads are used for strapping and are IOMUXed differently by the ts7100.c
+ * main file. Need to change the IOMUX settings for pad use here. */
+#define MISC_PAD_PU_CTRL (PAD_CTL_PUS_100K_UP | PAD_CTL_PKE | PAD_CTL_PUE | \
+        PAD_CTL_DSE_48ohm | PAD_CTL_SRE_FAST)
+static iomux_v3_cfg_t const wifi_spi[] = {
+	/* WIFI SPI CLK */
+	MX6_PAD_NAND_CE0_B__ECSPI3_SCLK | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* WIFI SPI MOSI */
+	MX6_PAD_NAND_CE1_B__ECSPI3_MOSI | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* WIFI SPI MISO */
+	MX6_PAD_NAND_CLE__ECSPI3_MISO | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* WIFI SPI CS# */
+	MX6_PAD_NAND_READY_B__ECSPI3_SS0 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* WIFI CHIP EN */
+	MX6_PAD_JTAG_TCK__GPIO1_IO14 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* WIFI RESETN is provided by FPGA */
+};
+
+static void leds_test(void)
 {
 	int i;
 	red_led_on();
 	green_led_on();
+	fpga_dio2_oe_set(BANK2_RED_LEDN);
+	fpga_dio2_oe_set(BANK2_GREEN_LEDN);
 
 	for(i = 0; i < 24; i++){
-		if(i % 4 == 0) red_led_on();
-		else red_led_off();
-		if(i % 4 == 1) green_led_on();
+		if(i % 4 == 0) green_led_on();
 		else green_led_off();
+		if(i % 4 == 1) red_led_on();
+		else red_led_off();
+		if(i % 4 == 2) fpga_dio2_dat_clr(BANK2_RED_LEDN);
+		else fpga_dio2_dat_set(BANK2_RED_LEDN);
+		if(i % 4 == 3) fpga_dio2_dat_clr(BANK2_GREEN_LEDN);
+		else fpga_dio2_dat_set(BANK2_GREEN_LEDN);
 		mdelay(100);
 	}
 
 	red_led_on();
 	green_led_on();
+	fpga_dio2_dat_clr(BANK2_RED_LEDN);
+	fpga_dio2_dat_clr(BANK2_GREEN_LEDN);
 }
 
-int weim_simple_test(void)
-{
-	static uint32_t wbuf[128] __attribute__((aligned(32)));
-	static uint32_t rbuf[128] __attribute__((aligned(32)));
-	unsigned long long start, now;
-	uint32_t i;
-
-	start = get_ticks();
-	for (i = 0; i < 8; i++)
-		wbuf[i] = ~i;
-
-	/* Test burst modes */
-	memcpy((uint32_t *)FPGA_BLOCKRAM, wbuf, 128*4);
-	memcpy(rbuf, (uint32_t *)FPGA_BLOCKRAM, 128*4);
-
-	for (i = 0; i < 128; i++) {
-		if(wbuf[i] != rbuf[i]) {
-			printf("Simple WEIM Burst mode failure, at addr %d Wrote 0x%X, got 0x%X\n", i, wbuf[i], rbuf[i]);
-			return 1;
-		}
-	}
-
-	/* Test 32-bit write/read */
-	writel(0x99c0ffee, FPGA_SCRATCH_REG);
-	if(readl(FPGA_SCRATCH_REG) != 0x99c0ffee){
-		printf("1st 32-bit write/read failed\n");
-		return 1;
-	}
-
-	writel(0xdeadbeef, FPGA_SCRATCH_REG);
-	if(readl(FPGA_SCRATCH_REG ) != 0xdeadbeef){
-		printf("2nd 32-bit write/read failed\n");
-		return 1;
-	}
-
-	/* Test 16-bit write/read */
-	writew(0xaaaa, FPGA_SCRATCH_REG);
-	if(readw(FPGA_SCRATCH_REG ) != 0xaaaa){
-		printf("1st 16-bit write/read failed\n");
-		return 1;
-	}
-	writew(0x5555, FPGA_SCRATCH_REG);
-	if(readw(FPGA_SCRATCH_REG) != 0x5555){
-		printf("2nd 16-bit write/read failed\n");
-		return 1;
-	}
-
-	now = get_ticks();
-	if(now - start > 1000){ /* Normally ~550us */
-		printf("Simple EIM test took %lluus instead of < 1ms!\n", now - start);
-		return 1;
-	}
-
-	printf("Simple test takes %lluus\n", now - start);
-	return 0;
-}
-
-int weim_burst_test(void)
-{
-	uint32_t wbuf[4096];
-	static uint32_t rbuf[4096] __attribute__((aligned(32)));
-	unsigned long long start, writeck, readck;
-	int i;
-
-	for (i = 0; i < 4096; i++)	{
-		wbuf[i] = ~i;
-	}
-
-	start = get_ticks();
-	memcpy((uint32_t *)FPGA_BLOCKRAM, wbuf, 4096*4);
-	writeck = get_ticks();
-	memcpy(rbuf, (uint32_t *)FPGA_BLOCKRAM, 4096*4);
-	readck = get_ticks();
-
-	readck = readck - writeck;
-	writeck = writeck - start;
-
-	for (i = 0; i < 4096; i++) {
-		if(wbuf[i] != rbuf[i]) {
-			printf("WEIM Burst mode failure, at addr %d Wrote 0x%X, got 0x%X\n", i, wbuf[i], rbuf[i]);
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-int weim_16bit_test(void)
-{
-	int i;
-
-	for (i = 0; i < 8192; i += 2)
-		writew(0, FPGA_BLOCKRAM + i);
-
-	/* set value and verify it took, and only affected that location */
-	writew(0x55aa, FPGA_BLOCKRAM + 100);;
-	for (i = 0; i < 8192; i += 2) {
-		if(i == 100) {
-			if(readw(FPGA_BLOCKRAM + i) != 0x55aa) {
-				printf("WEIM 16-bit test value failed\n");
-				return 1;
-			}
-		} else {
-			if(readw(FPGA_BLOCKRAM + i) != 0) {
-				printf("WEIM 16-bit write failed at addr %d\n", i);
-				return 1;
-			}
-		}
-	}
-
-	return 0;
-}
-
-int weim_32bit_test(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < 4096; i += 4)
-		writel(~i, FPGA_BLOCKRAM + i);
-
-	for (i = 0; i < 4096; i += 4) {
-		uint32_t dat = readl(FPGA_BLOCKRAM + i);
-		if(~dat != i) {
-			printf("WEIM 32-bit test failed at %d, wrote 0x%X, read 0x%X\n", i, ~i, dat);
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-int weim_64bit_test(void)
-{
-	uint64_t i;
-
-	for (i = 0; i < 2048; i += 8)
-		writeq(~i, (uint32_t)(FPGA_BLOCKRAM + i));
-
-	for (i = 0; i < 2048; i += 8) {
-		uint64_t dat = readq((uint32_t)(FPGA_BLOCKRAM + i));
-		if(~dat != i) {
-			printf("WEIM 64-bit test failed at %lld, wrote 0x%llX, read 0x%llX\n", i, ~i, dat);
-			return 1;
-		}
-	}
-
-	return 0;
-}
 #define UART_TEST_SIZE (32768)
 
 /* Test scratch register & 16550 loopback */
-int uart_16550_test(uint32_t addr)
+static int uart_16550_test(uint32_t addr)
 {
 	unsigned long long start, end;
 	int ret = 0;
@@ -207,10 +86,10 @@ int uart_16550_test(uint32_t addr)
 
 	/* Test scratch register */
 	for (i = 0; i < 0xff; i++) {
-		//printf("Addr 0x%X - i %d\n", addr, i);
 		writeb(i, addr + TS16550_SR);
 		if(i != readb(addr + TS16550_SR)) {
-			printf("16550 0x%X scratch register did not retain value\n", addr);
+			printf("16550 0x%X scratch reg did not retain value\n",
+			  addr);
 			return 1;
 		}
 	}
@@ -254,11 +133,13 @@ int uart_16550_test(uint32_t addr)
 			break;
 		case 0x1:
 			if(sz < UART_TEST_SIZE) {
-				for (i = 0; i < 16; i++){
-					if(sz != UART_TEST_SIZE){
-						writeb(wbuf[sz], addr + TS16550_THR);
+				for (i = 0; i < 16; i++) {
+					if(sz != UART_TEST_SIZE) {
+						writeb(wbuf[sz],
+						  addr + TS16550_THR);
 						sz++;
-						readb(addr + TS16550_SR); /* Dummy read following a write */
+						/* Dummy rd following a wr */
+						readb(addr + TS16550_SR);
 					}
 				}
 			}
@@ -277,11 +158,13 @@ int uart_16550_test(uint32_t addr)
 		}
 
 		end = get_ticks();
-		/* Add timeout here, disabling while I'm changing test size */
-		/*if((end - start) > 200000) {
+
+		/* Wait for 10 s max (averages 2.8 seconds). In terms of 8MHz
+		 * ticks, this is 80000000 */
+		if((end - start) > 80000000) {
 			printf("16550 timeout\n");
 			return 1;
-		}*/
+		}
 	}
 
 	/* Turn off IRQs */
@@ -292,20 +175,25 @@ int uart_16550_test(uint32_t addr)
 
 	for (i = 0; i < UART_TEST_SIZE; i++) {
 		if(wbuf[i] != rbuf[i]) {
-			printf("IDX %d: Expected 0x%X, got 0x%X\n",i,  wbuf[i], rbuf[i]);
+			printf("IDX %d: Expected 0x%X, got 0x%X\n",
+			  i, wbuf[i], rbuf[i]);
 			ret++;
 		}
 	}
-	if(ret)
+	if(ret) {
 		printf("%d errors\n", ret);
-	else
-		printf("Took %llu 8MHz ticks (%dms)\n", end - start, (uint32_t)(end - start)/8000);
+	} else {
+		printf("Took %llu 8MHz ticks (%dms)\n",
+		  end - start, (uint32_t)(end - start)/8000);
+	}
 
 	return ret;
 }
 
 /* Tx only without loopback on */
-int uart_16550_tx_test(uint32_t addr)
+/* XXX: This is very closely matching uart_16550_test, this could be eliminated
+ * or just integrated in to uart_16550_test as a function argument */
+static int uart_16550_tx_test(uint32_t addr)
 {
 	unsigned long long start, end;
 	int ret = 0;
@@ -316,10 +204,10 @@ int uart_16550_tx_test(uint32_t addr)
 
 	/* Test scratch register */
 	for (i = 0; i < 0xff; i++) {
-		//printf("Addr 0x%X - i %d\n", addr, i);
 		writeb(i, addr + TS16550_SR);
 		if(i != readb(addr + TS16550_SR)) {
-			printf("16550 0x%X scratch register did not retain value\n", addr);
+			printf("16550 0x%X scratch reg did not retain value\n",
+			  addr);
 			return 1;
 		}
 	}
@@ -362,9 +250,11 @@ int uart_16550_tx_test(uint32_t addr)
 			if(sz < UART_TEST_SIZE) {
 				for (i = 0; i < 16; i++){
 					if(sz != UART_TEST_SIZE){
-						writeb(wbuf[sz], addr + TS16550_THR);
+						writeb(wbuf[sz],
+						  addr + TS16550_THR);
 						sz++;
-						readb(addr + TS16550_SR);/* Dummy read following a write */
+						/* Dummy rd following a wr */
+						readb(addr + TS16550_SR);
 					}
 				}
 			}
@@ -387,63 +277,298 @@ int uart_16550_tx_test(uint32_t addr)
 	/* Turn off IRQs */
 	writeb(0x0, addr + TS16550_IER);
 
-	printf("TX Took %llu 8MHz ticks (%dms)\n", end - start, (uint32_t)(end - start)/8000);
+	printf("TX Took %llu 8MHz ticks (%dms)\n",
+	  end - start, (uint32_t)(end - start)/8000);
 
 	return ret;
 }
 
-int weim_test(void)
+static int micrel_phy_test(void)
 {
 	int ret = 0;
+	unsigned int oui;
+	unsigned char model;
+	unsigned char rev;
 
-	printf("Running simple test\n");
-	ret |= weim_simple_test();
-	printf("Running 32-bit test\n");
-	ret |= weim_32bit_test();
-	printf("Running 16-bit test\n");
-	ret |= weim_16bit_test();
-	printf("Running burst test\n");
-	ret |= weim_burst_test();
-	printf("Running 64-bit\n");
-	ret |= weim_64bit_test();
+	if (miiphy_info ("FEC0", 0x2, &oui, &model, &rev) != 0) {
+		printf("Failed to find PHY\n");
+		return 1;
+	}
 
-	if(ret == 0)
-		printf("WEIM tests passed!\n");
+	if(oui != 0x0885) {
+		printf("Wrong PHY? Bad OUI 0x%X 0x0885\n", oui);
+		ret |= 1;
+	}
+
+	if(model != 0x16) {
+		printf("Wrong PHY? Bad model 0x%X not 0x16\n", model);
+		ret |= 1;
+	}
+
+	if (ret == 0) printf("PHY test passed\n");
+	else printf("PHY test failed\n");
 
 	return ret;
+}
+
+static int atmel_wifi_test(void)
+{
+	/* Magic number SPI string.
+	 * This is sent by the kernel driver first thing after out of reset.
+	 * It is doing an internal read of some address, contents don't really
+	 *   matter.  We only care about first response byte, which should
+	 *   match the first byte sent (which is the command that is sent).
+	 */
+	static const char dout[17] = {0xc4, 0x0, 0x24, 0x0, 0x20, 0x0, 0x0, 0x0,
+	  0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+	char din[17] = {0};
+	static int ret = 0;
+	struct spi_slave *slave;
+
+	imx_iomux_v3_setup_multiple_pads(wifi_spi, ARRAY_SIZE(wifi_spi));
+
+	/* Unreset and enable device */
+	gpio_direction_output(IMX_GPIO_NR(1, 14), 1); // chip enable
+	mdelay(5);
+	fpga_dio2_dat_set(BANK2_WIFI_RESETN);
+	fpga_dio2_oe_set(BANK2_WIFI_RESETN);
+	mdelay(10);/* not documented in wifi datasheet, but needs at least 1ms */
+
+	slave = spi_setup_slave(CONFIG_ATMEL_WIFI_BUS, CONFIG_ATMEL_WIFI_CS,
+	  24000000, SPI_MODE_0);
+	if(spi_claim_bus(slave)){
+		printf("Failed to claim the SPI bus\n");
+		ret = 1;
+	}
+
+	/* XXX IOMUX in u-boot may need to set this as GPIO? */
+	if(!ret) ret = spi_xfer(slave, 136, (void *)dout, (void *)din, 0);
+
+	/* Verify first response byte is the command byte we sent */
+	ret |= !(din[5] == 0xc4);
+
+	/* Reset and disable device device */
+	fpga_dio2_dat_clr(BANK2_WIFI_RESETN);
+	gpio_direction_output(IMX_GPIO_NR(1, 14), 0); // chip enable
+
+	if (ret == 0) printf("WIFI test passed\n");
+	else printf("WIFI test failed\n");
+
+	return ret;
+}
+
+/* On the TS-7100, the FRAM is initialized by the main ts7100.c setup. This func
+ * should not have to do any setup, and a failure caused by that is worth
+ * leaving in place.
+ * Additionally, the FRAM API is byte read/write at a time.
+ * The destructive test writes and reads back a string from FRAM.
+ * The non-destructive test simply checks the status register.
+ */
+static int fram_test(int destructive)
+{
+	char wr_pattern[19] = {0x2, 0x0, 0x0, 0xAA, 0x55, 0xAA,
+	  0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55,
+	  0xAA, 0x55};
+	uint8_t din[19] = {0};
+	int ret = 0, i;
+
+
+	din[1] = fram_rdsr();
+	if(din[1] != 0x0) ret |= 1;
+
+	if (destructive) {
+		/* Write bit pattern */
+		for (i = 0; i < sizeof(wr_pattern); i++) {
+			fram_write(i, wr_pattern[i]);
+		}
+
+		/* Read back */
+		for (i = 0; i < sizeof(wr_pattern); i++) {
+			din[i] = fram_read(i);
+		}
+		for (i = 0; i < sizeof(wr_pattern); i++) {
+			if (din[i] != wr_pattern[i]) {
+				ret |= 1;
+				printf("Pattern mismatch at byte %d\n", i);
+				break;
+			}
+		}
+		memset(&din, 0, sizeof(din));
+		memset(&wr_pattern, 0, sizeof(wr_pattern));
+
+		/* Write zeros */
+		for (i = 0; i < sizeof(wr_pattern); i++) {
+			fram_write(i, wr_pattern[i]);
+		}
+
+		/* Read back */
+		for (i = 0; i < sizeof(wr_pattern); i++) {
+			din[i] = fram_read(i);
+		}
+		for (i = 0; i < sizeof(wr_pattern); i++) {
+			if (din[i] != 0x0) {
+				ret |= 1;
+				printf("Zero mismatch at byte %d\n", i-3);
+				break;
+			}
+		}
+	}
+
+	if (ret == 0) printf("FRAM test passed\n");
+	else printf("FRAM test failed\n");
+	return ret;
+}
+
+/* Check for M41T00S */
+static int rtc_test(void)
+{
+	int ret;
+
+	i2c_set_bus_num(0);
+	ret = i2c_probe(0x68);
+
+	if (ret == 0) printf("RTC test passed\n");
+	else printf("RTC test failed\n");
+	return ret;
+}
+
+/* Short mem test compatible with both 512 and 1 G RAM */
+static int mem_test(void)
+{
+        int ret = 0;
+        cmd_tbl_t *cmd;
+
+        /* Arguments to mtest are start, end, pattern, and iterations */
+        char *argv[5] = {"mtest", "0x80800000", "0x80810000", "1", "20" };
+
+        cmd = find_cmd("mtest");
+
+        ret |= cmd->cmd(cmd, 0, 5, argv);
+
+        if (ret == 0) printf("RAM test passed\n");
+        else printf("RAM test failed\n");
+        return ret;
+}
+
+/* Verify the functionality of the eMMC
+ * This functions sets the current mmc dev to eMMC bus and runs tests.
+ * The destructive test will write a pattern of 0xAA that is 4 MiB long starting
+ * at eMMC address 0x8080000, or roughtly 2.1 GiB, and then reads it back and
+ * verifies. Followed by a pattern of 0x55, also 4 MiB long, also at the same
+ * start, this is also read back and verified.
+ * If either of the writes or read-backs fails, the test fails.
+ * The non-destructive test simple does an enumeration with the mmc command.
+ */
+static int emmc_test(int destructive)
+{
+	int ret = 0, i;
+	uint32_t *loadaddr = (uint32_t *)0x80800000;
+	cmd_tbl_t *cmd;
+
+	/* NOTE: When porting, the last element of query_argv[] needs to be
+	 * updated to be the correct mmc bus which the eMMC is on */
+	char *query_argv[3] = { "mmc", "dev", "0" };
+	char *write_argv[5] = { "mmc", "write", "0x80800000", "0x0", "0x800" };
+	char *read_argv[5] = { "mmc", "read", "0x80800000", "0x0", "0x800" };
+
+	cmd = find_cmd("mmc");
+
+	/* This tests simple enumeration */
+	ret |= cmd->cmd(cmd, 0, 3, query_argv);
+
+	if(destructive) {
+		memset(loadaddr, 0xAAAAAAAA, 1024*1024*4);
+		ret |= cmd->cmd(cmd, 0, 5, write_argv);
+		memset(loadaddr, 0x00000000, 1024*1024*4);
+		ret |= cmd->cmd(cmd, 0, 5, read_argv);
+
+		for (i = 0; i < (1024*1024)/4; i++) {
+			if (loadaddr[i] != 0xAAAAAAAA) {
+				ret = 1;
+			}
+		}
+
+		memset(loadaddr, 0x55555555, 1024*1024*4);
+		ret |= cmd->cmd(cmd, 0, 5, write_argv);
+		memset(loadaddr, 0x00000000, 1024*1024*4);
+		ret |= cmd->cmd(cmd, 0, 5, read_argv);
+
+		for (i = 0; i < (1024*1024)/4; i++) {
+			if (loadaddr[i] != 0x55555555) {
+				ret = 1;
+			}
+		}
+
+		if (ret == 0) printf("eMMC test passed\n");
+		else printf("eMMC test failed\n");
+	} else {
+		printf("Not running eMMC test!\n");
+	}
+
+	return ret;
+}
+
+/* Only gets the uC revision.
+ * NOTE: When porting, the i2c_read command args will likely need to change. */
+static int uc_rev(void)
+{
+	uint8_t val;
+	i2c_set_bus_num(0);
+	i2c_read(0x54, 0x800, 2, &val, 1);
+	return val;
 }
 
 static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret = 0;
-	
-	while(1){
-		mdelay(500);
+	char *p;
+	int destructive = 0;
+	unsigned long cpu_opts, io_model, io_opts;
+	uint8_t rev;
+	uint64_t start, end;
+
+	if (argv[1][0] == '-') p = &argv[1][1];
+	else p = &argv[1][0];
+
+	if (*p == 'd') destructive = 1;
+
+	/* XXX: Currently there is no real meaning to any of these. The P2 7100
+	 * builds have all of these straps unpopulated, so for now just ensure
+	 * the values are sane and run all of the tests.
+	 */
+	io_model = getenv_ulong("io_model", 10, 0xFFFFFFFF);
+	io_opts = getenv_ulong("io_opts", 10, 0xFFFFFFFF);
+	cpu_opts = getenv_ulong("opts", 10, 0xFFFFFFFF);
+	if (io_model == 0xFFFFFFFF || io_opts == 0xFFFFFFFF ||
+	  cpu_opts == 0xFFFFFFFF) {
+		ret |= 1;
+		printf("Strapping values read by U-Boot are invalid!\n");
 	}
 
-	/* This is largely a placeholder for now.  Intending to implement the weim test,
-	 * an fram/bootcount test, then have it switch to the app load, test sanity, then 
-	 * test the 16550s and potentially other cores. */
+	/* TODO: IO board may or may not have LEDs */
+	leds_test();
 
-	//uint64_t start,end;
-	
-	/* Does not run while in app load */
-	//ret |= weim_test();
+	rev = uc_rev();
+	printf("Microcontroller rev is 0x%x\n", rev);
 
-	//uart_16550_tx_test(0x50000040);
+	ret |= atmel_wifi_test();
+	ret |= fram_test(destructive);
+	ret |= rtc_test();
+	ret |= mem_test();
+	ret |= emmc_test(destructive);
+	ret |= micrel_phy_test();
+	/* XXX: Add Splash Flash test? */
+	/* XXX: Add uC voltage rail check */
+	ret |= uart_16550_tx_test(0x50000000);
+	ret |= uart_16550_test(0x50000000);
 
-	//ret |= uart_16550_test(0x50000040);
-
-	/*start = get_ticks();
+#if 0
+	start = get_ticks();
 	udelay(1000*1000);
 	end = get_ticks();
-	printf("Took %llu 8MHz ticks (%dus)\n", end - start, (uint32_t)(end - start)/8);
-
-	start = readl(FPGA_USEC_CTR);
-	udelay(1000*1000);
-	end = readl(FPGA_USEC_CTR);
-
-	printf("Took %llu us ticks\n", end - start);*/
+	printf("Took %llu 8MHz ticks (%dus)\n",
+	  end - start, (uint32_t)(end - start)/8);
+#endif
 
 	return ret;
 }
