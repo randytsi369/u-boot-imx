@@ -524,7 +524,7 @@ u32 get_board_rev(void)
 int checkboard(void)
 {
 	puts("Board: Technologic Systems TS-7100\n");
-	printf("FPGA:  Rev 0x%X\n", readl(0x50004000));
+	printf("FPGA:  Rev 0x%X\n", readl(0x50004000) & 0xFF);
 	printf("Silab: Rev 0x%X\n", silab_rev());
 
 	return 0;
