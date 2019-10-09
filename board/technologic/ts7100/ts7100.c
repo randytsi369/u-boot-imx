@@ -36,7 +36,6 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 int ts7100_fpga_init(void);
-int silab_rev(void);
 
 #define EN_ETH_PHY_PWR 		IMX_GPIO_NR(1, 10)
 #define PHY1_DUPLEX 		IMX_GPIO_NR(2, 0)
@@ -519,15 +518,6 @@ int board_late_init(void)
 u32 get_board_rev(void)
 {
 	return get_cpu_rev();
-}
-
-int checkboard(void)
-{
-	puts("Board: Technologic Systems TS-7100\n");
-	printf("FPGA:  Rev 0x%X\n", readl(0x50004000) & 0xFF);
-	printf("Silab: Rev 0x%X\n", silab_rev());
-
-	return 0;
 }
 
 #ifdef CONFIG_USB_EHCI_MX6
