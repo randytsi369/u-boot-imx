@@ -53,6 +53,7 @@
 #define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
 
 #define CONFIG_BOARD_EARLY_INIT_F
+#define CONFIG_MISC_INIT_R
 #define CONFIG_BOARD_LATE_INIT
 
 #define CONFIG_MXC_UART
@@ -61,6 +62,14 @@
 #undef CONFIG_BOOTM_NETBSD
 #undef CONFIG_BOOTM_PLAN9
 #undef CONFIG_BOOTM_RTEMS
+
+#define CONFIG_CMD_SPI
+#define CONFIG_MXC_SPI
+#define CONFIG_ATMEL_WIFI_BUS	2 /* ECSPI3 */
+#define CONFIG_ATMEL_WIFI_CS	0 /* ECSPI3 */
+
+#define CONFIG_FPGA
+#define CONFIG_FPGA_LATTICE
 
 /* Video */
 /*#define CONFIG_VIDEO*/
@@ -107,36 +116,29 @@
 	"fdt_high=0xffffffff\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
-	"model=7100\0" \
 	"autoload=no\0" \
 	"nfsip=192.168.0.36\0" \
-	"nfsroot=/mnt/storage/imx6ul/\0" \
+	"nfsroot=/nfsroot/imx6ul/\0" \
 	"clearenv=mmc dev 0 1; mmc erase 2000 400; mmc erase 3000 400;\0" \
 	"clearbootcnt=mw.b 50004018 0;\0" \
 	"cmdline_append=console=ttymxc0,115200 init=/sbin/init\0" \
-	"up-uboot=dhcp; wget ${loadaddr} 192.168.0.36:/7100-update/u-boot.imx;setexpr filesize ${filesize} / 0x200;setexpr filesize ${filesize} + 1; mmc dev 0 1;mmc write ${loadaddr} 2 ${filesize};\0" \
-	"up-fpga-app=dhcp; wget ${loadaddr} 192.168.0.36:/7100-update/ts7100-app.rpd; asmi write ${loadaddr} f0000 ${filesize};\0" \
-	"up-fpga-factory=dhcp; wget ${loadaddr} 192.168.0.36:/7100-update/ts7100-factory.rpd; asmi write ${loadaddr} 0 ${filesize};\0" \
-	"up-silabs=dhcp; wget ${loadaddr} 192.168.0.36:/7100-update/ts7100.bin; tsmicroctl -p ${loadaddr} ${filesize};\0" \
-	"up=run up-uboot; run up-fpga-factory; run up-fpga-app; run up-silabs;\0" \
 	"altbootcmd=echo taking some recovery action\0" \
-	"splash=dhcp; wget ${loadaddr} 192.168.0.36:/7100-update/testlogo.bmp; bmp display ${loadaddr};\0" \
-	"silochargeon=tsmicroctl d;" \
+	"silochargeon=silabs scaps disable;" \
 		"if test $silopresent = '1';" \
 			"then if test $jpnochrg = 'off';" \
-				"then tsmicroctl e;"\
+				"then silab scaps enable;"\
 			"fi;"\
 		"fi;\0" \
 	"silowaitcharge=if test $silopresent = '1';" \
 		"then if test $jpnochrg = 'on';" \
 			"then echo 'NO CHRG jumper is set, not waiting';" \
-			"else tsmicroctl w ${chrg_pct} ${chrg_verb};" \
+			"else scaps wait pct ${chrg_pct};" \
 		"fi;" \
 	"fi;\0" \
 	"usbprod=usb start;" \
 		"if usb storage;" \
 			"then echo Checking USB storage for updates;" \
-			"if load usb 0:1 ${loadaddr} /tsinit.ub;" \
+			"if load usb 0:1 ${loadaddr} /tsinit.scr;" \
 				"then led green on;" \
 				"source ${loadaddr};" \
 				"led red off;" \
@@ -148,22 +150,34 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
-		"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7100.dtb;" \
-		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
-		"run silowaitcharge;" \
-		"setenv bootargs root=/dev/mmcblk0p1 rootwait rw ${cmdline_append};" \
-		"bootz ${loadaddr} - ${fdtaddr};\0" \
+		"load mmc 0:1 ${fdtaddr} " \
+		  "/boot/imx6ul-ts${model}-${io_model}.dtb;" \
+		"if load mmc 0:1 ${loadaddr} /boot/zImage;" \
+			"then run silowaitcharge;" \
+			"setenv bootargs root=/dev/mmcblk0p1 rootwait rw " \
+			  "cpu_opts=0x${opts} io_opts=0x${io_opts} " \
+			  "io_model=0x${io_model} ${cmdline_append};" \
+			"bootz ${loadaddr} - ${fdtaddr};" \
+		"else echo Failed to load kernel from eMMC;" \
+		"fi;\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"dhcp;" \
-		"mw.l ${fdtaddr} 0 1000;" \
-		"mw.l ${loadaddr} 0 1000;" \
-		"nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/imx6ul-ts7100.dtb;" \
-		"nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
-		"run silowaitcharge;" \
-		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsip}:${nfsroot} " \
-			"rootwait rw ${cmdline_append};" \
-		"bootz ${loadaddr} - ${fdtaddr};\0" \
-	"bootcmd_mfg=exit; echo Booted over USB, running test/prime;" \
+		"if nfs ${fdtaddr} ${nfsip}:${nfsroot}/boot/boot.scr;" \
+			"then echo Booting from custom /boot/boot.scr;" \
+			"source ${loadaddr};" \
+		"fi;" \
+		"nfs ${fdtaddr} " \
+		  "${nfsip}:${nfsroot}/boot/imx6ul-ts${model}-${io_model}.dtb;"\
+		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/zImage;" \
+			"then run silowaitcharge;" \
+			"setenv bootargs root=/dev/nfs ip=dhcp " \
+			  "nfsroot=${nfsip}:${nfsroot} rootwait rw " \
+			  "cpu_opts=0x${opts} io_opts=0x${io_opts} " \
+			  "io_model=0x${io_model} ${cmdline_append};" \
+			"bootz ${loadaddr} - ${fdtaddr};" \
+		"else echo Failed to load kernel from NFS;" \
+		"fi;\0" \
+	"bootcmd_mfg=echo Booted over USB, running test/prime;" \
 		"if post;" \
 			"then ums mmc 0.1;" \
 			"mmc bootbus 0 1 0 2;" \
@@ -192,10 +206,22 @@
 				"i2c mw 38 0.0 3;" \
 				"sleep 1;" \
 			"done;" \
+		"fi;\0" \
+	"update-uboot=dhcp;"\
+		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/u-boot.imx; " \
+                        "then setexpr filesize ${filesize} / 200;" \
+                        "setexpr filesize ${filesize} + 1;" \
+                        "mmc dev 0 1;" \
+                        "mmc write ${loadaddr} 2 ${filesize};"\
+                "fi;\0" \
+	"update-fpga=dhcp; " \
+		"if nfs ${loadaddr} ${nfsip}:${nfsroot}/boot/ts7100.vme; " \
+			"then fpga load 0 ${loadaddr} ${filesize};" \
 		"fi;\0"
 
 #define CONFIG_BOOTCOMMAND \
-	"echo normal boot"
+	"run usbprod; " \
+	"run emmcboot;"
 
 #define CONFIG_CMD_MEMTEST
 #define CONFIG_SYS_MEMTEST_START	0x80000000

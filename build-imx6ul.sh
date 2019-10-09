@@ -46,6 +46,24 @@ ts7180)
 	fi
 	;;
 
+ts7100)
+	make ts7100-512m_defconfig
+	make -j9 u-boot.imx
+	if [ $? -eq 0 ]; then
+		mv u-boot.imx out/u-boot-ts7100-512m.imx
+	else
+		let FAIL=FAIL+1
+	fi
+
+#	make ts7180-1g_defconfig
+#	make -j9 u-boot.imx
+#	if [ $? -eq 0 ]; then
+#		mv u-boot.imx out/u-boot-ts7180-1g.imx
+#	else
+#		let FAIL=FAIL+1
+#	fi
+	;;
+
 *)
 	echo "Usage: ./build-imx6ul.sh <model>"
 	exit 1

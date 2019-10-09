@@ -31,8 +31,11 @@
 #include <usb/ehci-fsl.h>
 #include "tsfpga.h"
 #include "fram.h"
+#include "parse_strap.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+
+int ts7100_fpga_init(void);
 
 #define EN_ETH_PHY_PWR 		IMX_GPIO_NR(1, 10)
 #define PHY1_DUPLEX 		IMX_GPIO_NR(2, 0)
@@ -43,6 +46,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define PHY2_CONFIG_2		IMX_GPIO_NR(2, 10)
 #define PHY1_ISOLATE		IMX_GPIO_NR(2, 7)
 #define PHY2_ISOLATE		IMX_GPIO_NR(2, 15)
+#define JTAG_FPGA_TDO		IMX_GPIO_NR(4, 0)
+#define JTAG_FPGA_TDI		IMX_GPIO_NR(4, 17)
+#define JTAG_FPGA_TMS		IMX_GPIO_NR(3, 6)
+#define JTAG_FPGA_TCK		IMX_GPIO_NR(3, 5)
+
 
 #define UART_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_100K_UP | \
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_SRE_FAST | PAD_CTL_HYS)
@@ -145,22 +153,51 @@ static iomux_v3_cfg_t const eim_pins[] = {
 	MX6_PAD_NAND_DQS__EIM_WAIT | MUX_PAD_CTRL(MISC_PAD_CTRL),
 	MX6_PAD_NAND_WP_B__EIM_BCLK | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
 
-	MX6_PAD_SNVS_TAMPER1__GPIO5_IO01 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL), /* FPGA_IRQ */
-	MX6_PAD_NAND_ALE__GPIO4_IO10 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL), /* FPGA_IRQ2 */
-	MX6_PAD_SNVS_TAMPER6__GPIO5_IO06 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* FPGA_1 */
-	MX6_PAD_SNVS_TAMPER7__GPIO5_IO07 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* FPGA_2 */
-	MX6_PAD_SNVS_TAMPER8__GPIO5_IO08 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* FPGA_3 */
-	MX6_PAD_SNVS_TAMPER9__GPIO5_IO09 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* FPGA_4 */
+	/* FPGA_IRQ */
+	MX6_PAD_SNVS_TAMPER1__GPIO5_IO01 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* FPGA_IRQ2 */
+	MX6_PAD_NAND_ALE__GPIO4_IO10 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
 
-	MX6_PAD_CSI_MCLK__GPIO4_IO17 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* JTAG_FPGA_TDI */
-	MX6_PAD_NAND_RE_B__GPIO4_IO00 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* JTAG_FPGA_TDO */
-	MX6_PAD_LCD_DATA01__GPIO3_IO06 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* JTAG_FPGA_TMS */
-	MX6_PAD_LCD_DATA00__GPIO3_IO05 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),  /* JTAT_FPGA_TCK */
 };
 
 static iomux_v3_cfg_t const misc_pads[] = {
-	MX6_PAD_NAND_WE_B__GPIO4_IO01 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* DETECT_9471 */
-	MX6_PAD_SNVS_TAMPER0__GPIO5_IO00 | MUX_PAD_CTRL(MISC_PAD_CTRL), /* POWER_FAIL_3V */
+	/* POWER_FAIL_3V */
+	MX6_PAD_SNVS_TAMPER0__GPIO5_IO00 | MUX_PAD_CTRL(MISC_PAD_CTRL),
+
+	/* FPGA_1 */
+	MX6_PAD_SNVS_TAMPER6__GPIO5_IO06 | MUX_PAD_CTRL(MISC_PAD_CTRL),
+	/* FPGA_2 */
+	MX6_PAD_SNVS_TAMPER7__GPIO5_IO07 | MUX_PAD_CTRL(MISC_PAD_CTRL),
+	/* FPGA_3 */
+	MX6_PAD_SNVS_TAMPER8__GPIO5_IO08 | MUX_PAD_CTRL(MISC_PAD_CTRL),
+	/* FPGA_4 */
+	MX6_PAD_SNVS_TAMPER9__GPIO5_IO09 | MUX_PAD_CTRL(MISC_PAD_CTRL),
+
+	/* JTAG_FPGA_TDI */
+	MX6_PAD_CSI_MCLK__GPIO4_IO17 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* JTAG_FPGA_TDO */
+	MX6_PAD_NAND_RE_B__GPIO4_IO00 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* JTAG_FPGA_TMS */
+	MX6_PAD_LCD_DATA01__GPIO3_IO06 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* JTAT_FPGA_TCK */
+	MX6_PAD_LCD_DATA00__GPIO3_IO05 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+
+	/* IO Strap 0, WIFI_SPI_CLK */
+	MX6_PAD_NAND_CE0_B__GPIO4_IO13 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* IO Strap 1, UART2_TXD */
+	MX6_PAD_UART2_TX_DATA__GPIO1_IO20 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* IO Strap 2, UART5_TXD */
+	MX6_PAD_UART5_TX_DATA__GPIO1_IO30 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* IO Strap 3, UART4_TXD */
+	MX6_PAD_UART4_TX_DATA__GPIO1_IO28 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* IO Strap 4, UART3_TXD */
+	MX6_PAD_UART3_TX_DATA__GPIO1_IO24 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* IO Strap 5, WIFI_SPI_MOSI */
+	MX6_PAD_NAND_CE1_B__GPIO4_IO14 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* IO Strap 6, CAN_1_TXD */
+	MX6_PAD_LCD_DATA08__GPIO3_IO13 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
+	/* IO Strap 7, UART3_CTS */
+	MX6_PAD_UART3_CTS_B__GPIO1_IO26 | MUX_PAD_CTRL(MISC_PAD_PU_CTRL),
 };
 
 /* eMMC */
@@ -394,33 +431,11 @@ int board_phy_config(struct phy_device *phydev)
 
 int board_early_init_f(void)
 {
-	setup_iomux_uart();
-
-	return 0;
-}
-
-int board_init(void)
-{
-	/* Address of boot parameters */
-	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
-	#ifdef CONFIG_FEC_MXC
-	setup_fec(CONFIG_FEC_ENET_DEV);
-	#endif
-
-	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
-
-	return 0;
-}
-
-int board_late_init(void)
-{
 	struct weim *weim_regs = (struct weim *)WEIM_BASE_ADDR;
 	struct mxc_ccm_reg *const imx_ccm =
 		(struct mxc_ccm_reg *)CCM_BASE_ADDR;
 
-	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
-
+	/* Set up FPGA for communication */
 	/* 396mhz PLL2_PDF2 div by 8 = 49.5MHz EIM clk */
 	clrsetbits_le32(&imx_ccm->cscmr1,
 			MXC_CCM_CSCMR1_ACLK_EMI_SLOW_PODF_MASK |
@@ -441,8 +456,59 @@ int board_late_init(void)
 
 	set_chipselect_size(CS0_128);
 
-	imx_iomux_v3_setup_multiple_pads(
-		misc_pads, ARRAY_SIZE(misc_pads));
+	/* Set up I2C bus for uC */
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
+	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
+
+	setup_iomux_uart();
+
+	return 0;
+}
+
+int misc_init_r(void)
+{
+	uint32_t opts;
+
+	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
+
+	setenv("model", "7100");
+	/* Need to read latched FPGA value
+	 * bits 3:0 are FPGA GPIO bank 3, 5:2 and are purely straps
+	 * bits 5:4 are FPGA GPIO bank 3, 12:11 and are DIO_18:DIO_17
+	 * bank 3 12:11 are latched values of DIO_18:DIO_17 after unreset
+	 */
+	opts = readl(0x50004050); /* DIO bank 3 */
+	opts = (((opts & 0x1800) >> 7) | ((opts & 0x3C) >> 2));
+	opts ^= 0x3F;
+	setenv_hex("opts", opts);
+
+	/* Read and parse CPU pins used for IO board strapping */
+	opts = (uint32_t)(parse_strap(NULL) & 0xFF);
+	setenv_hex("io_model", (ulong)((opts & 0xf0) >> 4));
+	setenv_hex("io_opts", opts);
+
+	return 0;
+}
+
+int board_init(void)
+{
+	/* Address of boot parameters */
+	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
+#ifdef CONFIG_FEC_MXC
+	setup_fec(CONFIG_FEC_ENET_DEV);
+#endif
+
+#ifdef CONFIG_FPGA
+	/* Set up FPGA subsystem for JTAGing, i.e., soft loading */
+	ts7100_fpga_init();
+#endif
+
+	return 0;
+}
+
+int board_late_init(void)
+{
+	set_wdog_reset((struct wdog_regs *)WDOG1_BASE_ADDR);
 
 	fram_init();
 
@@ -452,13 +518,6 @@ int board_late_init(void)
 u32 get_board_rev(void)
 {
 	return get_cpu_rev();
-}
-
-int checkboard(void)
-{
-	puts("Board: Technologic Systems TS-7100\n");
-
-	return 0;
 }
 
 #ifdef CONFIG_USB_EHCI_MX6
@@ -500,3 +559,78 @@ ulong bootcount_load(void)
 }
 
 #endif //CONFIG_BOOTCOUNT_LIMIT
+
+#if defined(CONFIG_FPGA)
+
+static void ts7100_fpga_jtag_init(void)
+{
+	gpio_direction_output(JTAG_FPGA_TDI, 1);
+	gpio_direction_output(JTAG_FPGA_TCK, 1);
+	gpio_direction_output(JTAG_FPGA_TMS, 1);
+	gpio_direction_input(JTAG_FPGA_TDO);
+}
+
+static void ts7100_fpga_done(void)
+{
+	gpio_direction_input(JTAG_FPGA_TDI);
+	gpio_direction_input(JTAG_FPGA_TCK);
+	gpio_direction_input(JTAG_FPGA_TMS);
+	gpio_direction_input(JTAG_FPGA_TDO);
+
+	/* During FPGA programming several important pins will
+	 * have been tristated.  Put it back to normal */
+	//fpga_mmc_init();
+	//red_led_on();
+	//green_led_off();
+	//fpga_gpio_output(OFF_BD_RESET_PADN, 1);
+	//fpga_gpio_output(EN_USB_HOST_5V_PAD, 1);
+}
+
+static void ts7100_fpga_tdi(int value)
+{
+	gpio_set_value(JTAG_FPGA_TDI, value);
+}
+
+static void ts7100_fpga_tms(int value)
+{
+	gpio_set_value(JTAG_FPGA_TMS, value);
+}
+
+static void ts7100_fpga_tck(int value)
+{
+	gpio_set_value(JTAG_FPGA_TCK, value);
+}
+
+static int ts7100_fpga_tdo(void)
+{
+	return gpio_get_value(JTAG_FPGA_TDO);
+}
+
+lattice_board_specific_func ts7100_fpga_fns = {
+	ts7100_fpga_jtag_init,
+	ts7100_fpga_tdi,
+	ts7100_fpga_tms,
+	ts7100_fpga_tck,
+	ts7100_fpga_tdo,
+	ts7100_fpga_done
+};
+
+Lattice_desc ts7100_fpga = {
+	Lattice_XP2,
+	lattice_jtag_mode,
+	589012,
+	(void *) &ts7100_fpga_fns,
+	NULL,
+	0,
+	"machxo_2_cb132"
+};
+
+int ts7100_fpga_init(void)
+{
+	fpga_init();
+	fpga_add(fpga_lattice, &ts7100_fpga);
+
+	return 0;
+}
+
+#endif

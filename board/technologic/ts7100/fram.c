@@ -27,7 +27,7 @@
 #define FRAM_READ	0x3
 #define FRAM_WRITE	0x2
 
-void ocspi_setup(int divider, int cpol, int cpha)
+static void ocspi_setup(int divider, int cpol, int cpha)
 {
 	uint32_t reg = readl(CONFIG_OCSPI_BASE + OCSPI_CTRL);
 	writel(divider, CONFIG_OCSPI_BASE + OCSPI_DIVIDER);
@@ -54,7 +54,7 @@ void ocspi_setup(int divider, int cpol, int cpha)
 	writel(reg, CONFIG_OCSPI_BASE + OCSPI_CTRL);
 }
 
-int ocspi_busy(void)
+static int ocspi_busy(void)
 {
 	int timeout = 1000;
 	while(readl(CONFIG_OCSPI_BASE + OCSPI_CTRL) & OCSPI_CTRL_GO_BSY) {
@@ -66,6 +66,19 @@ int ocspi_busy(void)
 		}
 	}
 	return 0;
+}
+
+static void fram_wren(void)
+{
+	uint32_t reg;
+
+	reg = readl(CONFIG_OCSPI_BASE + OCSPI_CTRL);
+	reg &= ~OCSPI_CTRL_CHARLEN_MASK;
+	reg |= OCSPI_CTRL_ASS | 8;
+	writel(reg, CONFIG_OCSPI_BASE + OCSPI_CTRL);
+	writel(FRAM_WREN, CONFIG_OCSPI_BASE + OCSPI_TXRX0);
+	writel(reg | OCSPI_CTRL_GO_BSY, CONFIG_OCSPI_BASE + OCSPI_CTRL);
+	ocspi_busy();
 }
 
 uint8_t fram_rdsr(void)
@@ -85,19 +98,6 @@ uint8_t fram_rdsr(void)
 	din = readl(CONFIG_OCSPI_BASE + OCSPI_TXRX0);
 
 	return (uint8_t)din;
-}
-
-void fram_wren(void)
-{
-	uint32_t reg;
-
-	reg = readl(CONFIG_OCSPI_BASE + OCSPI_CTRL);
-	reg &= ~OCSPI_CTRL_CHARLEN_MASK;
-	reg |= OCSPI_CTRL_ASS | 8;
-	writel(reg, CONFIG_OCSPI_BASE + OCSPI_CTRL);
-	writel(FRAM_WREN, CONFIG_OCSPI_BASE + OCSPI_TXRX0);
-	writel(reg | OCSPI_CTRL_GO_BSY, CONFIG_OCSPI_BASE + OCSPI_CTRL);
-	ocspi_busy();
 }
 
 void fram_init(void)

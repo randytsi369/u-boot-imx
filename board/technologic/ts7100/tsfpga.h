@@ -14,7 +14,7 @@
 #define FPGA_SYSCON		(FPGA_BASE + 0x4000)
 
 #define FPGA_SCRATCH_REG	(FPGA_BLOCKRAM)
-#define FPGA_MODEL		(FPGA_SYSCON + 0x0) /* Currently 0xbadbeef */
+#define FPGA_MODEL		(FPGA_SYSCON + 0x0)
 #define FPGA_DIO1_DAT_SET	(FPGA_SYSCON + 0x10)
 #define FPGA_DIO1_OE_SET	(FPGA_SYSCON + 0x12)
 #define FPGA_DIO1_DAT_CLR	(FPGA_SYSCON + 0x14)
@@ -23,6 +23,10 @@
 #define FPGA_DIO2_OE_SET	(FPGA_SYSCON + 0x42)
 #define FPGA_DIO2_DAT_CLR	(FPGA_SYSCON + 0x44)
 #define FPGA_DIO2_OE_CLR	(FPGA_SYSCON + 0x46)
+#define FPGA_DIO3_DAT_SET	(FPGA_SYSCON + 0x50)
+#define FPGA_DIO3_OE_SET	(FPGA_SYSCON + 0x52)
+#define FPGA_DIO3_DAT_CLR	(FPGA_SYSCON + 0x54)
+#define FPGA_DIO3_OE_CLR	(FPGA_SYSCON + 0x56)
 
 #define FPGA_SPI_0		(FPGA_BASE + 0x180)
 
@@ -86,27 +90,45 @@
 #define BANK2_EN_USB_HOST_5V	(1 << 4)
 #define BANK2_PHY_RESETN	(1 << 6)
 #define BANK2_WIFI_RESETN	(1 << 7)
-#define BANK2_RED_LED		(1 << 8)
-#define BANK2_GREEN_LED		(1 << 9)
-#define BANK2_I2C_DAT		(1 << 10)
-#define BANK2_I2C_CLK		(1 << 11)
+#define BANK2_RED_LEDN		(1 << 8)
+#define BANK2_GREEN_LEDN	(1 << 9)
+#define BANK2_RESERVED10	(1 << 10)
+#define BANK2_RESERVED11	(1 << 11)
 #define BANK2_EN_PROG_SILAB	(1 << 12)
 #define BANK2_IO_BD_PRESENT	(1 << 13)
+
+#define BANK3_CPU_STRAP0	(1 << 2)
+#define BANK3_CPU_STRAP1	(1 << 3)
+#define BANK3_CPU_STRAP2	(1 << 4)
+#define BANK3_CPU_STRAP3	(1 << 5)
+#define BANK3_DIO_15		(1 << 6)
+#define BANK3_DIO_16		(1 << 7)
+#define BANK3_DIO_17		(1 << 8)
+#define BANK3_DIO_18		(1 << 9)
+#define BANK3_BREAKER_TIPPED	(1 << 10)
+#define BANK3_CPU_STRAP4	(1 << 11)
+#define BANK3_CPU_STRAP5	(1 << 12)
+#define BANK3_SILAB_CLK_STB	(1 << 13)
 
 /* Output Enables */
 #define fpga_dio1_oe_set(value) writew(value, FPGA_DIO1_OE_SET)
 #define fpga_dio1_oe_clr(value) writew(value, FPGA_DIO1_OE_CLR)
 #define fpga_dio2_oe_set(value) writew(value, FPGA_DIO2_OE_SET)
 #define fpga_dio2_oe_clr(value) writew(value, FPGA_DIO2_OE_CLR)
+#define fpga_dio3_oe_set(value) writew(value, FPGA_DIO3_OE_SET)
+#define fpga_dio3_oe_clr(value) writew(value, FPGA_DIO3_OE_CLR)
 
 /* Output Data */
 #define fpga_dio1_dat_set(value) writew(value, FPGA_DIO1_DAT_SET)
 #define fpga_dio1_dat_clr(value) writew(value, FPGA_DIO1_DAT_CLR)
 #define fpga_dio2_dat_set(value) writew(value, FPGA_DIO2_DAT_SET)
 #define fpga_dio2_dat_clr(value) writew(value, FPGA_DIO2_DAT_CLR)
+#define fpga_dio3_dat_set(value) writew(value, FPGA_DIO3_DAT_SET)
+#define fpga_dio3_dat_clr(value) writew(value, FPGA_DIO3_DAT_CLR)
 
 /* Input Data */
 #define fpga_dio1_data_get(pin) !!(readw(FPGA_DIO1_DAT_SET) & pin)
 #define fpga_dio2_data_get(pin) !!(readw(FPGA_DIO2_DAT_SET) & pin)
+#define fpga_dio3_data_get(pin) !!(readw(FPGA_DIO3_DAT_SET) & pin)
 
 #endif // __FPGA_H__
