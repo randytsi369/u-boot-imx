@@ -104,20 +104,6 @@ struct i2c_pads_info i2c_pad_info1 = {
 	},
 };
 
-/* I2C3 for FPGA/offbd */
-struct i2c_pads_info i2c_pad_info3 = {
-	.scl = {
-		.i2c_mode = MX6_PAD_LCD_DATA01__I2C3_SCL | PC,
-		.gpio_mode = MX6_PAD_LCD_DATA01__GPIO3_IO06 | PC,
-		.gp = IMX_GPIO_NR(3, 6),
-	},
-	.sda = {
-		.i2c_mode = MX6_PAD_LCD_DATA00__I2C3_SDA | PC,
-		.gpio_mode = MX6_PAD_LCD_DATA00__GPIO3_IO05 | PC,
-		.gp = IMX_GPIO_NR(3, 5),
-	},
-};
-
 int dram_init(void)
 {
 	gd->ram_size = (phys_size_t)CONFIG_DDR_MB * 1024 * 1024;
@@ -458,7 +444,6 @@ int board_early_init_f(void)
 
 	/* Set up I2C bus for uC */
 	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info1);
-	setup_i2c(2, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c_pad_info3);
 
 	setup_iomux_uart();
 
