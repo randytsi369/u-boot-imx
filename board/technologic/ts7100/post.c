@@ -541,8 +541,11 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	cpu_opts = getenv_ulong("opts", 10, 0xFFFFFFFF);
 	if (io_model == 0xFFFFFFFF || io_opts == 0xFFFFFFFF ||
 	  cpu_opts == 0xFFFFFFFF) {
-		ret |= 1;
+		//ret |= 1;
 		printf("Strapping values read by U-Boot are invalid!\n");
+		printf("io_model: 0x%X\n", io_model);
+		printf("io_opts: 0x%X\n", io_opts);
+		printf("cpu_opts: 0x%X\n", cpu_opts);
 	}
 
 	/* TODO: IO board may or may not have LEDs */
@@ -551,7 +554,7 @@ static int do_post_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	rev = uc_rev();
 	printf("Microcontroller rev is 0x%x\n", rev);
 
-	ret |= atmel_wifi_test();
+	//ret |= atmel_wifi_test();
 	ret |= fram_test(destructive);
 	ret |= rtc_test();
 	ret |= mem_test();
