@@ -111,6 +111,7 @@
 	"run silochargeon;"*/
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	"board_name='TS-7100'\0" \
 	"chrg_pct=60\0" \
 	"chrg_verb=0\0" \
 	"fdt_high=0xffffffff\0" \
