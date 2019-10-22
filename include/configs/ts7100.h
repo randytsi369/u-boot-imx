@@ -114,6 +114,7 @@
 	"chrg_pct=60\0" \
 	"chrg_verb=0\0" \
 	"fdt_high=0xffffffff\0" \
+	"initrd_addr=0x83800000\0" \
 	"initrd_high=0xffffffff\0" \
 	"fdtaddr=0x83000000\0" \
 	"autoload=no\0" \
