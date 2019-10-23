@@ -290,7 +290,7 @@ static int micrel_phy_test(void)
 	unsigned char model;
 	unsigned char rev;
 
-	if (miiphy_info ("FEC0", 0x2, &oui, &model, &rev) != 0) {
+	if (miiphy_info ("FEC1", 0x1, &oui, &model, &rev) != 0) {
 		printf("Failed to find PHY\n");
 		return 1;
 	}
