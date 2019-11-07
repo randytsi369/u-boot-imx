@@ -369,8 +369,9 @@ int board_early_init_f(void)
 
 int misc_init_r(void)
 {
-	int jpr;
+	int jpr, rev_c;
 	uint8_t opts = 0;
+	char opts_str[4];
 
 	imx_iomux_v3_setup_multiple_pads(misc_pads, ARRAY_SIZE(misc_pads));
 
@@ -403,11 +404,40 @@ int misc_init_r(void)
 	if(jpr) setenv("jpnochrg", "off");
 	else setenv("jpnochrg", "on");
 
-	jpr = gpio_get_value(EN_EMMC_PWR);
-	if(!jpr) setenv("pcbrev", "C");
-
 	if(opts == 0x7 || opts == 0x5) setenv("silopresent", "1");
 	else setenv("silopresent", "0");
+
+	/* SILO is currently only defined for our standard options. Provide a
+	 * way in the environment to override this for custom options so they
+	 * do not need to be whitelisted with a new U-Boot every time. */
+	if (getenv_ulong("force_silopresent", 10, 0)) {
+		setenv("silopresent", "1");
+	}
+
+	/*
+	 * If the unit is a rev C, then set pcbrev to C.
+	 * If options are NOT one of our standard options, infer that it will
+	 * NOT be a rev C, and set pcbrev var to "-<opt>" value.
+	 * If options are one of our standard options AND the unit is NOT
+	 * rev C, then just load stock FDT file by not setting pcbrev var.
+	 *
+	 * The scripting for loading will attempt to load pcbrev FDT, if that
+	 * fails, fall back to stock. Due to the setup here, we should never
+	 * end up "falling" back unless its a non-standard option that doesn't
+	 * require its own non-standard FDT.
+	 */
+
+	/* If EN_EMMC_PWR is pulled low, PCB is rev C or lower; otherwise rev D
+	 * or higher. */
+	rev_c = !gpio_get_value(EN_EMMC_PWR);
+
+	if (rev_c) {
+		setenv("pcbrev", "C");
+	} else if ((opts != 0x2) && (opts != 0x3) && (opts != 0x5) &&
+	  (opts != 0x7)) {
+		snprintf(opts_str, sizeof(opts_str), "-%x", opts);
+		setenv("pcbrev", opts_str);
+	}
 
 	return 0;
 }

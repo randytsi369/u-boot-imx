@@ -123,7 +123,11 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
-		"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2${pcbrev}.dtb;" \
+		"if load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2${pcbrev}.dtb;"\
+			"then echo Booting from imx6ul-ts7553v2${pcbrev}.dtb;" \
+		"else echo imx6ul-ts7553v2${pcbrev}.dtb not found, using default device-tree;"\
+			"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;"\
+		"fi;" \
 		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
 		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/mmcblk0p1 ${cmdline_append};" \
@@ -133,14 +137,22 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
-		"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2${pcbrev}.dtb;" \
+		"if load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2${pcbrev}.dtb;"\
+			"then echo Booting from imx6ul-ts7553v2${pcbrev}.dtb;" \
+		"else echo imx6ul-ts7553v2${pcbrev}.dtb not found, using default device-tree;"\
+			"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;"\
+		"fi;" \
 		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
 		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/mmcblk1p1 ${cmdline_append};" \
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"dhcp;" \
-		"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2${pcbrev}.dtb;" \
+		"if nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2${pcbrev}.dtb;" \
+			"then echo Booting from imx6ul-ts7553v2${pcbrev}.dtb;" \
+		"else echo imx6ul-ts7553v2${pcbrev}.dtb not found, using default device-tree;"\
+			"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2.dtb;" \
+		"fi;" \
 		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \
 		"run silowaitcharge;" \
 		"setenv bootargs root=/dev/nfs ip=dhcp nfsroot=${nfsroot} " \
