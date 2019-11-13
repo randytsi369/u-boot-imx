@@ -437,6 +437,8 @@ int misc_init_r(void)
 	  (opts != 0x7)) {
 		snprintf(opts_str, sizeof(opts_str), "-%x", opts);
 		setenv("variant", opts_str);
+	} else {
+		setenv("variant", "");
 	}
 
 	return 0;
