@@ -123,9 +123,9 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
-		"if load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2${pcbrev}.dtb;"\
-			"then echo Booting from imx6ul-ts7553v2${pcbrev}.dtb;" \
-		"else echo imx6ul-ts7553v2${pcbrev}.dtb not found, using default device-tree;"\
+		"if load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2${variant}.dtb;"\
+			"then echo Booting from imx6ul-ts7553v2${variant}.dtb;" \
+		"else echo imx6ul-ts7553v2${variant}.dtb not found, using default device-tree;"\
 			"load mmc 0:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;"\
 		"fi;" \
 		"load mmc 0:1 ${loadaddr} /boot/zImage;" \
@@ -137,9 +137,9 @@
 			"then echo Booting from custom /boot/boot.ub;" \
 			"source ${loadaddr};" \
 		"fi;" \
-		"if load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2${pcbrev}.dtb;"\
-			"then echo Booting from imx6ul-ts7553v2${pcbrev}.dtb;" \
-		"else echo imx6ul-ts7553v2${pcbrev}.dtb not found, using default device-tree;"\
+		"if load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2${variant}.dtb;"\
+			"then echo Booting from imx6ul-ts7553v2${variant}.dtb;" \
+		"else echo imx6ul-ts7553v2${variant}.dtb not found, using default device-tree;"\
 			"load mmc 1:1 ${fdtaddr} /boot/imx6ul-ts7553v2.dtb;"\
 		"fi;" \
 		"load mmc 1:1 ${loadaddr} /boot/zImage;" \
@@ -148,9 +148,9 @@
 		"bootz ${loadaddr} - ${fdtaddr};\0" \
 	"nfsboot=echo Booting from NFS ...;" \
 		"dhcp;" \
-		"if nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2${pcbrev}.dtb;" \
-			"then echo Booting from imx6ul-ts7553v2${pcbrev}.dtb;" \
-		"else echo imx6ul-ts7553v2${pcbrev}.dtb not found, using default device-tree;"\
+		"if nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2${variant}.dtb;" \
+			"then echo Booting from imx6ul-ts7553v2${variant}.dtb;" \
+		"else echo imx6ul-ts7553v2${variant}.dtb not found, using default device-tree;"\
 			"nfs ${fdtaddr} ${nfsroot}/boot/imx6ul-ts7553v2.dtb;" \
 		"fi;" \
 		"nfs ${loadaddr} ${nfsroot}/boot/zImage;" \

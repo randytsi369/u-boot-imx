@@ -415,13 +415,13 @@ int misc_init_r(void)
 	}
 
 	/*
-	 * If the unit is a rev C, then set pcbrev to C.
+	 * If the unit is a rev C, then set variant to C.
 	 * If options are NOT one of our standard options, infer that it will
-	 * NOT be a rev C, and set pcbrev var to "-<opt>" value.
+	 * NOT be a rev C, and set variant var to "-<opt>" value.
 	 * If options are one of our standard options AND the unit is NOT
-	 * rev C, then just load stock FDT file by not setting pcbrev var.
+	 * rev C, then just load stock FDT file by not setting variant var.
 	 *
-	 * The scripting for loading will attempt to load pcbrev FDT, if that
+	 * The scripting for loading will attempt to load variant FDT, if that
 	 * fails, fall back to stock. Due to the setup here, we should never
 	 * end up "falling" back unless its a non-standard option that doesn't
 	 * require its own non-standard FDT.
@@ -432,11 +432,11 @@ int misc_init_r(void)
 	rev_c = !gpio_get_value(EN_EMMC_PWR);
 
 	if (rev_c) {
-		setenv("pcbrev", "C");
+		setenv("variant", "C");
 	} else if ((opts != 0x2) && (opts != 0x3) && (opts != 0x5) &&
 	  (opts != 0x7)) {
 		snprintf(opts_str, sizeof(opts_str), "-%x", opts);
-		setenv("pcbrev", opts_str);
+		setenv("variant", opts_str);
 	}
 
 	return 0;
