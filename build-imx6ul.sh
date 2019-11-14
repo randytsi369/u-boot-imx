@@ -64,6 +64,16 @@ ts7100)
 #	fi
 	;;
 
+ts7553v2)
+	make ts7553v2_defconfig
+	make -j9 u-boot.imx
+	if [ $? -eq 0 ]; then
+		mv u-boot.imx out/u-boot-ts7553v2.imx
+	else
+		let FAIL=FAIL+1
+	fi
+	;;
+
 *)
 	echo "Usage: ./build-imx6ul.sh <model>"
 	exit 1
