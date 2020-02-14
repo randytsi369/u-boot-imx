@@ -236,6 +236,8 @@ signed char ispVM(void)
 		return VME_VERSION_FAILURE;
 	}
 
+	if(pfns->jtag_init) pfns->jtag_init();
+
 	printf("VME file checked: starting downloading to FPGA\n");
 
 	ispVMStart();
@@ -244,6 +246,9 @@ signed char ispVM(void)
 
 	ispVMEnd();
 	ispVMFreeMem();
+
+	if(pfns->jtag_done) pfns->jtag_done();
+
 	puts("\n");
 
 	if (cRetCode == 0 && expectedCRC != 0 &&
