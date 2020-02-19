@@ -1938,6 +1938,9 @@ static int do_scsi_command(struct fsg_common *common)
 				      "START-STOP UNIT");
 		if (reply == 0)
 			reply = do_start_stop(common);
+		if(reply == 0)
+			return 1;
+
 		break;
 
 	case SC_SYNCHRONIZE_CACHE:
@@ -2409,8 +2412,11 @@ int fsg_main_thread(void *common_)
 		if (!exception_in_progress(common))
 			common->state = FSG_STATE_DATA_PHASE;
 
-		if (do_scsi_command(common) || finish_reply(common))
-			continue;
+		ret = do_scsi_command(common);
+		if(ret == 1)
+			return -1;
+		ret |= finish_reply(common);
+		if(ret) continue;
 
 		if (!exception_in_progress(common))
 			common->state = FSG_STATE_STATUS_PHASE;
