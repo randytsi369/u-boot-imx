@@ -39,6 +39,9 @@
 #define CONFIG_BOOTCOMMAND \
 	"run distro_bootcmd;"
 
+#define FDT_ADDR_R			0x83000000
+#define RAMDISK_ADDR_R			0x90000000
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"autoload=no\0" \
 	"emmc_dev=0\0" \
@@ -48,7 +51,7 @@
 	"kernel_addr_r=" __stringify(CONFIG_LOADADDR) "\0" \
 	"fdt_addr_r=" __stringify(FDT_ADDR_R) "\0" \
 	"ramdisk_addr_r=" __stringify(RAMDISK_ADDR_R) "\0" \
-	"scriptaddr=" __stringify(SCRIPT_ADDR_R) "\0" \
+	"scriptaddr=" __stringify(CONFIG_LOADADDR) "\0" \
 	"pxefile_addr_r=" __stringify(CONFIG_LOADADDR) "\0" \
 	"fdtfile=imx6ul-ts7250v3.dtb\0" \
 	"console=ttyS0,115200\0" \
