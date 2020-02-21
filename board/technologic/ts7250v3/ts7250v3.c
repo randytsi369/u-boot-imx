@@ -55,10 +55,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 int is_mfg(void)
 {
-	gpio_request(DETECT_94120, "DETECT_94120");
-	gpio_direction_input(DETECT_94120);
-
-	return !gpio_get_value(DETECT_94120);
+	return is_boot_from_usb();
 }
 
 extern int64_t silab_cmd(int argc, char *const argv[]);
