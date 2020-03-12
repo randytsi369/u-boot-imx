@@ -260,27 +260,6 @@ static void nfs_mount_req(char *path)
 	rpc_req(PROG_MOUNT, MOUNT_ADDENTRY, data, len);
 }
 
-/**************************************************************************
-NFS_UMOUNTALL - Unmount all our NFS Filesystems on the Server
-**************************************************************************/
-static void nfs_umountall_req(void)
-{
-	uint32_t data[1024];
-	uint32_t *p;
-	int len;
-
-	if ((nfs_server_mount_port == -1) || (!fs_mounted))
-		/* Nothing mounted, nothing to umount */
-		return;
-
-	p = &(data[0]);
-	p = rpc_add_credentials(p);
-
-	len = (uint32_t *)p - (uint32_t *)&(data[0]);
-
-	rpc_req(PROG_MOUNT, MOUNT_UMOUNTALL, data, len);
-}
-
 /***************************************************************************
  * NFS_READLINK (AH 2003-07-14)
  * This procedure is called when read of the first block fails -
@@ -411,7 +390,7 @@ static void nfs_send(void)
 		nfs_mount_req(nfs_path);
 		break;
 	case STATE_UMOUNT_REQ:
-		nfs_umountall_req();
+		net_set_state(nfs_download_state);
 		break;
 	case STATE_LOOKUP_REQ:
 		nfs_lookup_req(nfs_filename);
@@ -783,9 +762,6 @@ static void nfs_handler(uchar *pkt, unsigned dest, struct in_addr sip,
 		reply = nfs_umountall_reply(pkt, len);
 		if (reply == -NFS_RPC_DROP) {
 			break;
-		} else if (reply == -NFS_RPC_ERR) {
-			debug("*** ERROR: Cannot umount\n");
-			net_set_state(NETLOOP_FAIL);
 		} else {
 			puts("\ndone\n");
 			net_set_state(nfs_download_state);
