@@ -54,7 +54,7 @@
 	"scriptaddr=" __stringify(CONFIG_LOADADDR) "\0" \
 	"pxefile_addr_r=" __stringify(CONFIG_LOADADDR) "\0" \
 	"fdtfile=imx6ul-ts7250v3.dtb\0" \
-	"console=ttyS0,115200\0" \
+	"console=ttymxc0,115200\0" \
 	"clearenv=mmc dev 0 1; mmc erase 2000 2000; mmc erase 3000 2000;\0" \
 	"nfsroot=192.168.0.36:/mnt/storage/imx6ul\0" \
 	"nfsboot=echo Booting from NFS ...;" \
@@ -62,7 +62,7 @@
 		"nfs ${fdt_addr_r} ${nfsroot}/boot/" CONFIG_DEFAULT_DEVICE_TREE ".dtb;" \
 		"nfs ${kernel_addr_r} ${nfsroot}/boot/zImage;" \
 		"setenv bootargs root=/dev/nfs rw ip=dhcp nfsroot=${nfsroot} " \
-			"${cmdline_append};" \
+			"loglevel=4 console=${console};" \
 		"bootz ${kernel_addr_r} - ${fdt_addr_r};\0" \
 	BOOTENV
 
