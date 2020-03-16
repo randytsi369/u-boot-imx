@@ -229,9 +229,9 @@ void config_opts(int bbid)
 		nochrg = FORCE_UNSET;
 		bbsilo = NOT_PRESENT;
 		break;
-//TODO change id number for the 4100
-	  case 0x00: /* TS-4100 */
-	        setenv("baseboard", "TS-4100");
+//TODO change id number for the TS-8100
+	  case 0x00: /* TS-8100 */
+	        setenv("baseboard", "TS-8100");
 	        pswitch = fpga_gpio_input(DIO_09);
                 uboot = FORCE_UNSET;
 	        setenv_ulong("bootdelay",
