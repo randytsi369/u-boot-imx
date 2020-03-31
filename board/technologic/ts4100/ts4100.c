@@ -220,6 +220,16 @@ void config_opts(int bbid)
 		setenv("baseboard", "TS-8551");
 		pswitch = fpga_gpio_input(DIO_09);
 		break;
+//TODO change id number for the TS-8100
+	  case 0x07: /* TS-8100 */
+	        setenv("baseboard", "TS-8100");
+	        pswitch = fpga_gpio_input(DIO_09);
+                uboot = FORCE_UNSET;
+	        setenv_ulong("bootdelay",
+                  getenv_ulong("force_bootdelay", 10, 1));
+                nochrg = FORCE_UNSET;
+	        bbsilo = NOT_PRESENT;
+	        break;
 	  case 0x08: /* TS-8820 */
 		setenv("baseboard", "TS-8820");
 		pswitch = fpga_gpio_input(DIO_09);
@@ -229,16 +239,6 @@ void config_opts(int bbid)
 		nochrg = FORCE_UNSET;
 		bbsilo = NOT_PRESENT;
 		break;
-//TODO change id number for the TS-8100
-	  case 0x00: /* TS-8100 */
-	        setenv("baseboard", "TS-8100");
-	        pswitch = fpga_gpio_input(DIO_09);
-                uboot = FORCE_UNSET;
-	        setenv_ulong("bootdelay",
-                  getenv_ulong("force_bootdelay", 10, 1));
-                nochrg = FORCE_UNSET;
-	        bbsilo = NOT_PRESENT;
-	        break;
 	  default: /* All other boards presumed to have std. jumper locations w/
 		    * TS-SILO
 		    */
