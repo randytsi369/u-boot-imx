@@ -220,7 +220,6 @@ void config_opts(int bbid)
 		setenv("baseboard", "TS-8551");
 		pswitch = fpga_gpio_input(DIO_09);
 		break;
-//TODO change id number for the TS-8100
 	  case 0x07: /* TS-8100 */
 	        setenv("baseboard", "TS-8100");
 	        pswitch = fpga_gpio_input(DIO_09);
